@@ -149,6 +149,13 @@ npm run build
 npm audit --omit=dev
 ```
 
+The Vercel build intentionally runs only `vite build` (plus `@vercel/node` compiling `api/`), so a
+type-only complaint can never take down a deploy. Type checking of `src`, `api`, `server.ts` and the
+test suite happens through `npm run typecheck` (`tsconfig.json` + `tsconfig.test.json`) from the repo
+root, where `vitest` is installed as a workspace devDependency. Do not add `tsc` back to the relay's
+`build` script: when Vercel's Root Directory is `packages/cowork-web-relay`, that package's install has
+no `vitest`, so type-checking `test/` fails with TS2307 and exits 2.
+
 Tests **always use isolated memory or a mocked PostgreSQL transport**, even if `DATABASE_URL`
 is inherited. They never connect to or clear your live database. PostgreSQL contract tests
 verify lock/update/rollback ordering, but do not replace a live Supabase smoke test.
