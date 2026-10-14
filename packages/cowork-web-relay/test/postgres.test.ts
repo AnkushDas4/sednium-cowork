@@ -28,7 +28,8 @@ describe('Postgres transaction contract', () => {
     expect(calls.at(-1)).toBe('COMMIT');
     expect(fake.release).toHaveBeenCalledTimes(2); // initialization + mutation
     expect(calls.some(s => s.includes('ENABLE ROW LEVEL SECURITY'))).toBe(true);
-    expect(fake.pool.mock.calls[0][0].connectionString).toContain('sslmode=verify-full');
+    expect(fake.pool.mock.calls[0][0].ssl).toEqual({ rejectUnauthorized: true });
+    expect(fake.pool.mock.calls[0][0].connectionString).not.toContain('sslmode');
   });
   it('rolls back and propagates write failures rather than falling back', async () => {
     fake.query.mockImplementation(async (sql: string) => {

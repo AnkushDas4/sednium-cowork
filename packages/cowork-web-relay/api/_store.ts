@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import type { RoomState, CoWorkMessage } from './_types.js';
 import { ApiError, id } from './_validation.js';
+import { buildTls } from './_tls.js';
 
 export const LOCK_TTL_MS = 90_000;
 const memoryStore = new Map<string, RoomState>();
@@ -19,12 +20,12 @@ function database(): Pool | null {
     return null;
   }
   if (!pool) {
-    const url = new URL(process.env.DATABASE_URL);
-    if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && !url.searchParams.has('sslmode')) {
-      url.searchParams.set('sslmode', 'verify-full');
-    }
+    const tls = buildTls(process.env.DATABASE_URL!);
+    if (tls.warning) console.warn(`[CoWork] ${tls.warning}`);
+    else console.error(`[CoWork] Database TLS: ${tls.mode}`);
     pool = new Pool({
-      connectionString: url.toString(), max: 3, idleTimeoutMillis: 10_000,
+      connectionString: tls.connectionString, ssl: tls.ssl,
+      max: 3, idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 3_000, statement_timeout: 8_000,
     });
     pool.on('error', () => console.error('[CoWork] Idle database connection failed; reconnecting on next request.'));

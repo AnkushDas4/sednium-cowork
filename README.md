@@ -16,8 +16,25 @@ Local, preview, and production instances using the same `DATABASE_URL` share roo
    `PUBLIC`, `anon`, and `authenticated`. Other application tables are not changed.
 5. Redeploy after environment changes. Test a newly generated room with two clients.
 
-TLS certificate verification is enabled by default for non-local hosts. Do not work around
-certificate failures by disabling verification; check the connection URI and certificate chain.
+### Supabase TLS
+
+Verification against the system trust store is the default for non-local hosts. Supabase signs
+its database and poolers with a **private root CA**, so the first connection can fail with
+`self-signed certificate in certificate chain`. That is a trust problem, not a bug - the old
+relay hid it by disabling verification for every non-localhost URL. Pick one:
+
+1. **Preferred - pin the CA.** Download the root certificate from Supabase
+   (Project Settings → Database → SSL connection), then set either
+   `COWORK_DB_CA_CERT=/absolute/path/to/root.crt` or paste the whole PEM
+   (`-----BEGIN CERTIFICATE-----` … ) into `COWORK_DB_CA_CERT`. Chain **and** hostname are
+   verified (`verify-pinned-ca`).
+2. **Stopgap - `COWORK_DB_TLS=no-verify`** (equivalently `?sslmode=no-verify` in the URL).
+   Traffic is encrypted but the certificate is not verified, so an active network attacker
+   could impersonate the database. The relay logs a warning while this is set.
+
+`COWORK_DB_TLS=disable` is refused for remote hosts. Any `ssl*` params in `DATABASE_URL` are
+stripped so the URL can never silently override the driver's TLS settings; `sslmode=require`
+means *verify* with current `pg`, so it does not work against Supabase without a pinned CA.
 
 ### Local development
 

@@ -54,6 +54,13 @@ const STORAGE_HINTS: Record<string, string> = {
   '28': 'database rejected the credentials - re-check the password (percent-encode special characters)',
   '3D': 'database name not found - the URI path must be /postgres',
   '42': 'permission denied creating cowork_rooms - run the one-time SQL from the README',
+  SELF_SIGNED_CERT_IN_CHAIN: 'database certificate is not trusted by Node - pin Supabase\'s CA with COWORK_DB_CA_CERT, or set COWORK_DB_TLS=no-verify as a stopgap',
+  DEPTH_ZERO_SELF_SIGNED_CERT: 'database certificate is self-signed - pin Supabase\'s CA with COWORK_DB_CA_CERT, or COWORK_DB_TLS=no-verify as a stopgap',
+  UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'incomplete certificate chain - pin Supabase\'s CA with COWORK_DB_CA_CERT',
+  UNABLE_TO_GET_ISSUER_CERT_LOCALLY: 'missing issuer certificate - pin Supabase\'s CA with COWORK_DB_CA_CERT',
+  UNABLE_TO_GET_ISSUER_CERT: 'missing issuer certificate - pin Supabase\'s CA with COWORK_DB_CA_CERT',
+  CERT_HAS_EXPIRED: 'database certificate expired - retry; if it persists, check Supabase status',
+  ERR_TLS_CERT_ALTNAME_FAILED: 'certificate hostname mismatch - the host in DATABASE_URL must match the pooler hostname',
 };
 
 export function errorResponse(err: unknown): { status: number; body: Record<string, unknown> } {
