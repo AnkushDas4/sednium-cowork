@@ -7,9 +7,14 @@ interface JoinModalProps {
   onJoin: (roomCode: string, clientId: string) => void;
 }
 
-export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialClientId = 'loid', onJoin }) => {
+export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialClientId = 'peer', onJoin }) => {
   const [room, setRoom] = useState(initialRoom);
   const [clientId, setClientId] = useState(initialClientId);
+
+  React.useEffect(() => {
+    if (initialRoom) setRoom(initialRoom);
+    if (initialClientId) setClientId(initialClientId);
+  }, [initialRoom, initialClientId]);
 
   const generateRoomCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

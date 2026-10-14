@@ -23,9 +23,18 @@ export const App: React.FC = () => {
       const asParam = params.get('as') || params.get('clientId');
 
       if (roomParam) {
-        setRoomCode(roomParam.toUpperCase());
-        setClientId((asParam || 'loid').toLowerCase());
-        setConnected(true);
+        const cleanRoom = roomParam.toUpperCase();
+        setRoomCode(cleanRoom);
+
+        if (asParam) {
+          // Only auto-connect if user handle is explicitly specified in the URL
+          setClientId(asParam.trim().toLowerCase());
+          setConnected(true);
+        } else {
+          // Room was shared via invite link: Prompt peer to enter their name!
+          setClientId('peer');
+          setConnected(false);
+        }
       }
     }
   }, []);
