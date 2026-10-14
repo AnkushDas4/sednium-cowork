@@ -1,4 +1,4 @@
-import { relayRequest, captureInviteFromUrl, inviteKeyFor } from './relay.js';
+import { relayRequest, captureInviteFromUrl, inviteKeyFor, lastHandle } from './relay.js';
 import React, { useState, useEffect } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
@@ -65,7 +65,8 @@ export const App: React.FC = () => {
       setClientId(asParam.trim().toLowerCase());
       setConnected(true);
     } else {
-      setClientId('peer');
+      // Ask for a handle instead of silently assuming a canned identity.
+      setClientId(lastHandle());
     }
   }, []);
 
@@ -168,7 +169,7 @@ export const App: React.FC = () => {
       {!connected ? (
         <JoinModal
           initialRoom={roomCode}
-          initialClientId={clientId || 'peer'}
+          initialClientId={clientId}
           theme={theme}
           onToggleTheme={toggleTheme}
           onJoin={handleJoin}

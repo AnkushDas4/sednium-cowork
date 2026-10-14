@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { rememberInvite, inviteKeyFor } from '../relay.js';
+import { rememberInvite, inviteKeyFor, lastHandle, rememberHandle } from '../relay.js';
 import {
   Terminal,
   KeyRound,
@@ -22,14 +22,16 @@ interface JoinModalProps {
 
 export const JoinModal: React.FC<JoinModalProps> = ({
   initialRoom = '',
-  initialClientId = 'peer',
+  initialClientId = '',
   theme,
   onToggleTheme,
   onJoin,
 }) => {
   const requestVersion = useRef(0);
   const [room, setRoom] = useState(initialRoom);
-  const [clientId, setClientId] = useState(initialClientId);
+  // No preset identities: whatever this person typed last, otherwise an empty field that
+  // explains the role in the placeholder.
+  const [clientId, setClientId] = useState(initialClientId || lastHandle());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [invite, setInvite] = useState(() => inviteKeyFor(initialRoom));
 
@@ -79,7 +81,9 @@ export const JoinModal: React.FC<JoinModalProps> = ({
     e.preventDefault();
     if (room.trim() && clientId.trim()) {
       rememberInvite(room.trim().toUpperCase(), invite.trim()); // no-op unless the key is well-formed
-      onJoin(room.trim().toUpperCase(), clientId.trim().toLowerCase());
+      const handle = clientId.trim().toLowerCase();
+      rememberHandle(handle);
+      onJoin(room.trim().toUpperCase(), handle);
     }
   };
 
@@ -174,37 +178,18 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               <span>YOUR OPERATOR HANDLE</span>
             </label>
 
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <button
-                type="button"
-                onClick={() => setClientId('loid')}
-                className={`py-1.5 px-3 rounded-sm text-xs font-mono border transition-colors ${
-                  clientId === 'loid'
-                    ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-semibold'
-                    : 'bg-canvas hover:bg-hover text-secondary border-grid'
-                }`}
-              >
-                @loid (Host)
-              </button>
-              <button
-                type="button"
-                onClick={() => setClientId('peer')}
-                className={`py-1.5 px-3 rounded-sm text-xs font-mono border transition-colors ${
-                  clientId === 'peer'
-                    ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-semibold'
-                    : 'bg-canvas hover:bg-hover text-secondary border-grid'
-                }`}
-              >
-                @peer (Collaborator)
-              </button>
-            </div>
+            <p className="text-[11px] font-mono text-muted mb-2">
+              This device joins as the room's host operator. Agents connect separately with their
+              own handle, so keep yours unique in this room.
+            </p>
 
             <input
               type="text"
               required
               value={clientId}
-              onChange={(e) => setClientId(e.target.value.toLowerCase())}
-              placeholder="operator handle"
+              autoFocus={!clientId}
+              onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+              placeholder="host - your handle (e.g. android-lab)"
               className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-xs text-primary font-mono placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
             />
           </div>

@@ -1,5 +1,14 @@
 const TOKEN_KEY = 'cowork-participant-token';
 const INVITES_KEY = 'cowork-invite-keys';
+const LAST_HANDLE_KEY = 'cowork-last-handle';
+
+/** Convenience only - no identity is implied by it, and nothing is pre-filled from a preset. */
+export function lastHandle(): string {
+  return (localStorage.getItem(LAST_HANDLE_KEY) || '').trim().toLowerCase();
+}
+export function rememberHandle(handle: string): void {
+  if (handle) localStorage.setItem(LAST_HANDLE_KEY, handle.trim().toLowerCase());
+}
 
 export function participantToken(): string {
   let token = localStorage.getItem(TOKEN_KEY);

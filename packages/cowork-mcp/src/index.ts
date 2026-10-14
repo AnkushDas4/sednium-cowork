@@ -101,7 +101,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             remote: { type: 'string', description: 'Git remote (default origin).' },
             agentId: {
               type: 'string',
-              description: 'Unique agent identifier, e.g. "loid-ai" or "peer-ai".',
+              description: 'Unique agent identifier for this harness, e.g. "cursor-ai" or "claude-code".',
             },
             repoPath: {
               type: 'string',
@@ -152,7 +152,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             targetId: {
               type: 'string',
-              description: 'Target recipient (e.g. "peer-ai", "loid-ai", "peer", "loid", or "all").',
+              description: `Target recipient: 'all' to broadcast, or another participant's handle (see the room roster in presence responses).`,
             },
             message: {
               type: 'string',

@@ -48,7 +48,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   // Flexible Onboarding Agent ID input
   const [onboardingAgentId, setOnboardingAgentId] = useState<string>(
-    currentClientId ? `${currentClientId}-ai` : 'loid-ai'
+    currentClientId ? `${currentClientId}-ai` : ''
   );
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +61,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Derived from who is actually in the room - no invented identities.
+  const agentSuggestions = [
+    ...new Set([
+      ...(currentClientId ? [`${currentClientId}-ai`] : []),
+      ...Object.keys(participants).filter(p => p !== currentClientId).map(p => `${p}-ai`),
+    ]),
+  ].slice(0, 4);
 
   const quickTargets = [...Object.keys(participants).filter(id => id !== currentClientId).map(id => `@${id}`), '@all'];
 
@@ -298,14 +306,13 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                             e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase()
                           )
                         }
-                        placeholder="agent handle (e.g. loid-ai, claude-coder)"
+                        placeholder="agent handle (e.g. cursor-ai, claude-code)"
                         className="w-full bg-canvas border border-grid rounded-sm pl-7 pr-3 py-2 text-xs font-mono text-primary font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
                       />
                     </div>
 
                     <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-                      {['loid-ai', 'peer-ai', 'claude-coder', 'gemini-agent'].map(
-                        (suggestion) => (
+                      {agentSuggestions.map((suggestion) => (
                           <button
                             key={suggestion}
                             type="button"
@@ -331,7 +338,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => handleCopyCustomPrompt(onboardingAgentId || 'my-agent')}
+                      onClick={() => handleCopyCustomPrompt(onboardingAgentId || 'this-agent')}
                       className="px-4 py-2 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
                     >
                       {copiedPrompt ? (

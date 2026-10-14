@@ -13,8 +13,8 @@ export interface CoWorkMessage {
   messageId: string;
   timestamp: number;
   roomCode: string;
-  senderId: string;     // e.g. "loid-ai", "peer-ai", "loid", "peer"
-  targetId: string;     // e.g. "all", "peer-ai", "loid-ai", "loid", "peer"
+  senderId: string;     // the sender's handle (a room participant)
+  targetId: string;     // "all" to broadcast, or one recipient's handle
   contentType: ContentType;
   text: string;         // Supports @mentions
   files?: string[];
