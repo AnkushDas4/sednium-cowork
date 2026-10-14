@@ -148,8 +148,10 @@ GitHub instead of the relay (useful for a pre-deploy check; while `main` lags be
 GitHub install gets a pre-invite-key client). `scripts/verify-relay.mjs` is published the same way as
 `verify.mjs`, so a bare machine can also run the live relay checks with `curl` + `node`.
 
-Serving these files is opt-in by deployment: `public/` is generated at build time and gitignored, so
-an older deployment simply 404s (the installer then says so instead of installing HTML). If you want
+These files exist only on a deployment built from this commit onward, and `public/` is generated at
+build time (gitignored, no 1 MB duplicate in git). An older deployment answers `GET /cowork.cjs` with
+`index.html` via the SPA catch-all rather than a 404 - the installer rejects that (HTML body guard),
+and `sha256sum -c` fails loudly because no `.sha256` exists yet. If you want
 `npx`/`npm i -g` instead, `sednium-cowork` is an unused npm name and the root package declares no
 production dependencies, so `npm publish` is the short long-term path.
 
