@@ -28,6 +28,8 @@ interface ChatTerminalProps {
   roomCode?: string;
   onSendMessage: (text: string) => Promise<void>;
   onShowQr?: () => void;
+  prefilledInput?: string;
+  onClearPrefill?: () => void;
 }
 
 type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
@@ -39,6 +41,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   roomCode = 'SED-409',
   onSendMessage,
   onShowQr,
+  prefilledInput,
+  onClearPrefill,
 }) => {
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState<FilterType>('ALL');
@@ -62,6 +66,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (prefilledInput) {
+      setInput(prefilledInput);
+      inputRef.current?.focus();
+      onClearPrefill?.();
+    }
+  }, [prefilledInput]);
 
   // Derived from who is actually in the room - no invented identities.
   const agentSuggestions = [
@@ -226,17 +238,17 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
       {/* 1. Filter Tab Bar */}
-      <div className="h-11 xs:h-10 bg-panel border-b border-grid flex items-stretch px-1 xs:px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto no-scrollbar">
+      <div className="h-10 bg-panel border-b border-grid flex items-stretch px-1 xs:px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setFilter('ALL')}
-          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
+          className={`min-tap justify-center gap-1.5 px-3 xs:px-3.5 text-xs font-sans font-medium relative transition-colors flex items-center shrink-0 ${
             filter === 'ALL'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>All Events</span>
+          <span>All<span className="hidden xs:inline"> Events</span></span>
           <span className="text-[11px] font-mono text-muted">({messages.length})</span>
           {filter === 'ALL' && (
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
@@ -245,14 +257,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('MENTIONS')}
-          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
+          className={`min-tap justify-center gap-1.5 px-3 xs:px-3.5 text-xs font-sans font-medium relative transition-colors flex items-center shrink-0 ${
             filter === 'MENTIONS'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
           }`}
         >
           <AtSign className="w-3.5 h-3.5 text-accent" />
-          <span>Priority & Mentions</span>
+          <span><span className="hidden sm:inline">Priority & </span>Mentions</span>
           {mentionsCount > 0 && (
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-sm bg-accent text-accent-ink font-bold">
               {mentionsCount}
@@ -265,14 +277,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('GIT')}
-          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
+          className={`min-tap justify-center gap-1.5 px-3 xs:px-3.5 text-xs font-sans font-medium relative transition-colors flex items-center shrink-0 ${
             filter === 'GIT'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
           }`}
         >
           <GitPullRequest className="w-3.5 h-3.5" />
-          <span>Git Sync</span>
+          <span>Git<span className="hidden xs:inline"> Sync</span></span>
           {filter === 'GIT' && (
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
           )}
@@ -280,14 +292,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('LOCKS')}
-          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
+          className={`min-tap justify-center gap-1.5 px-3 xs:px-3.5 text-xs font-sans font-medium relative transition-colors flex items-center shrink-0 ${
             filter === 'LOCKS'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
           }`}
         >
           <Lock className="w-3.5 h-3.5" />
-          <span>File Locks</span>
+          <span><span className="hidden xs:inline">File </span>Locks</span>
           {filter === 'LOCKS' && (
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
           )}
@@ -482,18 +494,18 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             return (
               <div
                 key={msg.messageId}
-                className={`px-3.5 xs:px-5 py-3 xs:py-3.5 flex items-start gap-3 transition-colors ${
+                className={`px-3 xs:px-4 py-2.5 xs:py-3.5 flex items-start gap-2.5 xs:gap-3 transition-colors ${
                   isDirectedAtMe
-                    ? 'bg-accent/10 border-l-4 border-accent pl-3 xs:pl-4 shadow-sm'
+                    ? 'bg-accent/10 border-l-4 border-accent pl-2.5 xs:pl-3.5 shadow-sm'
                     : isPriority
-                      ? 'bg-panel/40 border-l-2 border-accent/60 pl-3.5 xs:pl-4'
+                      ? 'bg-panel/40 border-l-2 border-accent/60 pl-3 xs:pl-3.5'
                       : isSelf
                         ? 'bg-panel/20'
                         : 'hover:bg-hover/30'
                 }`}
               >
                 {/* Timestamp */}
-                <div className="font-mono text-[11px] xs:text-xs text-muted shrink-0 pt-0.5 select-none font-medium w-[38px] xs:w-auto">
+                <div className="font-mono text-[11px] xs:text-xs text-muted shrink-0 pt-0.5 select-none font-medium w-[34px] xs:w-auto">
                   {timeStr}
                   <span className="hidden xs:inline">{timeSec}</span>
                 </div>
@@ -509,10 +521,15 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
                 {/* Content Area */}
                 <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-xs font-semibold text-primary">
+                  <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handlePillClick(`@${msg.senderId}`)}
+                      className="font-mono text-xs font-semibold text-primary hover:text-accent transition-colors text-left"
+                      title={`Click to tag @${msg.senderId}`}
+                    >
                       @{msg.senderId}
-                    </span>
+                    </button>
                     <ArrowRight className="w-3 h-3 text-muted shrink-0" />
                     {allMentions.length > 0 ? (
                       <div className="flex items-center gap-1 flex-wrap">
@@ -609,10 +626,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         )}
 
         {/* Row 1: Quick Target Mention Bar with Multiple Tagging Support */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-grid overflow-x-auto bg-hover/30">
-          <span className="text-2xs font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1 font-semibold">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border-b border-grid overflow-x-auto no-scrollbar bg-hover/30 overscroll-x-contain">
+          <span className="text-2xs font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1 font-semibold select-none">
             <AtSign className="w-3 h-3 text-accent" />
-            TAG TARGETS:
+            <span className="hidden xs:inline">TAG </span>TARGETS:
           </span>
           {quickTargets.map((mention) => {
             const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
@@ -621,7 +638,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                 key={mention}
                 type="button"
                 onClick={() => handlePillClick(mention)}
-                className={`px-2.5 py-0.5 rounded-sm text-xs font-mono transition-colors shrink-0 border flex items-center gap-1 ${
+                className={`px-2.5 py-1 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
                   isSelected
                     ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
                     : 'bg-panel hover:bg-hover text-secondary hover:text-primary border-grid'
@@ -637,8 +654,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         </div>
 
         {/* Row 2: 100% Flush Edge-to-Edge Input & Dispatch Button (h-14) */}
-        <form onSubmit={handleSubmit} className="h-14 flex items-stretch">
-          <div className="pl-4 pr-2 flex items-center text-accent shrink-0 bg-canvas">
+        <form onSubmit={handleSubmit} className="h-13 xs:h-14 flex items-stretch">
+          <div className="pl-3 sm:pl-4 pr-1.5 sm:pr-2 flex items-center text-accent shrink-0 bg-canvas">
             <Terminal className="w-4 h-4" />
           </div>
 
@@ -647,7 +664,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             type="text"
             value={input}
             onChange={handleInputChange}
-            placeholder="Message the room, or @handle to direct..."
+            placeholder="Message room, or @handle..."
             enterKeyHint="send"
             autoComplete="off"
             className="flex-1 bg-canvas h-full px-2 text-[16px] md:text-sm text-primary placeholder:text-muted focus:outline-none font-sans font-medium"
@@ -656,7 +673,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           <button
             type="submit"
             disabled={!input.trim() || sending}
-            className="h-full min-w-[52px] px-4 xs:px-6 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-sm flex items-center justify-center gap-2 transition-colors shrink-0 select-none shadow-card"
+            className="h-full min-w-[50px] px-3.5 xs:px-6 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-sm flex items-center justify-center gap-2 transition-all shrink-0 select-none shadow-card active:scale-[0.98]"
           >
             <Send className="w-4 h-4" />
             <span className="hidden xs:inline">DISPATCH</span>

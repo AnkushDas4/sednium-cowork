@@ -6,6 +6,7 @@ import {
   ShieldAlert,
   Cpu,
   FileCode,
+  MessageSquare,
 } from 'lucide-react';
 import type { ParticipantInfo, FileLockInfo } from '../../api/_types.js';
 
@@ -13,11 +14,14 @@ interface AgentHUDProps {
   participants: Record<string, ParticipantInfo>;
   fileLocks: Record<string, FileLockInfo>;
   roomCode?: string;
+  onDirectMessage?: (agentId: string) => void;
 }
 
 export const AgentHUD: React.FC<AgentHUDProps> = ({
   participants,
   fileLocks,
+  roomCode,
+  onDirectMessage,
 }) => {
   const [now, setNow] = useState(Date.now());
 
@@ -140,6 +144,18 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* Direct Message Action */}
+                {onDirectMessage && (
+                  <button
+                    type="button"
+                    onClick={() => onDirectMessage(agentId)}
+                    className="w-full mt-2 min-h-[38px] py-1.5 px-3 bg-panel hover:bg-hover active:bg-hover/80 text-accent hover:text-accent-strong border border-grid hover:border-accent/40 rounded-sm font-mono text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>MESSAGE @{agentId}</span>
+                  </button>
                 )}
               </div>
             );

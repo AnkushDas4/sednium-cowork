@@ -22,6 +22,7 @@ export const App: React.FC = () => {
   const [inviteNotice, setInviteNotice] = useState('');
   const [connected, setConnected] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'stream' | 'agents'>('stream');
+  const [prefilledMessage, setPrefilledMessage] = useState<string>('');
 
   // Theme Management
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -199,30 +200,63 @@ export const App: React.FC = () => {
             </div>
           )}
           {/* Mobile Tab Switcher */}
-          <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-11 text-xs font-mono divide-x divide-grid shrink-0">
+          <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-11 text-xs font-mono divide-x divide-grid shrink-0 select-none">
             <button
               onClick={() => setMobileTab('stream')}
               aria-pressed={mobileTab === 'stream'}
-              className={`flex-1 flex items-center justify-center gap-1.5 ${
+              className={`flex-1 flex items-center justify-center gap-2 transition-colors ${
                 mobileTab === 'stream'
-                  ? 'bg-canvas text-accent font-semibold'
+                  ? 'bg-canvas text-accent font-semibold border-b-2 border-accent'
                   : 'text-muted hover:text-secondary'
               }`}
             >
               <Terminal className="w-3.5 h-3.5" />
-              <span>DISPATCH STREAM</span>
+              <span>STREAM</span>
+              {messages.filter(
+                (m) =>
+                  (m.mentions?.includes(clientId) ||
+                    m.targetId === clientId ||
+                    m.text?.includes(`@${clientId}`)) &&
+                  m.senderId !== clientId
+              ).length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-2xs bg-accent text-accent-ink font-bold">
+                  {
+                    messages.filter(
+                      (m) =>
+                        (m.mentions?.includes(clientId) ||
+                          m.targetId === clientId ||
+                          m.text?.includes(`@${clientId}`)) &&
+                        m.senderId !== clientId
+                    ).length
+                  }
+                </span>
+              )}
             </button>
             <button
               onClick={() => setMobileTab('agents')}
               aria-pressed={mobileTab === 'agents'}
-              className={`flex-1 flex items-center justify-center gap-1.5 ${
+              className={`flex-1 flex items-center justify-center gap-2 transition-colors ${
                 mobileTab === 'agents'
-                  ? 'bg-canvas text-accent font-semibold'
+                  ? 'bg-canvas text-accent font-semibold border-b-2 border-accent'
                   : 'text-muted hover:text-secondary'
               }`}
             >
               <Bot className="w-3.5 h-3.5" />
-              <span>AGENT NODES & LOCKS</span>
+              <span>AGENTS & LOCKS</span>
+              {Object.values(participants).filter(
+                (p) => p.role === 'agent' && Date.now() - (p.lastSeen || 0) < 90000
+              ).length > 0 ? (
+                <span className="flex items-center gap-1 text-2xs font-mono text-ok font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
+                  {
+                    Object.values(participants).filter(
+                      (p) => p.role === 'agent' && Date.now() - (p.lastSeen || 0) < 90000
+                    ).length
+                  }
+                </span>
+              ) : (
+                <span className="text-2xs text-muted font-mono">0</span>
+              )}
             </button>
           </div>
 
@@ -238,6 +272,10 @@ export const App: React.FC = () => {
                 participants={participants}
                 fileLocks={fileLocks}
                 roomCode={roomCode}
+                onDirectMessage={(agentId) => {
+                  setPrefilledMessage(`@${agentId} `);
+                  setMobileTab('stream');
+                }}
               />
             </section>
 
@@ -254,6 +292,8 @@ export const App: React.FC = () => {
                 currentClientId={clientId}
                 roomCode={roomCode}
                 onSendMessage={handleSendMessage}
+                prefilledInput={prefilledMessage}
+                onClearPrefill={() => setPrefilledMessage('')}
               />
             </section>
           </main>

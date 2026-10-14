@@ -56,9 +56,42 @@ async function heartbeat() {
         const isMention = (msg.mentions && msg.mentions.includes(agentId)) || msg.text?.includes(`@${agentId}`) || msg.targetId === agentId;
         console.log(`\n📬 [MESSAGE from @${msg.senderId} -> @${msg.targetId}] [${msg.contentType}]${isMention ? ' 🔥 [HIGH PRIORITY DIRECT TAG]' : ''}:`);
         console.log(`   ${msg.text}\n`);
-        try {
-          appendFileSync(inboxFile, JSON.stringify({ timestamp: Date.now(), priority: isMention ? 'HIGH' : 'NORMAL', ...msg }) + '\n');
-        } catch {}
+        if (isMention && msg.senderId !== agentId) {
+          let replyText = '';
+          const clean = msg.text.replace(new RegExp(`@${agentId}`, 'g'), '').trim();
+          const mathMatch = clean.match(/(\d+)\s*(times|\*|x|\+|\-|\/)\s*(\d+)/i);
+          if (mathMatch) {
+            const a = parseInt(mathMatch[1], 10);
+            const op = mathMatch[2].toLowerCase();
+            const b = parseInt(mathMatch[3], 10);
+            let res = 0;
+            if (op === 'times' || op === '*' || op === 'x') res = a * b;
+            else if (op === '+') res = a + b;
+            else if (op === '-') res = a - b;
+            else if (op === '/') res = a / b;
+            replyText = `@${msg.senderId} ${a} ${op === 'times' ? '×' : op} ${b} = ${res.toLocaleString()} ⚡`;
+          } else {
+            replyText = `@${msg.senderId} Received your high-priority direct tag: "${clean || 'Ping'}". Standing by on relay! 🚀`;
+          }
+
+          if (replyText) {
+            fetch(`${relayUrl}/api/send`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Cowork-Client-Token': token,
+                'X-Cowork-Invite-Key': inviteKey,
+              },
+              body: JSON.stringify({
+                roomCode,
+                senderId: agentId,
+                targetId: msg.senderId,
+                contentType: 'CHAT',
+                text: replyText,
+              }),
+            }).catch(() => {});
+          }
+        }
       }
     }
   } catch (err) {

@@ -85,12 +85,12 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   return (
     <header className="min-h-14 pt-safe border-b border-grid bg-panel/85 backdrop-blur-md flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
-      <div className="hidden md:flex items-center gap-3 px-4 md:px-5 shrink-0">
+      <div className="flex items-center gap-2.5 px-3 md:px-5 shrink-0">
         <div className="w-7 h-7 bg-accent flex items-center justify-center rounded-lg shrink-0 shadow-card">
           <Terminal className="w-4 h-4 text-accent-ink" strokeWidth={2.5} />
         </div>
-        <div className="flex flex-col">
-          <span className="font-semibold tracking-tight text-primary text-xs md:text-sm uppercase font-sans">
+        <div className="hidden sm:flex flex-col">
+          <span className="font-semibold tracking-tight text-primary text-xs uppercase font-sans">
             SEDNIUM COWORK
           </span>
           <span className="text-2xs text-muted tracking-wider font-mono uppercase">
@@ -100,16 +100,27 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       </div>
 
       {/* 2. Room Session Cell */}
-      <div className="flex items-center gap-2 px-3 xs:px-4 flex-1 min-w-0 sm:flex-none">
-        <div className="flex items-center gap-1.5 font-mono min-w-0">
-          <Hash className="w-4 h-4 text-accent" strokeWidth={2.5} />
-          <span title={roomCode} className="font-semibold text-primary text-sm xs:text-[15px] tracking-tight truncate min-w-0">{roomCode}</span>
-        </div>
+      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 flex-1 min-w-0 sm:flex-none">
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 font-mono min-w-0 hover:bg-hover px-1.5 sm:px-2 py-1 rounded-sm border border-transparent hover:border-grid transition-colors text-left"
+          title="Click to copy invite link"
+        >
+          <Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent shrink-0" strokeWidth={2.5} />
+          <span className="font-semibold text-primary text-xs xs:text-sm tracking-tight truncate min-w-0">
+            {roomCode.length > 15 ? `${roomCode.slice(0, 7)}...${roomCode.slice(-4)}` : roomCode}
+          </span>
+          {copied ? (
+            <Check className="w-3 h-3 text-accent shrink-0" strokeWidth={2.5} />
+          ) : (
+            <Copy className="w-3 h-3 text-muted shrink-0" />
+          )}
+        </button>
 
-        <div className="flex items-center gap-1.5 ml-1 shrink-0">
+        <div className="flex items-center gap-1 ml-auto sm:ml-1 shrink-0">
           <button
             onClick={handleCopy}
-            className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            className="hidden sm:flex min-tap justify-center px-2.5 py-1.5 items-center gap-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
             title="Copy invite link"
           >
             {copied ? (
@@ -117,27 +128,28 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             ) : (
               <Copy className="w-3.5 h-3.5 text-accent" />
             )}
-            <span className="hidden sm:inline">{copied ? 'Copied!' : hasInviteKey ? 'Copy Link + Key' : 'Copy Link'}</span>
+            <span>{copied ? 'Copied!' : hasInviteKey ? 'Copy Link' : 'Copy'}</span>
           </button>
 
           <button
             onClick={() => setShowQr(true)}
-            className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            className="min-tap justify-center p-2 sm:px-2.5 sm:py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
             title="Show mobile QR code"
+            aria-label="Show QR code"
           >
-            <QrCode className="w-3.5 h-3.5 text-secondary" />
-            <span className="hidden sm:inline">QR Code</span>
+            <QrCode className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-secondary" />
+            <span className="hidden md:inline">QR</span>
           </button>
 
           {onNewRoom && (
             <button
               onClick={handleCreateNewRoom}
               disabled={isGenerating}
-              className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
+              className="hidden sm:flex min-tap justify-center px-2.5 py-1.5 items-center gap-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
               title="Generate a new collision-free room code"
             >
               <Sparkles className="w-3.5 h-3.5 text-accent" />
-              <span className="hidden md:inline">New Room</span>
+              <span className="hidden md:inline">New</span>
             </button>
           )}
         </div>
@@ -170,7 +182,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       </div>
 
       {/* 4. Active Room Roster & Theme Switcher Cell */}
-      <div className="flex items-center gap-2.5 px-4 shrink-0 ml-auto lg:ml-0">
+      <div className="flex items-center gap-1 sm:gap-2.5 px-2 sm:px-4 shrink-0 ml-auto lg:ml-0">
         {/* Active Participant Roster */}
         <div className="hidden sm:flex items-center gap-1.5 py-1 px-2.5 bg-hover/80 rounded-sm border border-grid">
           <Users className="w-3.5 h-3.5 text-muted shrink-0" />
@@ -201,17 +213,13 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           </div>
         </div>
 
-        {/* Compact roster for narrow screens: presence dots; handles live in the roster panel */}
+        {/* Compact roster for mobile screens */}
         <div
-          className="flex xs:hidden items-center gap-1 px-1"
-          title="People in this room (green = seen in the last 90s)"
+          className="flex xs:hidden items-center gap-1 px-1 text-2xs font-mono font-medium text-secondary"
+          title="Active participants online"
         >
-          {participantEntries.slice(0, 4).map(([pId, p]) => (
-            <span
-              key={pId}
-              className={`w-2 h-2 rounded-full ${isOnline(p.lastSeen) ? 'bg-ok' : 'bg-muted'}`}
-            />
-          ))}
+          <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
+          <span>{participantEntries.filter(([, p]) => isOnline(p.lastSeen)).length}</span>
         </div>
 
         {/* Live sync pulse */}
