@@ -72,13 +72,21 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // 2. Continuous 2-second background polling loop
+  // 2. Chained background polling loop (non-overlapping, 2s rest after completion)
   useEffect(() => {
     if (!connected || !roomCode || !clientId) return;
 
     let isMounted = true;
     let polling = false;
     let acknowledgements: string[] = [];
+    let failCount = 0;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleNext = (delay = 2000) => {
+      if (!isMounted) return;
+      if (pollTimer) clearTimeout(pollTimer);
+      pollTimer = setTimeout(pollPresence, delay);
+    };
 
     const pollPresence = async () => {
       if (polling) return;
@@ -89,6 +97,7 @@ export const App: React.FC = () => {
           ack: acknowledgements,
         }, roomCode);
         if (!isMounted) return;
+        failCount = 0;
         acknowledgements = (data.messages || []).map(m => m.messageId);
         setConnectionError('');
         setInviteNotice('');
@@ -118,17 +127,29 @@ export const App: React.FC = () => {
           });
         }
       } catch (err) {
-        if (isMounted) setConnectionError(err instanceof Error ? err.message : 'Relay unavailable');
-      } finally { polling = false; }
+        failCount++;
+        // Only show disconnected error after 3 consecutive failures to ignore transient cold-starts
+        if (isMounted && failCount >= 3) {
+          setConnectionError(err instanceof Error ? err.message : 'Relay unavailable');
+        }
+      } finally {
+        polling = false;
+        if (isMounted) {
+          scheduleNext(2000);
+        }
+      }
     };
 
-    pollTriggerRef.current = pollPresence;
+    pollTriggerRef.current = () => {
+      if (pollTimer) clearTimeout(pollTimer);
+      pollPresence();
+    };
+
     pollPresence();
-    const interval = setInterval(pollPresence, 1500);
 
     return () => {
       isMounted = false;
-      clearInterval(interval);
+      if (pollTimer) clearTimeout(pollTimer);
     };
   }, [connected, roomCode, clientId]);
 
@@ -204,7 +225,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text pb-[env(safe-area-inset-bottom)]">
+    <div className="h-full w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text">
       {!connected ? (
         <JoinModal
           initialRoom={roomCode}

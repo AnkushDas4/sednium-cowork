@@ -94,18 +94,20 @@ async function heartbeat() {
         }
       }
     }
+    consecutiveErrors = 0;
   } catch (err) {
-    // Only log unexpected non-timeout errors to keep logs clean
-    if (err.name !== 'TimeoutError' && !err.message?.includes('aborted')) {
-      console.error(`[CoWork Runner] Poll failed:`, err.message);
+    consecutiveErrors++;
+    // Only log if 3 consecutive failures occur, avoiding log spam on transient socket resets/timeouts
+    if (consecutiveErrors >= 3 && err.name !== 'TimeoutError' && !err.message?.includes('aborted')) {
+      console.error(`[CoWork Runner] Network issue (${consecutiveErrors}x):`, err.message);
     }
   } finally {
     isPolling = false;
+    setTimeout(heartbeat, 2000);
   }
 }
 
+let consecutiveErrors = 0;
 // Initial pulse immediately
-await heartbeat();
-// Continuous 2s loop
-setInterval(heartbeat, 2000);
-console.log(`[CoWork Runner] @${agentId} is now ONLINE with continuous 2s heartbeat.`);
+console.log(`[CoWork Runner] @${agentId} is now ONLINE with continuous heartbeat.`);
+heartbeat();

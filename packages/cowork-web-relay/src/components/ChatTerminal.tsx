@@ -859,7 +859,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     </div>
 
       {/* 3. Command Composer Dock (Flush Edge-to-Edge Input Row) */}
-      <div className="bg-panel border-t border-grid shrink-0 relative">
+      <div className="bg-panel border-t border-grid shrink-0 relative pb-[max(env(safe-area-inset-bottom),0.65rem)] sm:pb-0">
         {/* Inline @ Mention Autocomplete Popup */}
         {showMentionPopup && (
           <div className="absolute bottom-full left-4 mb-2 bg-panel border border-grid rounded-sm shadow-float py-1 z-30 w-52 divide-y divide-grid">
@@ -881,7 +881,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         )}
 
         {/* Row 1: Quick Target Mention Bar with Multiple Tagging Support */}
-        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border-b border-grid overflow-x-auto no-scrollbar bg-hover/30 overscroll-x-contain">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 border-b border-grid overflow-x-auto no-scrollbar bg-hover/30 overscroll-x-contain">
           <span className="text-2xs font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1 font-semibold select-none">
             <AtSign className="w-3 h-3 text-accent" />
             <span className="hidden xs:inline">TAG </span>TARGETS:
@@ -908,8 +908,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           })}
         </div>
 
-        {/* Row 2: 100% Flush Edge-to-Edge Input & Dispatch Button (h-14) */}
-        <form onSubmit={handleSubmit} className="h-13 xs:h-14 flex items-stretch">
+        {/* Row 2: 100% Flush Edge-to-Edge Input & Dispatch Button */}
+        <form onSubmit={handleSubmit} className="h-12 xs:h-13 sm:h-14 flex items-stretch">
           <div className="pl-3 sm:pl-4 pr-1.5 sm:pr-2 flex items-center text-accent shrink-0 bg-canvas">
             <Terminal className="w-4 h-4" />
           </div>
