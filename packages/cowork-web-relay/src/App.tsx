@@ -1,5 +1,5 @@
 import { relayRequest, captureInviteFromUrl, inviteKeyFor, lastHandle } from './relay.js';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
@@ -53,6 +53,7 @@ export const App: React.FC = () => {
   const [fileLocks, setFileLocks] = useState<Record<string, FileLockInfo>>({});
   const [latestCommit, setLatestCommit] = useState<CommitInfo | null>(null);
   const [messages, setMessages] = useState<CoWorkMessage[]>([]);
+  const pollTriggerRef = useRef<(() => void) | null>(null);
 
   // 1. Adopt an invite link: ?room=<code>#k=<invite key>. The key never leaves the fragment.
   useEffect(() => {
@@ -96,21 +97,23 @@ export const App: React.FC = () => {
         setFileLocks(data.fileLocks || {});
         setLatestCommit(data.latestCommit || null);
 
-        // Drained new messages
+        // Drained new messages with array identity preservation
         if (data.messages && data.messages.length > 0) {
           setMessages((prev) => {
             const existingIds = new Set(prev.map((m) => m.messageId));
             const newOnes = data.messages.filter((m) => !existingIds.has(m.messageId));
+            if (newOnes.length === 0) return prev;
             return [...prev, ...newOnes].slice(-500);
           });
         }
 
-        // Merge history on first mount
+        // Merge history on mount with array identity preservation
         if (data.recentHistory && data.recentHistory.length > 0) {
           setMessages((prev) => {
             if (prev.length === 0) return data.recentHistory;
             const existingIds = new Set(prev.map((m) => m.messageId));
             const missing = data.recentHistory.filter((m) => !existingIds.has(m.messageId));
+            if (missing.length === 0) return prev;
             return [...missing, ...prev].sort((a, b) => a.timestamp - b.timestamp).slice(-500);
           });
         }
@@ -119,8 +122,9 @@ export const App: React.FC = () => {
       } finally { polling = false; }
     };
 
+    pollTriggerRef.current = pollPresence;
     pollPresence();
-    const interval = setInterval(pollPresence, 2000);
+    const interval = setInterval(pollPresence, 1500);
 
     return () => {
       isMounted = false;
@@ -160,9 +164,43 @@ export const App: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     if (!roomCode || !clientId) return;
 
-    await relayRequest('/api/send', {
-      roomCode, senderId: clientId, targetId: 'all', contentType: 'CHAT', text,
-    }, roomCode);
+    // Parse all mentions in the outgoing message
+    const allMentions = [...new Set([...text.matchAll(/@([a-zA-Z0-9_-]+)/g)].map(m => m[1]))];
+    const isDirected = allMentions.length > 0;
+    const tempId = `msg_opt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
+    const optimisticMsg: CoWorkMessage = {
+      messageId: tempId,
+      timestamp: Date.now(),
+      roomCode,
+      senderId: clientId,
+      targetId: isDirected ? (allMentions.length === 1 ? allMentions[0] : 'all') : 'all',
+      contentType: isDirected ? 'CROSS_PROMPT' : 'CHAT',
+      text,
+      mentions: allMentions.length > 0 ? allMentions : undefined,
+      priority: isDirected ? 'HIGH' : 'NORMAL',
+    };
+
+    // 0ms perceived latency: immediately append to local chat stream
+    setMessages((prev) => [...prev, optimisticMsg].slice(-500));
+
+    try {
+      const res = await relayRequest<{ ok: boolean; messageId?: string }>('/api/send', {
+        roomCode, senderId: clientId, targetId: 'all', contentType: 'CHAT', text,
+      }, roomCode);
+
+      if (res && res.messageId) {
+        setMessages((prev) =>
+          prev.map((m) => (m.messageId === tempId ? { ...m, messageId: res.messageId! } : m))
+        );
+      }
+      // Instant drain trigger for rapid replies
+      setTimeout(() => {
+        pollTriggerRef.current?.();
+      }, 250);
+    } catch (err) {
+      console.error('[Send Error]', err);
+    }
   };
 
   return (

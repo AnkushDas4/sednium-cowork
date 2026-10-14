@@ -17,6 +17,8 @@ import {
   Radio,
   Bot,
   Zap,
+  ChevronDown,
+  User,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
@@ -58,14 +60,45 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const streamEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+  const prevMessagesLengthRef = useRef(messages.length);
 
-  const scrollToBottom = () => {
-    streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+  const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    streamEndRef.current?.scrollIntoView({ behavior });
+    setIsScrolledUp(false);
+    setUnreadWhileScrolled(0);
+    isNearBottomRef.current = true;
+  };
+
+  const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    const atBottom = distanceToBottom < 70;
+    isNearBottomRef.current = atBottom;
+    setIsScrolledUp(!atBottom);
+    if (atBottom) {
+      setUnreadWhileScrolled(0);
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const countDiff = messages.length - prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messages.length;
+
+    const lastMsg = messages[messages.length - 1];
+    const isSelfLast = lastMsg && lastMsg.senderId === currentClientId;
+
+    if (isNearBottomRef.current || isSelfLast) {
+      scrollToBottom('smooth');
+    } else if (countDiff > 0) {
+      setUnreadWhileScrolled((prev) => prev + countDiff);
+    }
+  }, [messages, currentClientId]);
 
   useEffect(() => {
     if (prefilledInput) {
@@ -307,7 +340,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       </div>
 
       {/* 2. Structured Event Stream OR Interactive Onboarding Card */}
-      <div className="flex-1 overflow-y-auto scroll-panel divide-y divide-grid bg-canvas">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto scroll-panel bg-canvas p-3 xs:p-4 space-y-2 relative"
+      >
         {filteredMessages.length === 0 ? (
           /* Flexible Quick-Start Onboarding Card */
           <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
@@ -480,10 +517,47 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               minute: '2-digit',
               second: '2-digit',
             });
-            // Seconds only pay for themselves once there is room for them.
             const timeStr = clock.slice(0, 5);
-            const timeSec = clock.slice(5);
             const isSelf = msg.senderId === currentClientId;
+
+            // System Event: GIT_PUSH
+            if (msg.contentType === 'GIT_PUSH') {
+              return (
+                <div key={msg.messageId} className="flex justify-center my-2 select-none">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-panel border border-grid rounded-full shadow-sm text-xs font-mono max-w-full">
+                    <GitPullRequest className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span className="text-secondary font-medium shrink-0">@{msg.senderId} pushed</span>
+                    {msg.commitHash && (
+                      <span className="px-1.5 py-0.2 rounded bg-hover text-accent font-semibold border border-grid shrink-0">
+                        {msg.commitHash.slice(0, 7)}
+                      </span>
+                    )}
+                    {msg.text && (
+                      <span className="text-muted text-[11px] truncate max-w-[180px] xs:max-w-[280px]">
+                        {msg.text}
+                      </span>
+                    )}
+                    <span className="text-muted text-2xs shrink-0">{timeStr}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            // System Event: FILE_LOCK
+            if (msg.contentType === 'FILE_LOCK') {
+              return (
+                <div key={msg.messageId} className="flex justify-center my-2 select-none">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-panel border border-grid rounded-full shadow-sm text-xs font-mono max-w-full">
+                    <Lock className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span className="text-secondary font-medium shrink-0">@{msg.senderId} locked</span>
+                    <span className="text-accent font-semibold truncate max-w-[180px] xs:max-w-[260px]">
+                      {msg.files?.join(', ') || 'files'}
+                    </span>
+                    <span className="text-muted text-2xs shrink-0">{timeStr}</span>
+                  </div>
+                </div>
+              );
+            }
 
             // Multiple tagging & High Priority detection
             const parsedMentions = [...new Set([...(msg.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(m => m[1]))];
@@ -491,114 +565,142 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             const isPriority = msg.priority === 'HIGH' || allMentions.length > 0 || (msg.targetId && msg.targetId !== 'all') || msg.contentType === 'CROSS_PROMPT';
             const isDirectedAtMe = allMentions.includes(currentClientId) || msg.targetId === currentClientId;
 
+            // Self Message: Right-Aligned Speech Bubble
+            if (isSelf) {
+              return (
+                <div key={msg.messageId} className="flex justify-end my-1 select-text">
+                  <div className="flex flex-col items-end max-w-[85%] sm:max-w-[72%] space-y-1">
+                    <div className="bg-accent text-accent-ink rounded-2xl rounded-tr-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-card break-words text-[14px] font-sans font-medium leading-relaxed">
+                      {renderFormattedText(msg.text)}
+                      {msg.files && msg.files.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-1.5 opacity-90">
+                          {msg.files.map((f) => (
+                            <span key={f} className="text-xs font-mono bg-accent-strong px-2 py-0.5 rounded-sm">
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-2xs font-mono text-muted pr-1 select-none">
+                      <span>{timeStr}</span>
+                      <Check className="w-3 h-3 text-accent" strokeWidth={2.5} />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Peer / AI Agent Message: Left-Aligned Speech Bubble
             return (
-              <div
-                key={msg.messageId}
-                className={`px-3 xs:px-4 py-2.5 xs:py-3.5 flex items-start gap-2.5 xs:gap-3 transition-colors ${
-                  isDirectedAtMe
-                    ? 'bg-accent/10 border-l-4 border-accent pl-2.5 xs:pl-3.5 shadow-sm'
-                    : isPriority
-                      ? 'bg-panel/40 border-l-2 border-accent/60 pl-3 xs:pl-3.5'
-                      : isSelf
-                        ? 'bg-panel/20'
-                        : 'hover:bg-hover/30'
-                }`}
-              >
-                {/* Timestamp */}
-                <div className="font-mono text-[11px] xs:text-xs text-muted shrink-0 pt-0.5 select-none font-medium w-[34px] xs:w-auto">
-                  {timeStr}
-                  <span className="hidden xs:inline">{timeSec}</span>
-                </div>
-
-                {/* Event Type Icon */}
-                <div className="shrink-0 pt-0.5">
-                  {isPriority ? (
-                    <Zap className="w-4 h-4 text-accent fill-accent" strokeWidth={1.5} />
-                  ) : (
-                    getTypeIcon(msg.contentType)
-                  )}
-                </div>
-
-                {/* Content Area */}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap">
+              <div key={msg.messageId} className="flex justify-start my-1.5 select-text">
+                <div className="flex flex-col items-start max-w-[88%] sm:max-w-[75%] space-y-1">
+                  {/* Sender Header */}
+                  <div className="flex items-center gap-1.5 pl-1 select-none flex-wrap">
                     <button
                       type="button"
                       onClick={() => handlePillClick(`@${msg.senderId}`)}
-                      className="font-mono text-xs font-semibold text-primary hover:text-accent transition-colors text-left"
-                      title={`Click to tag @${msg.senderId}`}
+                      className="font-mono text-xs font-semibold text-primary hover:text-accent flex items-center gap-1 transition-colors"
+                      title={`Tag @${msg.senderId}`}
                     >
-                      @{msg.senderId}
+                      {msg.senderId.includes('ai') ? (
+                        <Bot className="w-3.5 h-3.5 text-accent" />
+                      ) : (
+                        <User className="w-3.5 h-3.5 text-secondary" />
+                      )}
+                      <span>@{msg.senderId}</span>
                     </button>
-                    <ArrowRight className="w-3 h-3 text-muted shrink-0" />
-                    {allMentions.length > 0 ? (
+
+                    {isDirectedAtMe && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-ink text-2xs font-bold font-mono flex items-center gap-0.5 shadow-card">
+                        <Zap className="w-2.5 h-2.5 fill-current" /> YOU
+                      </span>
+                    )}
+
+                    {isPriority && !isDirectedAtMe && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-accent-soft text-accent border border-accent/30 text-2xs font-semibold font-mono">
+                        PRIORITY
+                      </span>
+                    )}
+
+                    {allMentions.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
                         {allMentions.map((m) => (
                           <span
                             key={m}
-                            className={`font-mono text-xs font-semibold px-1.5 py-0.2 rounded-sm border ${
+                            className={`font-mono text-2xs px-1 rounded-sm border ${
                               m === currentClientId
-                                ? 'bg-accent text-accent-ink border-accent font-bold'
-                                : 'bg-panel text-accent border-accent/40'
+                                ? 'bg-accent/20 text-accent border-accent/40 font-bold'
+                                : 'text-muted border-grid'
                             }`}
                           >
                             @{m}
                           </span>
                         ))}
                       </div>
-                    ) : (
-                      <span className="font-mono text-xs font-semibold text-accent">
-                        @{msg.targetId}
-                      </span>
-                    )}
-                    <span className="font-mono text-2xs uppercase px-1.5 py-0.2 rounded-sm bg-panel text-muted border border-grid">
-                      {msg.contentType}
-                    </span>
-
-                    {/* High Priority & Direct Mention Badges */}
-                    {isDirectedAtMe && (
-                      <span className="font-mono text-2xs uppercase px-1.5 py-0.5 rounded-sm bg-accent text-accent-ink font-bold flex items-center gap-1 shadow-card">
-                        <Zap className="w-2.5 h-2.5 fill-current" />
-                        DIRECTED AT YOU
-                      </span>
-                    )}
-                    {!isDirectedAtMe && isPriority && (
-                      <span className="font-mono text-2xs uppercase px-1.5 py-0.5 rounded-sm bg-accent-soft text-accent border border-accent/30 font-semibold flex items-center gap-1">
-                        <Zap className="w-2.5 h-2.5 fill-current" />
-                        HIGH PRIORITY
-                      </span>
                     )}
                   </div>
 
-                  <div className="text-[14px] text-primary font-sans font-medium leading-relaxed break-words">
+                  {/* Bubble */}
+                  <div
+                    className={`rounded-2xl rounded-tl-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm break-words text-[14px] font-sans font-medium leading-relaxed ${
+                      isDirectedAtMe
+                        ? 'bg-panel border-2 border-accent text-primary shadow-float'
+                        : 'bg-panel border border-grid text-primary'
+                    }`}
+                  >
                     {renderFormattedText(msg.text)}
+
+                    {/* Attached files */}
+                    {msg.files && msg.files.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-2">
+                        {msg.files.map((file) => (
+                          <span
+                            key={file}
+                            className="font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-secondary font-medium"
+                          >
+                            {file}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg.commitHash && (
+                      <div className="pt-1.5">
+                        <span className="font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-accent font-semibold">
+                          {msg.commitHash.slice(0, 7)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Render files or commits if attached */}
-                  {msg.files && msg.files.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {msg.files.map((file) => (
-                        <span
-                          key={file}
-                          className="font-mono text-xs bg-panel px-2 py-0.5 rounded-sm border border-grid text-secondary font-medium"
-                        >
-                          {file}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {msg.commitHash && (
-                    <div className="pt-1">
-                      <span className="font-mono text-xs bg-panel px-2 py-0.5 rounded-sm border border-grid text-accent font-semibold">
-                        {msg.commitHash.slice(0, 7)}
-                      </span>
-                    </div>
-                  )}
+                  {/* Timestamp */}
+                  <div className="text-2xs font-mono text-muted pl-1 select-none">
+                    {timeStr}
+                  </div>
                 </div>
               </div>
             );
           })
+        )}
+        {/* Floating Scroll-to-Bottom Down-Arrow Button */}
+        {isScrolledUp && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom('smooth')}
+            className="fixed bottom-24 right-4 sm:right-8 z-30 flex items-center gap-1.5 px-3 py-2 bg-panel/95 hover:bg-panel border border-grid hover:border-accent text-primary rounded-full shadow-float backdrop-blur-md text-xs font-mono font-semibold transition-all animate-bounce"
+            title="Scroll down to latest messages"
+            aria-label="Scroll to bottom"
+          >
+            <ChevronDown className="w-4 h-4 text-accent" strokeWidth={2.5} />
+            {unreadWhileScrolled > 0 ? (
+              <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-ink text-2xs font-bold">
+                {unreadWhileScrolled} new
+              </span>
+            ) : (
+              <span className="text-2xs text-secondary hidden xs:inline">Latest</span>
+            )}
+          </button>
         )}
         <div ref={streamEndRef} />
       </div>
