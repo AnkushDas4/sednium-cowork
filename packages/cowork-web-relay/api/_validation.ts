@@ -51,9 +51,9 @@ const STORAGE_HINTS: Record<string, string> = {
   ECONNREFUSED: 'connection refused - use the transaction pooler (port 6543), not the direct 5432 host',
   ETIMEDOUT: 'connect timed out - serverless runtimes cannot reach IPv6-only direct connections; use the transaction pooler',
   ECONNRESET: 'connection reset - check sslmode in the connection string',
-  28: 'database rejected the credentials - re-check the password (percent-encode special characters)',
-  3D: 'database name not found - the URI path must be /postgres',
-  42: 'permission denied creating cowork_rooms - run the one-time SQL from the README',
+  '28': 'database rejected the credentials - re-check the password (percent-encode special characters)',
+  '3D': 'database name not found - the URI path must be /postgres',
+  '42': 'permission denied creating cowork_rooms - run the one-time SQL from the README',
 };
 
 export function errorResponse(err: unknown): { status: number; body: Record<string, unknown> } {
