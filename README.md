@@ -178,6 +178,21 @@ is inherited. They never connect to or clear your live database. PostgreSQL cont
 verify lock/update/rollback ordering, but do not replace a live Supabase smoke test.
 Git safety tests mock Git operations and never commit, pull, or push the working checkout.
 
+### Automated live check
+
+```bash
+npm run verify:relay -- https://your-relay-domain.example   # or http://localhost:3000
+npm run verify:relay -- http://localhost:3000 --slow         # adds ~4 min lease renewal/expiry
+```
+
+It creates a throwaway room over real HTTP and asserts the guarantees end to end: atomic
+concurrent claims, path-alias conflicts, token-bound handles (403 on impersonation, inbox
+drain and foreign unlock), redelivery until acknowledgement, broadcast `GIT_PUSH` despite an
+@mention, 400s for malformed payloads with no crash, absence of storage internals in error
+bodies, and - with `--slow` - a lease that survives 110s of heartbeats, cannot be stolen while
+live, and then expires after ~90s of silence. It leaves the room's locks empty; the room row
+itself remains like any other room.
+
 ### Live smoke test (after deployment)
 
 1. Create a fresh room and join from a browser plus two updated agents with distinct handles.
