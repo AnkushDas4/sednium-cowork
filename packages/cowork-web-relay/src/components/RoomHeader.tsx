@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QrCode, Copy, Check, GitCommit, Users, LogOut, ExternalLink } from 'lucide-react';
+import {
+  Terminal,
+  Hash,
+  Copy,
+  Check,
+  QrCode,
+  GitBranch,
+  GitCommit,
+  User,
+  Activity,
+  Sun,
+  Moon,
+  LogOut,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import type { CommitInfo, ParticipantInfo } from '../../api/_types.js';
 
 interface RoomHeaderProps {
@@ -8,6 +23,8 @@ interface RoomHeaderProps {
   clientId: string;
   latestCommit: CommitInfo | null;
   participants: Record<string, ParticipantInfo>;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   onLeave: () => void;
   onNewRoom?: (newRoom: string) => void;
 }
@@ -17,6 +34,8 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   clientId,
   latestCommit,
   participants,
+  theme,
+  onToggleTheme,
   onLeave,
   onNewRoom,
 }) => {
@@ -38,9 +57,10 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
     }
   };
 
-  const shareUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
-    : `https://cowork.sednium.com/?room=${encodeURIComponent(roomCode)}`;
+  const shareUrl =
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
+      : `https://cowork.sednium.com/?room=${encodeURIComponent(roomCode)}`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -51,110 +71,156 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   const participantCount = Object.keys(participants).length;
 
   return (
-    <header className="border-b border-cyber-border bg-cyber-bg/95 backdrop-blur sticky top-0 z-40 px-4 py-3">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Branding & Room Badge */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyber-emerald animate-glow" />
-            <h1 className="text-sm font-bold tracking-wider text-white">SEDNIUM COWORK</h1>
-          </div>
-          <div className="h-4 w-[1px] bg-zinc-800" />
-          <div className="flex items-center gap-1.5 bg-zinc-900 border border-zinc-800 px-2.5 py-1 rounded text-xs">
-            <span className="text-zinc-500">ROOM:</span>
-            <span className="font-bold text-cyber-cyan">{roomCode}</span>
-          </div>
-          <div className="hidden sm:flex items-center gap-1 text-xs text-zinc-400">
-            <Users className="w-3.5 h-3.5 text-zinc-500" />
-            <span>{participantCount} online</span>
-          </div>
+    <header className="h-12 border-b border-grid bg-panel flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
+      {/* 1. Brand Cell */}
+      <div className="flex items-center gap-2.5 px-3 md:px-4 shrink-0">
+        <div className="w-6 h-6 bg-[#FF6B00] flex items-center justify-center rounded-sm shrink-0">
+          <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
         </div>
-
-        {/* Middle: Latest Commit HUD */}
-        <div className="hidden md:flex items-center gap-2 bg-zinc-950 border border-zinc-800/80 px-3 py-1.5 rounded-lg text-xs max-w-md truncate">
-          <GitCommit className="w-4 h-4 text-cyber-emerald shrink-0" />
-          {latestCommit ? (
-            <div className="truncate flex items-center gap-2">
-              <span className="font-mono text-cyber-emerald bg-emerald-500/10 px-1 rounded text-[11px]">
-                {latestCommit.hash.slice(0, 7)}
-              </span>
-              <span className="text-zinc-300 truncate">{latestCommit.message}</span>
-              <span className="text-zinc-500 text-[10px]">by @{latestCommit.author}</span>
-            </div>
-          ) : (
-            <span className="text-zinc-500">Waiting for first git commit sync...</span>
-          )}
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2">
-          {onNewRoom && (
-            <button
-              onClick={handleCreateNewRoom}
-              disabled={isGenerating}
-              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-cyber-emerald px-2.5 py-1.5 rounded text-xs transition-colors disabled:opacity-50"
-              title="Generate a fresh, guaranteed collision-free room"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
-              <span className="hidden sm:inline">New Room</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowQr(true)}
-            className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white px-2.5 py-1.5 rounded text-xs transition-colors"
-            title="Scan QR to join on mobile"
-          >
-            <QrCode className="w-3.5 h-3.5 text-cyber-emerald" />
-            <span className="hidden sm:inline">QR Code</span>
-          </button>
-
-          <button
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white px-2.5 py-1.5 rounded text-xs transition-colors"
-            title="Copy room link"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-cyber-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy Link'}</span>
-          </button>
-
-          <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
-
-          <div className="flex items-center gap-1 text-xs text-zinc-400 bg-zinc-900/60 border border-zinc-800/60 px-2 py-1 rounded">
-            <span>as</span>
-            <span className="font-semibold text-white">@{clientId}</span>
-          </div>
-
-          <button
-            onClick={onLeave}
-            className="text-zinc-500 hover:text-red-400 p-1.5 rounded hover:bg-zinc-900 transition-colors"
-            title="Disconnect"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+        <div className="flex flex-col">
+          <span className="font-bold tracking-tight text-primary text-[11px] md:text-xs uppercase font-sans">
+            SEDNIUM COWORK
+          </span>
+          <span className="text-[9px] text-muted tracking-wider font-mono uppercase">
+            RELAY HUD v1.0
+          </span>
         </div>
       </div>
 
-      {/* QR Code Modal */}
+      {/* 2. Room Session Cell */}
+      <div className="flex items-center gap-2 px-3 shrink-0">
+        <div className="flex items-center gap-1 font-mono">
+          <Hash className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
+          <span className="font-semibold text-primary text-xs">{roomCode}</span>
+        </div>
+
+        <button
+          onClick={handleCopy}
+          className="p-1 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          title="Copy invite link"
+        >
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setShowQr(true)}
+          className="p-1 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          title="Show mobile QR code"
+        >
+          <QrCode className="w-3.5 h-3.5" />
+        </button>
+
+        {onNewRoom && (
+          <button
+            onClick={handleCreateNewRoom}
+            disabled={isGenerating}
+            className="hidden lg:flex items-center gap-1 px-1.5 py-0.5 hover:bg-hover text-muted hover:text-primary rounded-sm border border-transparent hover:border-grid transition-colors"
+            title="Generate a new collision-free room code"
+          >
+            <Sparkles className="w-3 h-3 text-[#FF6B00]" />
+            <span className="text-[10px] uppercase font-mono">NEW</span>
+          </button>
+        )}
+      </div>
+
+      {/* 3. Git Main Status Cell */}
+      <div className="hidden md:flex flex-1 items-center px-3 gap-2 overflow-hidden">
+        <div className="flex items-center gap-1 text-[#FF6B00] shrink-0 font-mono text-[11px]">
+          <GitBranch className="w-3.5 h-3.5" strokeWidth={2.2} />
+          <span className="font-semibold">main</span>
+        </div>
+        <span className="text-muted text-[10px]">/</span>
+        {latestCommit ? (
+          <div className="flex items-center gap-2 overflow-hidden truncate">
+            <span className="font-mono text-primary bg-hover px-1.5 py-0.5 rounded-sm text-[11px] border border-grid shrink-0">
+              {latestCommit.hash.slice(0, 7)}
+            </span>
+            <span className="text-secondary truncate text-xs font-sans">
+              {latestCommit.message}
+            </span>
+            <span className="text-muted text-[10px] shrink-0 font-mono">
+              @{latestCommit.author}
+            </span>
+          </div>
+        ) : (
+          <span className="text-muted text-xs truncate">
+            Waiting for first git push on main...
+          </span>
+        )}
+      </div>
+
+      {/* 4. Operator & Theme Switcher Cell */}
+      <div className="flex items-center gap-2 px-3 shrink-0 ml-auto md:ml-0">
+        <div className="flex items-center gap-1.5 bg-hover px-2 py-1 rounded-sm border border-grid">
+          <User className="w-3 h-3 text-[#FF6B00]" />
+          <span className="font-mono text-primary text-[11px] font-medium">@{clientId}</span>
+          <span className="text-muted text-[10px]">({participantCount})</span>
+        </div>
+
+        <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
+          <Activity className="w-3.5 h-3.5 text-[#FF6B00] animate-pulse" />
+        </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          onClick={onToggleTheme}
+          className="p-1.5 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid ml-1"
+          title={`Switch to ${theme === 'dark' ? 'Milk White (Light)' : 'Charcoal Black (Dark)'} mode`}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+          ) : (
+            <Moon className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+          )}
+        </button>
+
+        <button
+          onClick={onLeave}
+          className="p-1.5 hover:bg-hover text-muted hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          title="Exit Room"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* QR Code Modal Popover */}
       {showQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-cyber-card border border-cyber-border rounded-xl p-6 max-w-xs w-full text-center relative">
-            <h3 className="text-sm font-bold text-white mb-1">SCAN TO JOIN</h3>
-            <p className="text-xs text-zinc-400 mb-4">Open on your phone or peer laptop</p>
-            
-            <div className="bg-white p-4 rounded-lg inline-block shadow-lg mx-auto">
-              <QRCodeSVG value={shareUrl} size={180} level="M" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-panel border border-grid rounded-sm p-6 max-w-xs w-full shadow-2xl relative">
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-grid">
+              <div className="flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-[#FF6B00]" />
+                <span className="font-bold text-xs uppercase font-sans text-primary">
+                  Mobile Join Link
+                </span>
+              </div>
+              <button
+                onClick={() => setShowQr(false)}
+                className="p-1 hover:bg-hover text-muted hover:text-primary rounded-sm"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <p className="text-[11px] font-mono text-cyber-emerald mt-4 truncate bg-zinc-950 p-2 rounded border border-zinc-800">
+            <div className="bg-white p-3.5 rounded-sm flex items-center justify-center border border-grid shadow-inner mb-4">
+              <QRCodeSVG value={shareUrl} size={190} level="M" />
+            </div>
+
+            <div className="text-center font-mono text-[11px] text-muted mb-3 break-all">
               {shareUrl}
-            </p>
+            </div>
 
             <button
-              onClick={() => setShowQr(false)}
-              className="mt-4 w-full bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold py-2 rounded-lg transition-colors"
+              onClick={handleCopy}
+              className="w-full py-2 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2"
             >
-              Close
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'LINK COPIED' : 'COPY SHARE LINK'}
             </button>
           </div>
         </div>

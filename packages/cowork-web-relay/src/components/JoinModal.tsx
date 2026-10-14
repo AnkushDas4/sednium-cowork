@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Users, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
+import {
+  Terminal,
+  KeyRound,
+  User,
+  ArrowRight,
+  RefreshCw,
+  Sun,
+  Moon,
+  Sparkles,
+} from 'lucide-react';
 
 interface JoinModalProps {
   initialRoom?: string;
   initialClientId?: string;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
   onJoin: (roomCode: string, clientId: string) => void;
 }
 
-export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialClientId = 'peer', onJoin }) => {
+export const JoinModal: React.FC<JoinModalProps> = ({
+  initialRoom = '',
+  initialClientId = 'peer',
+  theme,
+  onToggleTheme,
+  onJoin,
+}) => {
   const [room, setRoom] = useState(initialRoom);
   const [clientId, setClientId] = useState(initialClientId);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -24,12 +41,12 @@ export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialC
         }
       }
     } catch {
-      // fallback to high-entropy generator
+      // Fallback generator
     } finally {
       setIsRefreshing(false);
     }
 
-    // High entropy fallback
+    // High-entropy fallback
     const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
     let code = 'SED-';
     for (let i = 0; i < 4; i++) {
@@ -42,7 +59,6 @@ export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialC
     if (initialRoom) {
       setRoom(initialRoom);
     } else {
-      // Auto-generate fresh unique collision-free code on mount
       fetchCollisionFreeCode();
     }
     if (initialClientId) setClientId(initialClientId);
@@ -56,89 +72,129 @@ export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialC
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-cyber-card border border-cyber-border rounded-xl shadow-2xl p-6 relative overflow-hidden">
-        {/* Glow accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyber-emerald via-cyber-cyan to-cyber-violet" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 select-none">
+      <div className="w-full max-w-md bg-panel border border-grid rounded-sm shadow-2xl overflow-hidden relative">
+        {/* Hardware Top Accent Bar in Safety Orange */}
+        <div className="h-1 bg-[#FF6B00] w-full" />
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-cyber-emerald">
-            <Terminal className="w-5 h-5" />
+        {/* Modal Header */}
+        <div className="p-4 border-b border-grid flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 bg-[#FF6B00] flex items-center justify-center rounded-sm text-white">
+              <Terminal className="w-3.5 h-3.5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <div className="font-bold text-xs uppercase tracking-tight text-primary font-sans">
+                SEDNIUM COWORK
+              </div>
+              <div className="text-[10px] text-muted font-mono">
+                PAIR PROGRAMMING RELAY
+              </div>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-white tracking-wide">SEDNIUM COWORK</h2>
-            <p className="text-xs text-cyber-muted font-mono">Stateless Relay & Agent HUD</p>
-          </div>
+
+          {/* Theme Toggle Button */}
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            className="p-1.5 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+            title={`Switch to ${theme === 'dark' ? 'Milk White (Light)' : 'Charcoal Black (Dark)'} mode`}
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+              <Sun className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+            ) : (
+              <Moon className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+            )}
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <div className="flex justify-between items-center mb-1.5">
-              <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">Room Code</label>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Room Code */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <label className="text-secondary flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <span>ROOM SESSION CODE</span>
+              </label>
               <button
                 type="button"
                 onClick={fetchCollisionFreeCode}
                 disabled={isRefreshing}
-                className="text-xs text-cyber-emerald hover:underline flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                title="Generate guaranteed collision-free room code"
+                className="text-[10px] text-muted hover:text-[#FF6B00] flex items-center gap-1 transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span>{isRefreshing ? 'Checking...' : 'Refresh Code'}</span>
+                <RefreshCw
+                  className={`w-2.5 h-2.5 ${isRefreshing ? 'animate-spin' : ''}`}
+                />
+                <span>NEW CODE</span>
               </button>
             </div>
+
             <input
               type="text"
               required
               value={room}
               onChange={(e) => setRoom(e.target.value.toUpperCase())}
               placeholder="e.g. SED-409"
-              className="w-full bg-zinc-950 border border-cyber-border rounded-lg px-3.5 py-2.5 text-sm font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-cyber-emerald transition-colors"
+              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00] tracking-wider"
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-1.5">Your Client Handle</label>
-            <div className="flex gap-2 mb-2">
-              {['loid', 'peer', 'guest'].map((handle) => (
-                <button
-                  key={handle}
-                  type="button"
-                  onClick={() => setClientId(handle)}
-                  className={`px-2.5 py-1 text-xs rounded border transition-colors ${
-                    clientId === handle
-                      ? 'border-cyber-emerald bg-emerald-500/10 text-cyber-emerald'
-                      : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  @{handle}
-                </button>
-              ))}
+          {/* Operator Handle */}
+          <div className="space-y-1.5">
+            <label className="text-xs text-secondary flex items-center gap-1.5 font-mono">
+              <User className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span>YOUR OPERATOR HANDLE</span>
+            </label>
+
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setClientId('loid')}
+                className={`py-1.5 px-3 rounded-sm text-xs font-mono border transition-colors ${
+                  clientId === 'loid'
+                    ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-semibold'
+                    : 'bg-canvas hover:bg-hover text-secondary border-grid'
+                }`}
+              >
+                @loid (Host)
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientId('peer')}
+                className={`py-1.5 px-3 rounded-sm text-xs font-mono border transition-colors ${
+                  clientId === 'peer'
+                    ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-semibold'
+                    : 'bg-canvas hover:bg-hover text-secondary border-grid'
+                }`}
+              >
+                @peer (Collaborator)
+              </button>
             </div>
+
             <input
               type="text"
               required
               value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
-              placeholder="e.g. loid"
-              className="w-full bg-zinc-950 border border-cyber-border rounded-lg px-3.5 py-2.5 text-sm font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-cyber-emerald transition-colors"
+              onChange={(e) => setClientId(e.target.value.toLowerCase())}
+              placeholder="operator handle"
+              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-xs text-primary font-mono placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
             />
           </div>
 
-          <div className="pt-2">
-            <button
-              type="submit"
-              className="w-full bg-cyber-emerald hover:bg-emerald-400 text-black font-semibold rounded-lg py-2.5 px-4 text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/30"
-            >
-              <span>Connect to CoWork Room</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 shadow-sm font-sans tracking-wide"
+          >
+            <span>CONNECT TO RELAY</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          <div className="text-[10px] text-muted text-center font-mono pt-1">
+            Zero WebSockets • Zero Login Walls • Stateless HTTP Mailbox
           </div>
         </form>
-
-        <div className="mt-5 pt-4 border-t border-zinc-800 text-[11px] text-zinc-500 flex items-center justify-between">
-          <span>Zero-Auth Relay</span>
-          <span>SED-409 Protocol</span>
-        </div>
       </div>
     </div>
   );

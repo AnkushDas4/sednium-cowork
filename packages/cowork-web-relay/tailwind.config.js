@@ -4,22 +4,31 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        cyber: {
-          bg: '#09090b',
-          card: '#121215',
-          border: '#27272a',
-          emerald: '#10b981',
-          amber: '#f59e0b',
-          cyan: '#06b6d4',
-          violet: '#8b5cf6',
-          muted: '#71717a',
-        }
+        canvas: 'var(--bg-canvas)',
+        panel: 'var(--bg-panel)',
+        hover: 'var(--bg-hover)',
+        grid: 'var(--border-grid)',
+        primary: 'var(--text-primary)',
+        secondary: 'var(--text-secondary)',
+        muted: 'var(--text-muted)',
+        orange: {
+          DEFAULT: '#FF6B00',
+          hover: '#E66000',
+        },
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+        sans: ['Urbanist', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      borderRadius: {
+        DEFAULT: '2px',
+        sm: '2px',
+        md: '4px',
+        lg: '4px',
       }
     },
   },

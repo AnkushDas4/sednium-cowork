@@ -1,5 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, CornerDownLeft, Sparkles, Filter, GitCommit, FileCode, MessageSquare } from 'lucide-react';
+import {
+  Layers,
+  AtSign,
+  GitPullRequest,
+  Lock,
+  GitCommit,
+  Cpu,
+  MessageSquare,
+  Terminal,
+  Send,
+  CornerDownLeft,
+  ArrowRight,
+} from 'lucide-react';
 import type { CoWorkMessage, ContentType } from '../../api/_types.js';
 
 interface ChatTerminalProps {
@@ -8,18 +20,20 @@ interface ChatTerminalProps {
   onSendMessage: (text: string) => Promise<void>;
 }
 
+type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
+
 export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   messages,
   currentClientId,
   onSendMessage,
 }) => {
   const [input, setInput] = useState('');
-  const [filter, setFilter] = useState<'ALL' | 'PROMPTS' | 'GIT'>('ALL');
+  const [filter, setFilter] = useState<FilterType>('ALL');
   const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    streamEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -45,172 +59,262 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }
   };
 
-  const getTagColor = (type: ContentType) => {
-    switch (type) {
-      case 'CROSS_PROMPT':
-        return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
-      case 'AGENT_SYNC':
-        return 'bg-violet-500/10 text-violet-400 border-violet-500/30';
-      case 'GIT_PUSH':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'FILE_LOCK':
-      case 'FILE_UNLOCK':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'STATUS':
-        return 'bg-zinc-800 text-zinc-400 border-zinc-700';
-      default:
-        return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
-    }
-  };
-
+  // Filter messages
   const filteredMessages = messages.filter((m) => {
-    if (filter === 'PROMPTS') return m.contentType === 'CROSS_PROMPT' || m.contentType === 'AGENT_SYNC';
-    if (filter === 'GIT') return m.contentType === 'GIT_PUSH' || m.contentType === 'FILE_LOCK';
+    if (filter === 'ALL') return true;
+    if (filter === 'MENTIONS') {
+      return (
+        m.contentType === 'CROSS_PROMPT' ||
+        m.text.includes('@') ||
+        m.targetId !== 'all'
+      );
+    }
+    if (filter === 'GIT') return m.contentType === 'GIT_PUSH';
+    if (filter === 'LOCKS') {
+      return m.contentType === 'FILE_LOCK' || m.contentType === 'FILE_UNLOCK';
+    }
     return true;
   });
 
-  return (
-    <div className="bg-cyber-card border border-cyber-border rounded-xl flex flex-col h-[520px] overflow-hidden">
-      {/* Top Bar with Filter Tabs */}
-      <div className="border-b border-cyber-border px-4 py-2.5 flex items-center justify-between bg-zinc-950/60">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-cyber-emerald" />
-          <span className="text-xs font-bold text-white tracking-wider">COLLABORATION TERMINAL</span>
-          <span className="text-[10px] text-zinc-500 font-mono">({filteredMessages.length})</span>
-        </div>
+  const getTypeIcon = (type: ContentType) => {
+    switch (type) {
+      case 'CROSS_PROMPT':
+        return <AtSign className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.2} />;
+      case 'GIT_PUSH':
+        return <GitCommit className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.2} />;
+      case 'FILE_LOCK':
+      case 'FILE_UNLOCK':
+        return <Lock className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.2} />;
+      case 'AGENT_SYNC':
+        return <Cpu className="w-3.5 h-3.5 text-secondary" strokeWidth={2} />;
+      default:
+        return <MessageSquare className="w-3.5 h-3.5 text-secondary" strokeWidth={2} />;
+    }
+  };
 
-        <div className="flex items-center gap-1">
-          {(['ALL', 'PROMPTS', 'GIT'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`px-2 py-0.5 text-[11px] rounded transition-colors ${
-                filter === tab
-                  ? 'bg-zinc-800 text-white font-semibold'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+  // Render message text with highlighted @ mentions
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(@[a-zA-Z0-9_-]+)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith('@')) {
+        return (
+          <span
+            key={idx}
+            className="inline-flex items-center px-1.5 py-0.2 rounded-sm bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/30 font-mono text-xs font-semibold mr-1"
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={idx}>{part}</span>;
+    });
+  };
+
+  const quickTargets = ['@peer-ai', '@loid-ai', '@peer', '@loid', '@all'];
+
+  return (
+    <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
+      {/* 1. Filter Tab Bar */}
+      <div className="h-10 bg-panel border-b border-grid flex items-stretch px-2 divide-x divide-grid select-none shrink-0 overflow-x-auto">
+        <button
+          onClick={() => setFilter('ALL')}
+          className={`flex items-center gap-1.5 px-3 text-xs font-sans font-medium relative transition-colors ${
+            filter === 'ALL'
+              ? 'text-primary font-bold'
+              : 'text-muted hover:text-secondary'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+          <span>All Events</span>
+          <span className="text-[10px] font-mono text-muted">({messages.length})</span>
+          {filter === 'ALL' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6B00]" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setFilter('MENTIONS')}
+          className={`flex items-center gap-1.5 px-3 text-xs font-sans font-medium relative transition-colors ${
+            filter === 'MENTIONS'
+              ? 'text-primary font-bold'
+              : 'text-muted hover:text-secondary'
+          }`}
+        >
+          <AtSign className="w-3.5 h-3.5" />
+          <span>@Mentions & Tasks</span>
+          {filter === 'MENTIONS' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6B00]" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setFilter('GIT')}
+          className={`flex items-center gap-1.5 px-3 text-xs font-sans font-medium relative transition-colors ${
+            filter === 'GIT'
+              ? 'text-primary font-bold'
+              : 'text-muted hover:text-secondary'
+          }`}
+        >
+          <GitPullRequest className="w-3.5 h-3.5" />
+          <span>Git Sync</span>
+          {filter === 'GIT' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6B00]" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setFilter('LOCKS')}
+          className={`flex items-center gap-1.5 px-3 text-xs font-sans font-medium relative transition-colors ${
+            filter === 'LOCKS'
+              ? 'text-primary font-bold'
+              : 'text-muted hover:text-secondary'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5" />
+          <span>File Locks</span>
+          {filter === 'LOCKS' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6B00]" />
+          )}
+        </button>
       </div>
 
-      {/* Message Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs">
+      {/* 2. Structured Event Stream */}
+      <div className="flex-1 overflow-y-auto divide-y divide-grid bg-canvas">
         {filteredMessages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-zinc-600 gap-2">
-            <Sparkles className="w-6 h-6 text-zinc-700" />
-            <p>No messages yet in this room.</p>
-            <p className="text-[11px] text-zinc-700">Use @peer-ai or @loid-ai to dispatch instructions.</p>
+          <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted space-y-2">
+            <Terminal className="w-8 h-8 opacity-40 text-[#FF6B00]" />
+            <div className="text-sm font-sans font-semibold text-secondary">
+              Relay stream initialized
+            </div>
+            <div className="text-xs font-mono max-w-sm">
+              Ready for real-time AI prompts, lock acquisitions, and commit handoffs.
+            </div>
           </div>
         ) : (
           filteredMessages.map((msg) => {
-            const isMe = msg.senderId === currentClientId;
-            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {
+              hour12: false,
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            });
+            const isSelf = msg.senderId === currentClientId;
 
             return (
               <div
                 key={msg.messageId}
-                className={`p-3 rounded-lg border transition-all ${
-                  isMe
-                    ? 'bg-zinc-900/90 border-zinc-700/60 ml-4'
-                    : 'bg-zinc-950/70 border-cyber-border mr-4'
+                className={`px-4 py-2.5 flex items-start gap-3 transition-colors hover:bg-hover/40 ${
+                  isSelf ? 'bg-panel/30' : ''
                 }`}
               >
-                {/* Meta header */}
-                <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-zinc-500">[{timeStr}]</span>
-                    <span className={`font-bold ${isMe ? 'text-cyber-emerald' : 'text-zinc-300'}`}>
+                {/* Timestamp */}
+                <div className="font-mono text-[11px] text-muted shrink-0 pt-0.5 select-none">
+                  {timeStr}
+                </div>
+
+                {/* Event Type Icon */}
+                <div className="shrink-0 pt-0.5">{getTypeIcon(msg.contentType)}</div>
+
+                {/* Content Area */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-primary">
                       @{msg.senderId}
                     </span>
-                    {msg.senderModel && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/60 text-zinc-400 font-mono">
-                        {msg.senderModel}
-                      </span>
-                    )}
-                    {msg.targetId && msg.targetId !== 'all' && (
-                      <>
-                        <span className="text-zinc-600">→</span>
-                        <span className="text-cyber-cyan font-semibold">@{msg.targetId}</span>
-                      </>
-                    )}
+                    <ArrowRight className="w-3 h-3 text-muted shrink-0" />
+                    <span className="font-mono text-xs font-semibold text-[#FF6B00]">
+                      @{msg.targetId}
+                    </span>
+                    <span className="font-mono text-[9px] uppercase px-1.5 py-0.2 rounded-sm bg-hover text-muted border border-grid">
+                      {msg.contentType}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded border uppercase font-semibold ${getTagColor(
-                      msg.contentType
-                    )}`}
-                  >
-                    {msg.contentType}
-                  </span>
-                </div>
 
-                {/* Content */}
-                <div className="text-zinc-200 whitespace-pre-wrap break-words leading-relaxed">
-                  {msg.text}
-                </div>
+                  <div className="text-[13px] md:text-[14px] text-primary font-sans font-medium leading-relaxed break-words">
+                    {renderFormattedText(msg.text)}
+                  </div>
 
-                {/* File locks / Git artifacts */}
-                {(msg.files || msg.commitHash) && (
-                  <div className="mt-2 pt-2 border-t border-zinc-800/60 flex flex-wrap gap-2 text-[11px]">
-                    {msg.files?.map((f) => (
-                      <span key={f} className="flex items-center gap-1 text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        <FileCode className="w-3 h-3" />
-                        {f}
-                      </span>
-                    ))}
-                    {msg.commitHash && (
-                      <span className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                        <GitCommit className="w-3 h-3" />
+                  {/* Render files or commits if attached */}
+                  {msg.files && msg.files.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {msg.files.map((file) => (
+                        <span
+                          key={file}
+                          className="font-mono text-[10px] bg-hover px-1.5 py-0.5 rounded-sm border border-grid text-secondary"
+                        >
+                          {file}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {msg.commitHash && (
+                    <div className="pt-1">
+                      <span className="font-mono text-[11px] bg-hover px-2 py-0.5 rounded-sm border border-grid text-[#FF6B00] font-semibold">
                         {msg.commitHash.slice(0, 7)}
                       </span>
-                    )}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })
         )}
-        <div ref={messagesEndRef} />
+        <div ref={streamEndRef} />
       </div>
 
-      {/* Pill Bar */}
-      <div className="px-4 py-2 border-t border-zinc-800/80 bg-zinc-950/80 flex items-center gap-1.5 overflow-x-auto text-xs">
-        <span className="text-zinc-500 text-[10px] uppercase tracking-wider shrink-0 mr-1">Quick @:</span>
-        {['@peer-ai', '@loid-ai', '@peer', '@loid', '@all'].map((mention) => (
-          <button
-            key={mention}
-            type="button"
-            onClick={() => handlePillClick(mention)}
-            className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 hover:border-cyber-emerald text-zinc-300 hover:text-cyber-emerald transition-colors font-mono shrink-0"
-          >
-            {mention}
-          </button>
-        ))}
-      </div>
-
-      {/* Input Bar */}
-      <form onSubmit={handleSubmit} className="p-3 border-t border-cyber-border bg-zinc-950 flex gap-2">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type message or @peer-ai instructions..."
-            disabled={sending}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3.5 py-2.5 text-xs font-mono text-white placeholder-zinc-500 focus:outline-none focus:border-cyber-emerald transition-colors"
-          />
+      {/* 3. Command Composer Dock */}
+      <div className="p-3 bg-panel border-t border-grid space-y-2 shrink-0">
+        {/* Row 1: Quick Target Mention Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <span className="text-[10px] font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1">
+            <AtSign className="w-3 h-3 text-[#FF6B00]" />
+            TARGET:
+          </span>
+          {quickTargets.map((mention) => {
+            const isSelected = input.includes(mention);
+            return (
+              <button
+                key={mention}
+                type="button"
+                onClick={() => handlePillClick(mention)}
+                className={`px-2 py-0.5 rounded-sm text-xs font-mono transition-colors shrink-0 border ${
+                  isSelected
+                    ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-semibold'
+                    : 'bg-canvas hover:bg-hover text-secondary hover:text-primary border-grid'
+                }`}
+              >
+                {mention}
+              </button>
+            );
+          })}
         </div>
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          className="bg-cyber-emerald hover:bg-emerald-400 disabled:opacity-40 text-black px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/20"
-        >
-          <span>Send</span>
-          <CornerDownLeft className="w-3.5 h-3.5" />
-        </button>
-      </form>
+
+        {/* Row 2: Input & Submit */}
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <div className="relative flex-1 flex items-center">
+            <div className="absolute left-3 text-[#FF6B00] pointer-events-none">
+              <Terminal className="w-4 h-4" />
+            </div>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Assign task with @peer-ai or message room..."
+              className="w-full bg-canvas border border-grid rounded-sm pl-9 pr-4 py-2 text-xs md:text-sm text-primary placeholder:text-muted focus:outline-none focus:border-[#FF6B00] font-sans transition-colors"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={!input.trim() || sending}
+            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#E66000] disabled:opacity-40 text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0 shadow-sm"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">DISPATCH</span>
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
