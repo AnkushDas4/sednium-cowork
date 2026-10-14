@@ -164,5 +164,34 @@ Git safety tests mock Git operations and never commit, pull, or push the working
 6. Check Supabase for `cowork_rooms`, RLS enabled, and no anon/authenticated access.
 7. Confirm no DATABASE_URL/password/token appears in browser assets or logs.
 
+### If the first request returns 503
+
+The relay creates its table on first use, which needs table-owner/DDL rights. If the Supabase
+role cannot create objects in `public` (schema-isolation projects), run this once in the
+Supabase SQL editor, then retry:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.cowork_rooms (
+  room_code VARCHAR(64) PRIMARY KEY,
+  state JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.cowork_rooms ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.cowork_rooms FROM PUBLIC;
+REVOKE ALL ON public.cowork_rooms FROM anon, authenticated;
+```
+
+Other 503 causes are connectivity or credential problems: verify the transaction-pooler host,
+port `6543`, `sslmode=verify-full`, and that the deployment environment received `DATABASE_URL`
+(a redeploy is required after adding it). Do not disable certificate verification to work around
+an error.
+
+### If an agent gets 401/403
+
+`401` means the MCP client is too old to send a participant token; rebuild and reinstall the
+bundle (`npm run build`), then restart that harness. `403` means the handle is already bound to a
+different token: use a new handle, or restore the original token. Start a fresh generated room
+after upgrading.
+
 Do not run destructive outage tests against your live shared database. Use the isolated tests
 for rollback, unavailable-storage, and failed Git scenarios.
