@@ -2,48 +2,200 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Design tokens. One light and one dark value per token; components only ever
+   reference the semantic names, so a palette change never touches JSX.
+--------------------------------------------------------------------------- */
 @layer base {
   :root {
-    --bg-canvas: #F7F6F2;
-    --bg-panel: #EFECE6;
-    --bg-hover: #E5E0D8;
-    --border-grid: #D8D3C8;
-    --text-primary: #141416;
-    --text-secondary: #4A4A52;
-    --text-muted: #6E6E77;
-    --accent-orange: #FF6B00;
+    --rgb-canvas: 251 251 252;
+    --rgb-panel: 255 255 255;
+    --rgb-hover: 244 245 247;
+    --rgb-grid: 232 233 237;
+    --rgb-grid-strong: 216 218 225;
+    --rgb-primary: 16 17 20;
+    --rgb-secondary: 78 81 88;
+    --rgb-muted: 139 143 152;
+    --rgb-accent: 255 107 0;
+
+    --bg-canvas: rgb(var(--rgb-canvas));
+    --bg-panel: rgb(var(--rgb-panel));
+    --bg-hover: rgb(var(--rgb-hover));
+    --border-grid: rgb(var(--rgb-grid));
+    --border-strong: rgb(var(--rgb-grid-strong));
+    --text-primary: rgb(var(--rgb-primary));
+    --text-secondary: rgb(var(--rgb-secondary));
+    --text-muted: rgb(var(--rgb-muted));
+
+    --accent: rgb(var(--rgb-accent));
+    --accent-strong: #ea5f00;
+    --accent-soft: rgb(255 241 231);
+    --accent-ink: #ffffff;
+    --ring: rgba(255, 107, 0, 0.26);
+
+    --ok: #15803d;
+    --ok-soft: #e9f6ee;
+    --warn: #b45309;
+    --warn-soft: #fdf3e5;
+    --danger: #b42318;
+    --danger-soft: #fdecea;
+
+    --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --shadow-float: 0 16px 40px -12px rgba(16, 24, 40, 0.18), 0 2px 6px rgba(16, 24, 40, 0.06);
+    --tint: rgba(255, 107, 0, 0.06);
+    color-scheme: light;
   }
 
   .dark {
-    --bg-canvas: #121214;
-    --bg-panel: #18181B;
-    --bg-hover: #202024;
-    --border-grid: #2A2A2E;
-    --text-primary: #F7F6F2;
-    --text-secondary: #A1A1AA;
-    --text-muted: #71717A;
-    --accent-orange: #FF6B00;
+    --rgb-canvas: 11 12 14;
+    --rgb-panel: 20 21 25;
+    --rgb-hover: 29 31 36;
+    --rgb-grid: 38 40 46;
+    --rgb-grid-strong: 52 55 63;
+    --rgb-primary: 243 244 246;
+    --rgb-secondary: 167 171 180;
+    --rgb-muted: 124 129 139;
+    --rgb-accent: 255 122 31;
+
+    --bg-canvas: rgb(var(--rgb-canvas));
+    --bg-panel: rgb(var(--rgb-panel));
+    --bg-hover: rgb(var(--rgb-hover));
+    --border-grid: rgb(var(--rgb-grid));
+    --border-strong: rgb(var(--rgb-grid-strong));
+    --text-primary: rgb(var(--rgb-primary));
+    --text-secondary: rgb(var(--rgb-secondary));
+    --text-muted: rgb(var(--rgb-muted));
+
+    --accent: rgb(var(--rgb-accent));
+    --accent-strong: #ff8c40;
+    --accent-soft: rgba(255, 122, 31, 0.14);
+    --accent-ink: #1a1206;
+    --ring: rgba(255, 122, 31, 0.32);
+
+    --ok: #4ade80;
+    --ok-soft: rgba(74, 222, 128, 0.14);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251, 191, 36, 0.14);
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-float: 0 18px 44px -12px rgba(0, 0, 0, 0.6);
+    --tint: rgba(255, 122, 31, 0.07);
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     background-color: var(--bg-canvas);
+    background-image: radial-gradient(900px 320px at 50% -180px, var(--tint), transparent 72%);
+    background-attachment: fixed;
     color: var(--text-primary);
-    font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Room codes, hashes and timestamps should not dance while polling. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--text-primary);
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--ring);
+    border-radius: 8px;
   }
 }
 
-/* Crisp Industrial Scrollbars */
+@layer components {
+  .card {
+    @apply bg-panel border border-grid;
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+  }
+  .field {
+    @apply w-full bg-canvas border border-grid text-sm;
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    color: var(--text-primary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  .field::placeholder {
+    color: var(--text-muted);
+  }
+  .field:focus {
+    @apply outline-none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 text-sm font-semibold transition active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none;
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+  }
+  .btn-primary {
+    @apply btn;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-primary:hover {
+    background: var(--accent-strong);
+  }
+  .btn-ghost {
+    @apply btn border border-grid;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 text-[11px] font-medium;
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+  }
+}
+
+/* Thin, unobtrusive scrollbars that match the surface, not the content. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-canvas);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-grid);
-  border-radius: 2px;
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

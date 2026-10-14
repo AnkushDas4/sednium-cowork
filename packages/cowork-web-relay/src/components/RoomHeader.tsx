@@ -83,17 +83,17 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   };
 
   return (
-    <header className="h-14 border-b border-grid bg-panel flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
+    <header className="h-14 border-b border-grid bg-panel/85 backdrop-blur-md flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
       <div className="hidden md:flex items-center gap-3 px-4 md:px-5 shrink-0">
-        <div className="w-7 h-7 bg-[#FF6B00] flex items-center justify-center rounded-sm shrink-0 shadow-sm">
-          <Terminal className="w-4 h-4 text-white" strokeWidth={2.5} />
+        <div className="w-7 h-7 bg-accent flex items-center justify-center rounded-lg shrink-0 shadow-card">
+          <Terminal className="w-4 h-4 text-accent-ink" strokeWidth={2.5} />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold tracking-tight text-primary text-xs md:text-sm uppercase font-sans">
+          <span className="font-semibold tracking-tight text-primary text-xs md:text-sm uppercase font-sans">
             SEDNIUM COWORK
           </span>
-          <span className="text-[10px] text-muted tracking-wider font-mono uppercase">
+          <span className="text-2xs text-muted tracking-wider font-mono uppercase">
             RELAY HUD v1.0
           </span>
         </div>
@@ -102,8 +102,8 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       {/* 2. Room Session Cell */}
       <div className="flex items-center gap-2.5 px-4 shrink-0">
         <div className="flex items-center gap-1.5 font-mono">
-          <Hash className="w-4 h-4 text-[#FF6B00]" strokeWidth={2.5} />
-          <span title={roomCode} className="font-bold text-primary text-[15px] tracking-tight truncate max-w-[110px] lg:max-w-[220px]">{roomCode}</span>
+          <Hash className="w-4 h-4 text-accent" strokeWidth={2.5} />
+          <span title={roomCode} className="font-semibold text-primary text-[15px] tracking-tight truncate max-w-[110px] lg:max-w-[220px]">{roomCode}</span>
         </div>
 
         <div className="flex items-center gap-1.5 ml-1">
@@ -113,9 +113,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             title="Copy invite link"
           >
             {copied ? (
-              <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
+              <Check className="w-3.5 h-3.5 text-accent" strokeWidth={2.5} />
             ) : (
-              <Copy className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <Copy className="w-3.5 h-3.5 text-accent" />
             )}
             <span>{copied ? 'Copied!' : hasInviteKey ? 'Copy Link + Key' : 'Copy Link'}</span>
           </button>
@@ -136,7 +136,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
               title="Generate a new collision-free room code"
             >
-              <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
               <span className="hidden md:inline">New Room</span>
             </button>
           )}
@@ -145,9 +145,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
       {/* 3. Git Main Status Cell */}
       <div className="hidden lg:flex flex-1 items-center px-4 gap-2.5 overflow-hidden">
-        <div className="flex items-center gap-1 text-[#FF6B00] shrink-0 font-mono text-xs">
+        <div className="flex items-center gap-1 text-accent shrink-0 font-mono text-xs">
           <GitBranch className="w-4 h-4" strokeWidth={2.2} />
-          <span className="font-bold">Git</span>
+          <span className="font-semibold">Git</span>
         </div>
         <span className="text-muted text-xs">/</span>
         {latestCommit ? (
@@ -187,7 +187,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
                   />
                   <span
                     className={`text-[11px] font-medium ${
-                      pId === clientId ? 'text-[#FF6B00] font-bold' : 'text-primary'
+                      pId === clientId ? 'text-accent font-semibold' : 'text-primary'
                     }`}
                   >
                     @{pId}
@@ -196,14 +196,14 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               ))
             )}
             {participantEntries.length > 3 && (
-              <span className="text-muted text-[10px]">+{participantEntries.length - 3}</span>
+              <span className="text-muted text-2xs">+{participantEntries.length - 3}</span>
             )}
           </div>
         </div>
 
         {/* Live sync pulse */}
         <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
-          <Activity className="w-4 h-4 text-[#FF6B00] animate-pulse" />
+          <Activity className="w-4 h-4 text-accent animate-pulse" />
         </div>
 
         {/* Theme Toggle Button */}
@@ -214,9 +214,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? (
-            <Sun className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+            <Sun className="w-4 h-4 text-accent" strokeWidth={2} />
           ) : (
-            <Moon className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+            <Moon className="w-4 h-4 text-accent" strokeWidth={2} />
           )}
         </button>
 
@@ -232,11 +232,11 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       {/* QR Code Modal Popover */}
       {showQr && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-panel border border-grid rounded-sm p-6 max-w-xs w-full shadow-2xl relative">
+          <div className="bg-panel border border-grid rounded-sm p-6 max-w-xs w-full shadow-float relative">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-grid">
               <div className="flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-[#FF6B00]" />
-                <span className="font-bold text-xs uppercase font-sans text-primary">
+                <QrCode className="w-4 h-4 text-accent" />
+                <span className="font-semibold text-xs uppercase font-sans text-primary">
                   Mobile Join Link
                 </span>
               </div>
@@ -258,7 +258,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
             <button
               onClick={handleCopy}
-              className="w-full py-2.5 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
+              className="w-full py-2.5 bg-accent hover:bg-accent-strong text-accent-ink text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'LINK COPIED' : 'COPY SHARE LINK'}</span>

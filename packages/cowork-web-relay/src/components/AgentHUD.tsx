@@ -35,7 +35,7 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
     if (!lastSeen) return { label: 'OFFLINE', dot: 'bg-muted', text: 'text-muted' };
     const diff = (now - lastSeen) / 1000;
     if (diff < 30) return { label: 'ONLINE', dot: 'bg-[#10B981] animate-pulse', text: 'text-[#10B981]' };
-    if (diff < 90) return { label: 'IDLE', dot: 'bg-[#FF6B00]', text: 'text-[#FF6B00]' };
+    if (diff < 90) return { label: 'IDLE', dot: 'bg-accent', text: 'text-accent' };
     return { label: 'DISCONNECTED', dot: 'bg-muted', text: 'text-muted' };
   };
 
@@ -50,8 +50,8 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
       {/* 1. Header Bar for Agent Section */}
       <div className="px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
         <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-[#FF6B00]" />
-          <span className="font-bold text-primary text-xs">AGENT NODES</span>
+          <Cpu className="w-4 h-4 text-accent" />
+          <span className="font-semibold text-primary text-xs">AGENT NODES</span>
         </div>
         <span className="text-[11px] font-semibold text-secondary">
           {connectedAgentEntries.length === 0
@@ -70,7 +70,7 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
             <div className="w-10 h-10 rounded-sm bg-panel border border-grid flex items-center justify-center mx-auto text-muted">
               <Bot className="w-5 h-5 opacity-40" />
             </div>
-            <div className="text-xs font-sans font-bold text-primary">
+            <div className="text-xs font-sans font-semibold text-primary">
               No Agents Connected
             </div>
             <p className="text-[11px] font-sans text-secondary max-w-xs mx-auto leading-relaxed">
@@ -88,11 +88,11 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
                 {/* Agent Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-hover border border-grid flex items-center justify-center rounded-sm text-[#FF6B00]">
+                    <div className="w-7 h-7 bg-hover border border-grid flex items-center justify-center rounded-sm text-accent">
                       <Bot className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-[15px] text-primary font-sans leading-tight">
+                      <div className="font-semibold text-[15px] text-primary font-sans leading-tight">
                         @{agentId}
                       </div>
                       <div className="text-[11px] text-secondary font-mono leading-none">
@@ -111,7 +111,7 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
 
                 {/* Clean Unbordered Current Task Line */}
                 <div className="pt-1">
-                  <div className="text-[10px] font-mono uppercase text-muted tracking-wide mb-0.5">
+                  <div className="text-2xs font-mono uppercase text-muted tracking-wide mb-0.5">
                     CURRENT TASK
                   </div>
                   <div className="text-[13px] text-primary font-sans font-medium leading-relaxed">
@@ -122,18 +122,18 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
                 {/* Claimed Files List */}
                 {locks.length > 0 && (
                   <div className="space-y-1.5 pt-1">
-                    <div className="text-[10px] font-mono uppercase text-muted flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-[#FF6B00]" />
+                    <div className="text-2xs font-mono uppercase text-muted flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-accent" />
                       <span>CLAIMED FILES ({locks.length})</span>
                     </div>
                     <div className="space-y-1">
                       {locks.map(([file, lock]) => (
                         <div
                           key={file}
-                          className="border-l-2 border-[#FF6B00] pl-2.5 py-1 bg-panel text-xs font-mono text-primary flex items-center justify-between gap-2"
+                          className="border-l-2 border-accent pl-2.5 py-1 bg-panel text-xs font-mono text-primary flex items-center justify-between gap-2"
                         >
                           <span className="truncate font-semibold">{file}</span>
-                          <span className="text-[10px] text-secondary shrink-0 font-sans">
+                          <span className="text-2xs text-secondary shrink-0 font-sans">
                             {lock.task}
                           </span>
                         </div>
@@ -150,8 +150,8 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
       {/* 3. Section Header for File Locks */}
       <div className="px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 text-[#FF6B00]" />
-          <span className="font-bold text-primary text-xs">FILE LOCK REGISTRY</span>
+          <ShieldAlert className="w-4 h-4 text-accent" />
+          <span className="font-semibold text-primary text-xs">FILE LOCK REGISTRY</span>
         </div>
         <span className="text-[11px] font-mono text-muted">90S TTL</span>
       </div>
@@ -177,12 +177,12 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
               <div key={filePath} className="px-5 py-3 text-xs space-y-1 bg-canvas">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 overflow-hidden">
-                    <Lock className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
-                    <span className="font-mono text-xs text-primary truncate font-bold">
+                    <Lock className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span className="font-mono text-xs text-primary truncate font-semibold">
                       {filePath}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#FF6B00] bg-panel px-2 py-0.5 rounded-sm border border-grid shrink-0">
+                  <div className="flex items-center gap-1 text-[11px] font-mono text-accent bg-panel px-2 py-0.5 rounded-sm border border-grid shrink-0">
                     <Clock className="w-3 h-3" />
                     <span className="font-semibold">{remainingSeconds}s</span>
                   </div>

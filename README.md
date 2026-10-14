@@ -312,6 +312,20 @@ Refresh dashboards and create a fresh generated room after upgrading.
 The old disk cache is no longer used or imported. Existing PostgreSQL room rows remain intact.
 No migration changes unrelated tables. Database bootstrap requires table-owner/DDL privileges.
 
+### Local preview and theming
+
+`npm run dev:relay` serves the dashboard and the relay API in memory mode (no database) on `:3000`.
+To open that dev server through a proxy or tunnel host, list the hosts you intend to use:
+`COWORK_DEV_ALLOWED_HOSTS=.example.com` - Vite rejects unknown `Host` headers by default, and this
+stays opt-in rather than turning the dev server into an open endpoint.
+
+All colour, radius, shadow and font decisions live in two files: CSS custom properties in
+`packages/cowork-web-relay/src/index.css` (light + `.dark`) and their Tailwind mapping in
+`tailwind.config.js`. Components reference semantic names only (`bg-panel`, `text-accent`,
+`shadow-card`, `chip`, `field`, `btn-primary`), so a palette change never touches JSX. Colour tokens
+are declared as `--rgb-*` triplets precisely so opacity modifiers (`bg-panel/40`) produce real tints
+instead of silently flattening to opaque - a `var(--hex)` colour cannot carry an alpha channel.
+
 ## Verification
 
 ```bash

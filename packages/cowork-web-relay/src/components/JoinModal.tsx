@@ -88,22 +88,22 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 select-none">
-      <div className="w-full max-w-md bg-panel border border-grid rounded-sm shadow-2xl overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 select-none">
+      <div className="w-full max-w-md bg-panel border border-grid rounded-2xl shadow-float overflow-hidden relative">
         {/* Hardware Top Accent Bar in Safety Orange */}
-        <div className="h-1 bg-[#FF6B00] w-full" />
+        <div className="h-1 bg-accent w-full opacity-90" />
 
         {/* Modal Header */}
         <div className="p-4 border-b border-grid flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-6 h-6 bg-[#FF6B00] flex items-center justify-center rounded-sm text-white">
+            <div className="w-6 h-6 bg-accent flex items-center justify-center rounded-lg text-accent-ink">
               <Terminal className="w-3.5 h-3.5" strokeWidth={2.5} />
             </div>
             <div>
-              <div className="font-bold text-xs uppercase tracking-tight text-primary font-sans">
+              <div className="font-semibold text-xs uppercase tracking-tight text-primary font-sans">
                 SEDNIUM COWORK
               </div>
-              <div className="text-[10px] text-muted font-mono">
+              <div className="text-2xs text-muted font-mono">
                 PAIR PROGRAMMING RELAY
               </div>
             </div>
@@ -118,27 +118,27 @@ export const JoinModal: React.FC<JoinModalProps> = ({
             aria-label="Toggle theme"
           >
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+              <Sun className="w-4 h-4 text-accent" strokeWidth={2} />
             ) : (
-              <Moon className="w-4 h-4 text-[#FF6B00]" strokeWidth={2} />
+              <Moon className="w-4 h-4 text-accent" strokeWidth={2} />
             )}
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Room Code */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
               <label className="text-secondary flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <KeyRound className="w-3.5 h-3.5 text-accent" />
                 <span>ROOM SESSION CODE</span>
               </label>
               <button
                 type="button"
                 onClick={fetchCollisionFreeCode}
                 disabled={isRefreshing}
-                className="text-[10px] text-muted hover:text-[#FF6B00] flex items-center gap-1 transition-colors disabled:opacity-50"
+                className="text-2xs text-muted hover:text-accent flex items-center gap-1 transition-colors disabled:opacity-50"
               >
                 <RefreshCw
                   className={`w-2.5 h-2.5 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -153,11 +153,11 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               value={room}
               onChange={(e) => { requestVersion.current++; setRoom(e.target.value.toUpperCase()); }}
               placeholder="e.g. SED-409"
-              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00] tracking-wider"
+              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-accent tracking-wider"
             />
 
             {invite ? (
-              <p className="text-[11px] font-mono text-[#FF6B00] flex items-center gap-1.5">
+              <p className="text-[11px] font-mono text-accent flex items-center gap-1.5">
                 <ShieldCheck className="w-3 h-3" /> Invite key stored - link and QR will carry it
               </p>
             ) : (
@@ -166,15 +166,15 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                 value={invite}
                 onChange={(e) => setInvite(e.target.value.trim().toLowerCase())}
                 placeholder="invite key (only if the room requires one)"
-                className="w-full bg-canvas border border-grid rounded-sm px-3 py-1.5 text-[11px] text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
+                className="w-full bg-canvas border border-grid rounded-sm px-3 py-1.5 text-[11px] text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
               />
             )}
           </div>
 
           {/* Operator Handle */}
           <div className="space-y-1.5">
-            <label className="text-xs text-secondary flex items-center gap-1.5 font-mono">
-              <User className="w-3.5 h-3.5 text-[#FF6B00]" />
+            <label className="text-[11px] text-secondary flex items-center gap-1.5 font-semibold uppercase tracking-wide">
+              <User className="w-3.5 h-3.5 text-accent" />
               <span>YOUR OPERATOR HANDLE</span>
             </label>
 
@@ -190,19 +190,19 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               autoFocus={!clientId}
               onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
               placeholder="host - your handle (e.g. android-lab)"
-              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-xs text-primary font-mono placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
+              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-xs text-primary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 shadow-sm font-sans tracking-wide"
+            className="w-full py-2.5 bg-accent hover:bg-accent-strong text-accent-ink text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 shadow-card font-sans tracking-wide"
           >
             <span>CONNECT TO RELAY</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
-          <div className="text-[10px] text-muted text-center font-mono pt-1">
+          <div className="text-2xs text-muted text-center font-mono pt-1">
             Zero WebSockets • Zero Login Walls • Stateless HTTP Mailbox
           </div>
         </form>

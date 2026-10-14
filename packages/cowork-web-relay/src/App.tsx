@@ -165,7 +165,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text">
+    <div className="h-[100dvh] w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text pb-[env(safe-area-inset-bottom)]">
       {!connected ? (
         <JoinModal
           initialRoom={roomCode}
@@ -188,15 +188,23 @@ export const App: React.FC = () => {
             onNewRoom={(newCode) => handleJoin(newCode, clientId)}
           />
 
-          {connectionError && <div role="alert" className="p-2 text-sm text-red-500 bg-panel">Relay disconnected: {connectionError}</div>}
-          {inviteNotice && !connectionError && <div className="p-2 text-xs text-[#FF6B00] bg-panel font-mono">{inviteNotice}</div>}
+          {connectionError && (
+            <div role="alert" className="mx-3 mt-3 flex items-center gap-2 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2 text-xs font-medium text-danger">
+              Relay disconnected: {connectionError}
+            </div>
+          )}
+          {inviteNotice && !connectionError && (
+            <div className="mx-3 mt-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-xs font-medium text-accent">
+              {inviteNotice}
+            </div>
+          )}
           {/* Mobile Tab Switcher */}
           <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-9 text-xs font-mono divide-x divide-grid shrink-0">
             <button
               onClick={() => setMobileTab('stream')}
               className={`flex-1 flex items-center justify-center gap-1.5 ${
                 mobileTab === 'stream'
-                  ? 'bg-canvas text-[#FF6B00] font-bold'
+                  ? 'bg-canvas text-accent font-semibold'
                   : 'text-muted hover:text-secondary'
               }`}
             >
@@ -207,7 +215,7 @@ export const App: React.FC = () => {
               onClick={() => setMobileTab('agents')}
               className={`flex-1 flex items-center justify-center gap-1.5 ${
                 mobileTab === 'agents'
-                  ? 'bg-canvas text-[#FF6B00] font-bold'
+                  ? 'bg-canvas text-accent font-semibold'
                   : 'text-muted hover:text-secondary'
               }`}
             >
