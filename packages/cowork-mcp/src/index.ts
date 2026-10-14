@@ -11,7 +11,7 @@ import qrcodeTerminal from 'qrcode-terminal';
 import path from 'node:path';
 import { CoWorkPoller } from './poller.js';
 import { parseInviteLink } from './invite.js';
-import { safeCommitAndPush, getLatestCommit } from './git.js';
+import { safeCommitAndPush, getLatestCommit, getGit } from './git.js';
 import type { ContentType, CoWorkMessage } from './types.js';
 
 let activePoller: CoWorkPoller | null = null;
@@ -125,7 +125,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             inviteLink: { type: 'string', description: 'Full invite link shared by a human, e.g. https://relay/?room=SED-…#k=… . Relay URL, room code and invite key are all read from it; explicit args still win.' },
             participantToken: { type: 'string', description: 'Private persistent identity token (32–128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts.' },
             autoPull: { type: 'boolean', description: 'Opt in to automatic Git pulls on peer pushes. Default false.' },
-            branch: { type: 'string', description: 'Expected checked-out Git branch (default main).' },
+            branch: { type: 'string', description: 'Target Git branch to sync with. If omitted, auto-detects the currently checked-out branch (or falls back to main).' },
             remote: { type: 'string', description: 'Git remote (default origin).' },
             agentId: {
               type: 'string',
@@ -197,7 +197,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'cowork_sync_main',
         description:
-          'Safely validates the branch and remote state, commits only explicitly selected files, pushes to the configured branch, and notifies the relay to release your file locks and trigger auto-pull on the peer laptop.',
+          'Safely validates the branch and remote state, commits only explicitly selected files, pushes to the target branch (auto-detected or configured), and notifies the relay to release your file locks and trigger auto-pull on peer laptops.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -205,6 +205,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             commitMessage: {
               type: 'string',
               description: 'Git commit message describing your completed changes.',
+            },
+            branch: {
+              type: 'string',
+              description: 'Optional Git branch to push to (defaults to the currently configured or checked-out branch).',
+            },
+          },
+          required: ['commitMessage', 'files'],
+        },
+      },
+      {
+        name: 'cowork_sync',
+        description:
+          'Alias for cowork_sync_main. Safely commits selected files, pushes to the target branch, and notifies the relay to release your file locks.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            files: { type: 'array', items: { type: 'string' }, minItems: 1, description: 'Explicit repository-relative files to stage and commit. Unrelated staged changes cause refusal.' },
+            commitMessage: {
+              type: 'string',
+              description: 'Git commit message describing your completed changes.',
+            },
+            branch: {
+              type: 'string',
+              description: 'Optional Git branch to push to (defaults to the currently configured or checked-out branch).',
             },
           },
           required: ['commitMessage', 'files'],
@@ -292,6 +316,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
         const repoPath = path.resolve(String(args?.repoPath || env('COWORK_REPO_PATH') || process.cwd()));
 
+        let detectedBranch = 'main';
+        try {
+          const git = getGit(repoPath);
+          if (await git.checkIsRepo()) {
+            const current = (await git.branchLocal()).current;
+            if (current && current !== 'HEAD') {
+              detectedBranch = current;
+            }
+          }
+        } catch {
+          // fallback if not a git repo or git lookup fails
+        }
+        const branch = String(args?.branch || env('COWORK_BRANCH') || detectedBranch);
+
         let roomCode = String(args?.roomCode || env('COWORK_ROOM_CODE') || invite.roomCode || '').toUpperCase();
         let generatedKey = '';
         if (!roomCode) {
@@ -324,7 +362,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
           inviteKey: String(args?.inviteKey || invite.inviteKey || env('COWORK_INVITE_KEY') || generatedKey || '') || undefined,
           autoPull: args?.autoPull === true || truthy(env('COWORK_AUTO_PULL')),
-          branch: String(args?.branch || env('COWORK_BRANCH') || 'main'),
+          branch,
           remote: String(args?.remote || env('COWORK_REMOTE') || 'origin'),
         });
 
@@ -359,6 +397,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +
+                    `🌿 Git Branch: ${branch} (${activePoller.getRemote()})\n` +
                     `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`,
             },
           ],
@@ -454,15 +493,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'cowork_sync':
       case 'cowork_sync_main': {
         if (!activePoller) {
           throw new Error('Not connected to a CoWork room. Run cowork_connect first.');
         }
 
         const commitMessage = String(args?.commitMessage || 'feat: cowork sync');
-        activePoller.setStatus(`Syncing git to ${activePoller.getBranch()}`);
+        let targetBranch = args?.branch ? String(args.branch) : undefined;
+        if (!targetBranch) {
+          try {
+            const git = getGit(activePoller.getRepoPath());
+            if (await git.checkIsRepo()) {
+              const current = (await git.branchLocal()).current;
+              if (current && current !== 'HEAD') {
+                targetBranch = current;
+              }
+            }
+          } catch {
+            // fallback to poller's configured branch
+          }
+        }
+        if (!targetBranch) {
+          targetBranch = activePoller.getBranch() || 'main';
+        }
+        activePoller.setBranch(targetBranch);
 
-        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage, activePoller.getBranch(), activePoller.getRemote(), args?.files as string[]);
+        activePoller.setStatus(`Syncing git to ${targetBranch}`);
+
+        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage, targetBranch, activePoller.getRemote(), args?.files as string[]);
 
         if (!gitRes.success) {
           activePoller.setStatus('Git sync failed');
@@ -482,17 +541,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           await sendToRelay(activePoller, {
             method: 'POST',
             headers: activePoller.getHeaders(),
-          body: JSON.stringify({
-            roomCode: activePoller.getRoomCode(),
-            senderId: activePoller.getAgentId(),
-            targetId: 'all',
-            contentType: 'GIT_PUSH',
-            text: commitMessage,
-            commitHash: gitRes.hash,
-            senderModel: activePoller.getModel(),
-            senderHarness: activePoller.getHarness(),
-          }),
-        });
+            body: JSON.stringify({
+              roomCode: activePoller.getRoomCode(),
+              senderId: activePoller.getAgentId(),
+              targetId: 'all',
+              contentType: 'GIT_PUSH',
+              text: commitMessage,
+              commitHash: gitRes.hash,
+              senderModel: activePoller.getModel(),
+              senderHarness: activePoller.getHarness(),
+            }),
+          });
 
         } catch {
           activePoller.setStatus('Git pushed; relay notification failed');
@@ -504,7 +563,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `🚀 Successfully committed and pushed to ${activePoller.getRemote()}/${activePoller.getBranch()}:\n` +
+              text: `🚀 Successfully committed and pushed to ${activePoller.getRemote()}/${targetBranch}:\n` +
                     `  Hash: ${gitRes.hash || 'HEAD'}\n` +
                     `  Message: "${commitMessage}"\n\n` +
                     `🔓 All file locks held by @${activePoller.getAgentId()} have been liberated.\n` +

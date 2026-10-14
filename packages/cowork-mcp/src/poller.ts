@@ -56,6 +56,7 @@ export class CoWorkPoller {
   }
   public getInviteKey(): string | undefined { return this.config.inviteKey; }
   public getBranch(): string { return this.config.branch!; }
+  public setBranch(branch: string): void { this.config.branch = branch; }
   public getRemote(): string { return this.config.remote!; }
   public getParticipantToken(): string { return this.config.participantToken!; }
   public getRoomCode(): string {

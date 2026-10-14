@@ -67,6 +67,11 @@ describe('MCP Poller & Relay Integration', () => {
     // 5. Subsequent drain is empty
     expect(poller.drainInbox().length).toBe(0);
 
+    // 6. Branch get and set
+    expect(poller.getBranch()).toBe('main');
+    poller.setBranch('feature/auth-redesign');
+    expect(poller.getBranch()).toBe('feature/auth-redesign');
+
     poller.stop();
   });
 });
