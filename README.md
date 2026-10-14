@@ -209,7 +209,10 @@ A production 503 also returns a machine-readable `code`/`hint` (`DATABASE_URL_MI
 `STORAGE_UNAVAILABLE` + Postgres/driver code such as `ETIMEDOUT`, `ECONNREFUSED`, `28P01`, `42501`).
 Hints never contain hostnames or credentials, so they are safe to show and to paste into a bug report.
 
-`DATABASE_URL_INVALID` also covers an unreplaced `[YOUR-PASSWORD]` placeholder or an empty password.
+`DATABASE_URL_INVALID` also covers an unreplaced `[YOUR-PASSWORD]` placeholder, an empty
+password, and a bare `postgres` username against the **shared** pooler - `*.pooler.supabase.com`
+requires `postgres.<PROJECT-REF>` (the plain `postgres` user is only valid for direct connections
+and the dedicated pooler). A wrong username there looks exactly like a wrong password: `28P01`.
 On any database failure the function logs a private summary (`user`, password **length**, host, port)
 so a truncated or stale credential is visible in Vercel logs without the secret ever appearing in a
 response. A `_` is harmless in a URL password, and a raw `@` is parsed correctly by this driver

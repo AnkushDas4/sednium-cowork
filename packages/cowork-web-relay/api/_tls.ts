@@ -60,6 +60,11 @@ export function assertUsableUrl(raw: string): void {
   if (/[#?/\s]/.test(password) || /%(?![0-9A-Fa-f]{2})/.test(password)) throw new Error(invalid);
   const host = authority.slice(at + 1).toLowerCase().replace(/:\d+$/, '');
   const localHost = LOCAL_HOSTS.has(host) || host.startsWith('127.') || host.startsWith('[::1]');
+  // Supabase's SHARED pooler maps tenants from the username suffix: postgres.<PROJECT-REF>.
+  // A bare "postgres" there fails as 28P01 even with a perfectly correct password.
+  if (/\.pooler\.supabase\.com$/.test(host) && !user.includes('.')) {
+    throw new Error('DATABASE_URL username must be postgres.<PROJECT-REF> for the shared Supabase pooler (the bare "postgres" user is only for direct connections and the dedicated pooler)');
+  }
   if (/YOUR-PASSWORD|YOUR_PASSWORD/i.test(password) || (password === '' && !localHost)) {
     throw new Error('DATABASE_URL still contains the [YOUR-PASSWORD] placeholder (or an empty password) - paste the real database password');
   }
@@ -72,7 +77,9 @@ export function assertUsableUrl(raw: string): void {
 export function describeConnection(raw: string): string {
   try {
     const url = new URL(raw);
-    return `user=${url.username ? url.username.slice(0, 3) + '***' : '(none)'} password length=${decodeURIComponent(url.password).length} host=${url.hostname} port=${url.port || 'default'}`;
+    const user = url.username ? decodeURIComponent(url.username) : '';
+    const suffix = user.includes('.') ? `+ref suffix (${user.split('.').length - 1})` : 'NO ref suffix';
+    return `user=${user.slice(0, 3)}*** ${suffix}, password length=${decodeURIComponent(url.password).length}, host=${url.hostname}, port=${url.port || 'default'}`;
   } catch {
     return 'connection string could not be parsed';
   }

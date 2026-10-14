@@ -61,6 +61,13 @@ describe('Database TLS policy', () => {
     expect(buildTls('postgresql://postgres.x:pa%23ss@h:6543/postgres', {}).mode).toBe('verify-full');
     expect(buildTls('postgresql://postgres.x:Simple1Password@h:6543/postgres', {}).connectionString).toContain('Simple1Password');
   });
+  it('requires the project-ref username suffix on the shared Supabase pooler', () => {
+    expect(() => buildTls('postgresql://postgres:pw@aws-0-ap-south-1.pooler.supabase.com:6543/postgres', {}))
+      .toThrow('must be postgres.<PROJECT-REF> for the shared Supabase pooler');
+    // A bare username is correct for direct connections and the dedicated pooler.
+    expect(buildTls('postgresql://postgres:pw@db.abc.supabase.co:5432/postgres', {}).mode).toBe('verify-full');
+    expect(buildTls('postgresql://postgres.opfpeglq:pw@aws-0-ap-south-1.pooler.supabase.com:6543/postgres', {}).mode).toBe('verify-full');
+  });
   it('catches an unreplaced password placeholder without echoing secrets', () => {
     expect(() => buildTls('postgresql://postgres.abc:[YOUR-PASSWORD]@h:6543/postgres', {})).toThrow('placeholder');
     expect(() => buildTls('postgresql://postgres.abc:@h:6543/postgres', {})).toThrow('placeholder');
@@ -68,8 +75,11 @@ describe('Database TLS policy', () => {
     const summary = describeConnection('postgresql://postgres.abc:Sup3rSecretPw@h.pooler.supabase.com:6543/postgres');
     expect(summary).toContain('password length=13');
     expect(summary).toContain('host=h.pooler.supabase.com');
+    expect(describeConnection('postgresql://postgres.abc:x@h.pooler.supabase.com:6543/db')).toContain('+ref suffix (1)');
     expect(summary).not.toContain('Sup3rSecretPw');
     expect(summary).not.toContain('postgres.abc');
+    expect(summary).toContain('+ref suffix (1)');
+    expect(describeConnection('postgresql://postgres:pw@h.pooler.supabase.com:6543/db')).toContain('NO ref suffix');
   });
   it('explains Supabase certificate failures to the operator', () => {
     let configError: Error | undefined;
