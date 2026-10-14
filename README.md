@@ -104,15 +104,17 @@ In your Vercel project settings, assign domain `cowork.sednium.com`. Optionally 
 
 ## Configuring AI Harnesses (Antigravity, Claude, Cursor, Windsurf)
 
-Because `cowork-mcp` implements the standard Model Context Protocol (MCP) over Stdio, it works with **any AI harness**:
+The `sednium-cowork` MCP server is packaged as a **zero-dependency standalone executable** (`bin/cowork.cjs`). Teammates **do not need to clone this repository, install node_modules, or run any build scripts**.
 
-### 1. Google Antigravity (`~/.gemini/config/mcp_config.json`)
+Any AI harness can run it dynamically via `npx`:
+
+### 1. Google Antigravity (`~/.gemini/config/mcp_config.json` or `~/.gemini/antigravity/mcp_config.json`)
 ```json
 {
   "mcpServers": {
     "cowork": {
-      "command": "node",
-      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -130,8 +132,8 @@ Because `cowork-mcp` implements the standard Model Context Protocol (MCP) over S
 {
   "mcpServers": {
     "cowork": {
-      "command": "node",
-      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -143,7 +145,7 @@ Because `cowork-mcp` implements the standard Model Context Protocol (MCP) over S
 ### 3. Claude Code CLI
 Run directly in your terminal:
 ```bash
-claude mcp add cowork node <PATH_TO_REPO>/packages/cowork-mcp/dist/index.js -e COWORK_RELAY_URL=https://cowork.sednium.com
+claude mcp add cowork npx -y git+https://github.com/AnkushDas4/sednium-cowork.git -e COWORK_RELAY_URL=https://cowork.sednium.com
 ```
 
 ### 4. Cursor & Windsurf (`.cursor/mcp.json` or `~/.codeium/windsurf/mcp_config.json`)
@@ -151,8 +153,8 @@ claude mcp add cowork node <PATH_TO_REPO>/packages/cowork-mcp/dist/index.js -e C
 {
   "mcpServers": {
     "cowork": {
-      "command": "node",
-      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -160,6 +162,8 @@ claude mcp add cowork node <PATH_TO_REPO>/packages/cowork-mcp/dist/index.js -e C
   }
 }
 ```
+
+*(Note: Once published to the public npm registry via `npm publish`, the args can simply be `["-y", "sednium-cowork"]`)*
 
 ---
 
