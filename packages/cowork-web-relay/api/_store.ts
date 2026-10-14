@@ -81,7 +81,7 @@ export function cleanExpiredLocks(room: RoomState): boolean {
   for (const [file, lock] of Object.entries(room.fileLocks)) {
     const holder = room.participants[lock.lockedBy];
     const isLockAged = (now - lock.timestamp) > LOCK_TTL_MS;
-    const isHolderStale = holder ? (now - holder.lastSeen) > LOCK_TTL_MS : true;
+    const isHolderStale = holder ? (now - holder.lastSeen) > LOCK_TTL_MS : false;
 
     if (isLockAged || isHolderStale) {
       delete room.fileLocks[file];
