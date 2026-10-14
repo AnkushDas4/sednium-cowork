@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { handleSend } from '../api/send.js';
+import { errorResponse } from '../api/_validation.js';
 import presenceHandler, { handlePresence } from '../api/presence.js';
 import { generateUniqueRoomCode, getRoom, mutateRoom, resetStore } from '../api/_store.js';
 
@@ -58,6 +59,17 @@ describe('Relay safety regressions', () => {
     { contentType: 'FILE_LOCK', files: ['../outside'] },
   ])('rejects malformed input: %j', async payload => {
     await expect(send(payload)).rejects.toMatchObject({ status: 400 });
+  });
+  it('describes storage failures without leaking driver messages', () => {
+    const timeout = errorResponse(Object.assign(new Error('connect ETIMEDOUT db.internal:6543'), { code: 'ETIMEDOUT' }));
+    expect(timeout.status).toBe(503);
+    expect(timeout.body.code).toBe('STORAGE_UNAVAILABLE');
+    expect(String(timeout.body.hint)).toContain('transaction pooler');
+    expect(JSON.stringify(timeout.body)).not.toContain('db.internal');
+    const auth = errorResponse(Object.assign(new Error('password authentication failed'), { code: '28P01' }));
+    expect(String(auth.body.hint)).toContain('credentials');
+    const leaked = errorResponse(new Error('relation cowork_rooms does not exist at secret-host'));
+    expect(JSON.stringify(leaked.body)).not.toContain('secret-host');
   });
   it('reserves high-entropy room codes', async () => {
     const codes = await Promise.all(Array.from({ length: 30 }, () => generateUniqueRoomCode()));

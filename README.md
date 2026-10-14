@@ -188,6 +188,10 @@ REVOKE ALL ON public.cowork_rooms FROM PUBLIC;
 REVOKE ALL ON public.cowork_rooms FROM anon, authenticated;
 ```
 
+A production 503 also returns a machine-readable `code`/`hint` (`DATABASE_URL_MISSING` or
+`STORAGE_UNAVAILABLE` + Postgres/driver code such as `ETIMEDOUT`, `ECONNREFUSED`, `28P01`, `42501`).
+Hints never contain hostnames or credentials, so they are safe to show and to paste into a bug report.
+
 Other 503 causes are connectivity or credential problems: verify the transaction-pooler host,
 port `6543`, `sslmode=verify-full`, and that the deployment environment received `DATABASE_URL`
 (a redeploy is required after adding it). Do not disable certificate verification to work around

@@ -43,8 +43,26 @@ export function authorize(room: RoomState, clientId: string, token: unknown): vo
   }
   room.participantKeys[clientId] = hash;
 }
-export function errorResponse(err: unknown) {
-  return err instanceof ApiError
-    ? { status: err.status, body: { ok: false, error: err.message } }
-    : { status: 503, body: { ok: false, error: 'Relay storage unavailable; retry later.' } };
+// Operational hints are deliberately free of secrets: never echo driver messages (they can
+// contain hostnames/credentials). Codes + static hints are enough to diagnose a bad deploy.
+const STORAGE_HINTS: Record<string, string> = {
+  ENOTFOUND: 'database host not found - use the Supabase pooler hostname from the connection URI',
+  EAI_AGAIN: 'database host lookup failed - retry; DNS problem in this runtime',
+  ECONNREFUSED: 'connection refused - use the transaction pooler (port 6543), not the direct 5432 host',
+  ETIMEDOUT: 'connect timed out - serverless runtimes cannot reach IPv6-only direct connections; use the transaction pooler',
+  ECONNRESET: 'connection reset - check sslmode in the connection string',
+  28: 'database rejected the credentials - re-check the password (percent-encode special characters)',
+  3D: 'database name not found - the URI path must be /postgres',
+  42: 'permission denied creating cowork_rooms - run the one-time SQL from the README',
+};
+
+export function errorResponse(err: unknown): { status: number; body: Record<string, unknown> } {
+  if (err instanceof ApiError) return { status: err.status, body: { ok: false, error: err.message } };
+  const e = err as { message?: string; code?: string; errno?: string };
+  if (e?.message === 'DATABASE_URL is required in production') {
+    return { status: 503, body: { ok: false, error: 'Relay storage not configured', code: 'DATABASE_URL_MISSING', hint: 'Add DATABASE_URL to Vercel Production environment variables, then redeploy.' } };
+  }
+  const key = String(e?.code || e?.errno || '');
+  const hint = STORAGE_HINTS[key] || STORAGE_HINTS[key.slice(0, 2)] || 'database unreachable - check the connection string, pooler port and network';
+  return { status: 503, body: { ok: false, error: 'Relay storage unavailable; retry later.', code: 'STORAGE_UNAVAILABLE', storageCode: key || undefined, hint } };
 }
