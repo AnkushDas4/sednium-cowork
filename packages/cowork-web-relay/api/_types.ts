@@ -19,6 +19,8 @@ export interface CoWorkMessage {
   text: string;         // Supports @mentions
   files?: string[];
   commitHash?: string;
+  senderModel?: string;   // e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet"
+  senderHarness?: string; // e.g. "Antigravity", "Claude Code", "Cursor"
 }
 
 export interface FileLockInfo {
@@ -32,6 +34,8 @@ export interface ParticipantInfo {
   role: ClientRole;
   status: string;
   lastSeen: number;
+  harness?: string;      // e.g. "Antigravity", "Claude Code", "Cursor", "Web"
+  model?: string;        // e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet"
 }
 
 export interface CommitInfo {

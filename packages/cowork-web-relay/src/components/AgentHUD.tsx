@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Lock, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Bot, Lock, CheckCircle2, AlertCircle, Clock, Sparkles } from 'lucide-react';
 import type { ParticipantInfo, FileLockInfo } from '../../api/_types.js';
 
 interface AgentHUDProps {
@@ -58,10 +58,18 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({ participants, fileLocks }) =
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-white">@{agentId}</span>
                     <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
-                      AGY MCP
+                      {participant?.harness || (isLoid ? 'Antigravity' : 'MCP Agent')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  {participant?.model && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 flex items-center gap-1">
+                        <Sparkles className="w-2.5 h-2.5 text-indigo-400" />
+                        {participant.model}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 mt-1">
                     <span className={`w-2 h-2 rounded-full ${health.color}`} />
                     <span className={`text-[11px] font-semibold tracking-wider ${health.text}`}>
                       {health.status}

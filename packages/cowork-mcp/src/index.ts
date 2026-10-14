@@ -14,6 +14,56 @@ import type { ContentType, CoWorkMessage } from './types.js';
 
 let activePoller: CoWorkPoller | null = null;
 
+/**
+ * Smart detection of running AI model and harness environment
+ */
+export function detectSmartModelAndHarness(
+  customModel?: string,
+  customHarness?: string
+): { harness: string; model: string } {
+  let harness = customHarness;
+  let model = customModel;
+
+  if (!harness) {
+    if (
+      process.env.ANTIGRAVITY_APP_DATA_DIR ||
+      process.env.ANTIGRAVITY_SOURCE_METADATA ||
+      process.env.GEMINI_CLI
+    ) {
+      harness = 'Antigravity';
+    } else if (
+      process.env.CLAUDE_CODE ||
+      process.env.CLAUDE_PROJECT_DIR ||
+      process.env.ANTHROPIC_MODEL ||
+      process.env.CLAUDE_SESSION_ID
+    ) {
+      harness = 'Claude Code';
+    } else if (process.env.CURSOR_PROJECT_DIR || process.env.CURSOR_AGENT) {
+      harness = 'Cursor';
+    } else if (process.env.WINDSURF_API_KEY || process.env.CODEIUM_API_KEY) {
+      harness = 'Windsurf';
+    } else {
+      harness = 'AI Agent';
+    }
+  }
+
+  if (!model) {
+    if (harness === 'Antigravity') {
+      model = process.env.MODEL || process.env.ANTIGRAVITY_MODEL || 'Gemini 3.8 Flash';
+    } else if (harness === 'Claude Code') {
+      model = process.env.ANTHROPIC_MODEL || 'Claude 3.7 Sonnet';
+    } else if (harness === 'Cursor') {
+      model = process.env.CURSOR_MODEL || 'Claude 3.7 / GPT-4o';
+    } else if (harness === 'Windsurf') {
+      model = 'Cascade AI';
+    } else {
+      model = process.env.AI_MODEL || 'Autonomous AI';
+    }
+  }
+
+  return { harness, model };
+}
+
 const server = new Server(
   {
     name: 'sednium-cowork-mcp',
@@ -52,6 +102,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             relayUrl: {
               type: 'string',
               description: 'URL of the CoWork relay (defaults to COWORK_RELAY_URL or https://cowork.sednium.com).',
+            },
+            model: {
+              type: 'string',
+              description: 'Optional AI model name (auto-detected if omitted, e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet").',
+            },
+            harness: {
+              type: 'string',
+              description: 'Optional AI harness name (auto-detected if omitted, e.g. "Antigravity", "Claude Code", "Cursor").',
             },
           },
           required: ['agentId'],
@@ -176,12 +234,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : '';
         if (!roomCode) {
-          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-          roomCode = 'SED-';
-          for (let i = 0; i < 3; i++) {
-            roomCode += chars[Math.floor(Math.random() * chars.length)];
+          try {
+            const codeRes = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/presence?action=new-room`);
+            if (codeRes.ok) {
+              const codeData: any = await codeRes.json();
+              if (codeData.roomCode) roomCode = codeData.roomCode;
+            }
+          } catch {
+            // fallback
+          }
+          if (!roomCode) {
+            const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+            let suffix = '';
+            for (let i = 0; i < 4; i++) {
+              suffix += chars[Math.floor(Math.random() * chars.length)];
+            }
+            roomCode = `SED-${suffix}`;
           }
         }
+
+        const { harness, model } = detectSmartModelAndHarness(
+          args?.model ? String(args.model) : undefined,
+          args?.harness ? String(args.harness) : undefined
+        );
 
         if (activePoller) {
           activePoller.stop();
@@ -192,6 +267,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           agentId,
           repoPath,
           relayUrl,
+          harness,
+          model,
         });
 
         activePoller.start();
@@ -203,7 +280,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✅ Connected to Sednium CoWork Room: ${roomCode} as @${agentId}\n\n` +
+              text: `✅ Connected to Sednium CoWork Room: ${roomCode} as @${agentId}\n` +
+                    `🤖 Smart Model Recognition: [${model}] via [${harness}]\n\n` +
                     `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +
@@ -281,6 +359,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             targetId,
             contentType,
             text: message,
+            senderModel: activePoller.getModel(),
+            senderHarness: activePoller.getHarness(),
           }),
         });
 
@@ -334,6 +414,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             contentType: 'GIT_PUSH',
             text: commitMessage,
             commitHash: gitRes.hash,
+            senderModel: activePoller.getModel(),
+            senderHarness: activePoller.getHarness(),
           }),
         });
 

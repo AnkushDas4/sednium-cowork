@@ -6,6 +6,8 @@ export interface PollerConfig {
   agentId: string;
   repoPath: string;
   relayUrl: string;
+  harness?: string;
+  model?: string;
 }
 
 export class CoWorkPoller {
@@ -27,6 +29,8 @@ export class CoWorkPoller {
       ...config,
       relayUrl: config.relayUrl.replace(/\/+$/, ''),
       roomCode: config.roomCode.toUpperCase(),
+      harness: config.harness || 'AI Agent',
+      model: config.model,
     };
   }
 
@@ -36,6 +40,14 @@ export class CoWorkPoller {
 
   public getAgentId(): string {
     return this.config.agentId;
+  }
+
+  public getHarness(): string | undefined {
+    return this.config.harness;
+  }
+
+  public getModel(): string | undefined {
+    return this.config.model;
   }
 
   public getRepoPath(): string {
@@ -74,6 +86,8 @@ export class CoWorkPoller {
       url.searchParams.set('clientId', this.config.agentId);
       url.searchParams.set('role', 'agent');
       url.searchParams.set('status', this.currentStatus);
+      if (this.config.harness) url.searchParams.set('harness', this.config.harness);
+      if (this.config.model) url.searchParams.set('model', this.config.model);
 
       const res = await fetch(url.toString(), {
         headers: { 'Accept': 'application/json' },

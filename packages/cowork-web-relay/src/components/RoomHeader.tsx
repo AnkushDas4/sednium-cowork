@@ -9,6 +9,7 @@ interface RoomHeaderProps {
   latestCommit: CommitInfo | null;
   participants: Record<string, ParticipantInfo>;
   onLeave: () => void;
+  onNewRoom?: (newRoom: string) => void;
 }
 
 export const RoomHeader: React.FC<RoomHeaderProps> = ({
@@ -17,9 +18,25 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   latestCommit,
   participants,
   onLeave,
+  onNewRoom,
 }) => {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleCreateNewRoom = async () => {
+    if (isGenerating || !onNewRoom) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/presence?action=new-room');
+      const data = await res.json();
+      if (data.roomCode) {
+        onNewRoom(data.roomCode);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const shareUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
@@ -71,6 +88,18 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {onNewRoom && (
+            <button
+              onClick={handleCreateNewRoom}
+              disabled={isGenerating}
+              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-cyber-emerald px-2.5 py-1.5 rounded text-xs transition-colors disabled:opacity-50"
+              title="Generate a fresh, guaranteed collision-free room"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
+              <span className="hidden sm:inline">New Room</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowQr(true)}
             className="flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white px-2.5 py-1.5 rounded text-xs transition-colors"

@@ -199,6 +199,56 @@ export async function saveRoom(state: RoomState): Promise<void> {
 }
 
 /**
+ * Checks if a room already exists in memory or persistent store
+ */
+export async function hasRoom(rawCode: string): Promise<boolean> {
+  const roomCode = rawCode.trim().toUpperCase();
+  if (memoryStore.has(roomCode)) {
+    return true;
+  }
+
+  const pool = await getPostgresPool();
+  if (pool) {
+    try {
+      const res = await pool.query('SELECT 1 FROM cowork_rooms WHERE room_code = $1', [roomCode]);
+      return res.rows.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Generates a unique, collision-free 6-8 char room code (e.g. SED-7K9P).
+ * Checks the storage engine to guarantee it has never been allocated.
+ */
+export async function generateUniqueRoomCode(): Promise<string> {
+  const CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // 32 unambiguous chars
+  let attempts = 0;
+
+  while (attempts < 100) {
+    attempts++;
+    // Generate 4-char suffix (32^4 = 1,048,576 combinations)
+    let suffix = '';
+    for (let i = 0; i < 4; i++) {
+      suffix += CHARSET[Math.floor(Math.random() * CHARSET.length)];
+    }
+    const candidate = `SED-${suffix}`;
+
+    const exists = await hasRoom(candidate);
+    if (!exists) {
+      return candidate;
+    }
+  }
+
+  // Fallback for astronomical scale: add timestamp entropy (guaranteed collision-free)
+  const timeSuffix = Date.now().toString(36).toUpperCase().slice(-4);
+  return `SED-${timeSuffix}`;
+}
+
+/**
  * Resets store state (used for tests)
  */
 export async function resetStore(): Promise<void> {

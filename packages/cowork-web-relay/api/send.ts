@@ -10,6 +10,8 @@ export interface SendPayload {
   text?: string;
   files?: string[];
   commitHash?: string;
+  senderModel?: string;
+  senderHarness?: string;
 }
 
 /**
@@ -23,6 +25,8 @@ export async function handleSend(payload: SendPayload): Promise<{ status: number
   const text = payload.text || '';
   const files = payload.files || [];
   const commitHash = payload.commitHash;
+  const senderModel = payload.senderModel;
+  const senderHarness = payload.senderHarness;
 
   // 1. Mentions Parsing: e.g., "@peer-ai build navbar"
   const mentionMatch = text.match(/@([a-zA-Z0-9_-]+)/);
@@ -39,19 +43,23 @@ export async function handleSend(payload: SendPayload): Promise<{ status: number
 
   const room = await getRoom(roomCode);
 
-  // Update sender presence timestamp
+  // Update sender presence timestamp & model recognition
   if (!room.participants[senderId]) {
     room.participants[senderId] = {
       clientId: senderId,
       role: senderId.includes('ai') ? 'agent' : 'human',
       status: contentType === 'FILE_LOCK' ? 'Locked files' : 'Active',
       lastSeen: Date.now(),
+      model: senderModel,
+      harness: senderHarness,
     };
   } else {
     room.participants[senderId].lastSeen = Date.now();
     if (contentType === 'FILE_LOCK') {
       room.participants[senderId].status = 'Working on files';
     }
+    if (senderModel) room.participants[senderId].model = senderModel;
+    if (senderHarness) room.participants[senderId].harness = senderHarness;
   }
 
   // 2. Handle FILE_LOCK
@@ -142,6 +150,8 @@ export async function handleSend(payload: SendPayload): Promise<{ status: number
     text,
     files: files.length > 0 ? files : undefined,
     commitHash,
+    senderModel,
+    senderHarness,
   };
 
   // Add to Room History (capped at 100)

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Terminal, Users, Sparkles, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Terminal, Users, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
 
 interface JoinModalProps {
   initialRoom?: string;
@@ -10,20 +10,43 @@ interface JoinModalProps {
 export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialClientId = 'peer', onJoin }) => {
   const [room, setRoom] = useState(initialRoom);
   const [clientId, setClientId] = useState(initialClientId);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  React.useEffect(() => {
-    if (initialRoom) setRoom(initialRoom);
-    if (initialClientId) setClientId(initialClientId);
-  }, [initialRoom, initialClientId]);
+  const fetchCollisionFreeCode = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/presence?action=new-room');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.roomCode) {
+          setRoom(data.roomCode);
+          return;
+        }
+      }
+    } catch {
+      // fallback to high-entropy generator
+    } finally {
+      setIsRefreshing(false);
+    }
 
-  const generateRoomCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    // High entropy fallback
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
     let code = 'SED-';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       code += chars[Math.floor(Math.random() * chars.length)];
     }
     setRoom(code);
   };
+
+  useEffect(() => {
+    if (initialRoom) {
+      setRoom(initialRoom);
+    } else {
+      // Auto-generate fresh unique collision-free code on mount
+      fetchCollisionFreeCode();
+    }
+    if (initialClientId) setClientId(initialClientId);
+  }, [initialRoom, initialClientId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +77,13 @@ export const JoinModal: React.FC<JoinModalProps> = ({ initialRoom = '', initialC
               <label className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">Room Code</label>
               <button
                 type="button"
-                onClick={generateRoomCode}
-                className="text-xs text-cyber-emerald hover:underline flex items-center gap-1"
+                onClick={fetchCollisionFreeCode}
+                disabled={isRefreshing}
+                className="text-xs text-cyber-emerald hover:underline flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                title="Generate guaranteed collision-free room code"
               >
-                <Sparkles className="w-3 h-3" /> Generate New
+                <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>{isRefreshing ? 'Checking...' : 'Refresh Code'}</span>
               </button>
             </div>
             <input

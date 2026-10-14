@@ -153,8 +153,8 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-cyber-bg flex flex-col text-zinc-100">
       {!connected ? (
         <JoinModal
-          initialRoom={roomCode || 'SED-409'}
-          initialClientId={clientId || 'loid'}
+          initialRoom={roomCode}
+          initialClientId={clientId || 'peer'}
           onJoin={handleJoin}
         />
       ) : (
@@ -165,6 +165,7 @@ export const App: React.FC = () => {
             latestCommit={latestCommit}
             participants={participants}
             onLeave={handleLeave}
+            onNewRoom={(newCode) => handleJoin(newCode, clientId)}
           />
 
           <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">

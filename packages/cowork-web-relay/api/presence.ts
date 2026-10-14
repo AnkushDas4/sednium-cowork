@@ -7,25 +7,44 @@ export interface PresenceParams {
   clientId?: string;
   role?: ClientRole;
   status?: string;
+  harness?: string;
+  model?: string;
 }
 
 /**
  * Pure business logic for GET /api/presence
  */
-export async function handlePresence(params: PresenceParams): Promise<{ status: number; body: PresenceResponse }> {
+export async function handlePresence(params: PresenceParams): Promise<{ status: number; body: any }> {
+  // 0. Support unique room code generation with guaranteed non-collision
+  if (params.action === 'new-room' || params.action === 'generate-room') {
+    const { generateUniqueRoomCode } = await import('./_store.js');
+    const newCode = await generateUniqueRoomCode();
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        roomCode: newCode,
+      }
+    };
+  }
+
   const roomCode = (params.roomCode || 'DEFAULT').trim().toUpperCase();
   const clientId = (params.clientId || 'anonymous').trim();
   const role: ClientRole = (params.role === 'human') ? 'human' : 'agent';
   const status = params.status || 'Active';
+  const harness = params.harness || (role === 'human' ? 'Web Dashboard' : 'AI Agent');
+  const model = params.model;
 
   const room = await getRoom(roomCode);
 
-  // 1. Update participant presence & heartbeat
+  // 1. Update participant presence, heartbeat & smart model info
   room.participants[clientId] = {
     clientId,
     role,
     status,
     lastSeen: Date.now(),
+    harness,
+    model,
   };
 
   // 2. Atomically drain inbox for this client

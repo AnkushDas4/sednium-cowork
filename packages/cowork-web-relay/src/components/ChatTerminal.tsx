@@ -125,6 +125,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                     <span className={`font-bold ${isMe ? 'text-cyber-emerald' : 'text-zinc-300'}`}>
                       @{msg.senderId}
                     </span>
+                    {msg.senderModel && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700/60 text-zinc-400 font-mono">
+                        {msg.senderModel}
+                      </span>
+                    )}
                     {msg.targetId && msg.targetId !== 'all' && (
                       <>
                         <span className="text-zinc-600">→</span>
