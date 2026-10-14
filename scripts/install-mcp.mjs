@@ -2,9 +2,12 @@
 /**
  * Install the CoWork MCP server as ONE file - no repo clone, no build, no npm install.
  *
- *   node scripts/install-mcp.mjs                                  # download from GitHub, verify, install
- *   node scripts/install-mcp.mjs --check /path/to/cowork.cjs       # verify a file you already have
- *   node scripts/install-mcp.mjs --ref main                         # pin a different ref
+ *   node scripts/install-mcp.mjs                 # fetch from the relay origin, verify, install
+ *   node scripts/install-mcp.mjs --check FILE    # verify a file you already have
+ *   node scripts/install-mcp.mjs --ref <sha>     # fetch from GitHub instead of the relay
+ *
+ * Default source is the relay itself (<COWORK_RELAY_URL or https://cowork.sednium.com>/cowork.cjs),
+ * because the relay build publishes it - one short host, no 90-char raw.githubusercontent URL.
  *
  * What "verify" means here: the downloaded file is spawned with the same JSON-RPC handshake a
  * harness uses (initialize -> tools/list). We only accept it if the server answers and advertises
@@ -19,7 +22,9 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 const REPO = 'AnkushDas4/sednium-cowork';
-const DEFAULT_REF = 'arena/efda0128-sednium-cowork'; // merge into main, then drop --ref
+const DEFAULT_RELAY = 'https://cowork.sednium.com';
+// GitHub fallback ref, used only with --ref: main still predates the invite-key work.
+const DEFAULT_REF = 'arena/efda0128-sednium-cowork';
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
@@ -106,8 +111,11 @@ if (has('check')) {
   process.exit(0);
 }
 
-const ref = flag('ref', DEFAULT_REF);
-const url = flag('url', `https://raw.githubusercontent.com/${REPO}/${ref}/bin/cowork.cjs`);
+const relay = flag('relay-url', process.env.COWORK_RELAY_URL || DEFAULT_RELAY).replace(/\/+$/, '');
+const ref = flag('ref', '');
+const url = flag('url', ref
+  ? `https://raw.githubusercontent.com/${REPO}/${ref}/bin/cowork.cjs`
+  : `${relay}/cowork.cjs`);
 
 if (major() < 20) die(`Node >= 20 required (found ${process.version}); install nodejs-lts first`);
 
@@ -115,7 +123,28 @@ console.log(`\n  CoWork MCP - single-file install\n  source: ${url}\n`);
 const res = await fetch(url, { redirect: 'follow' });
 if (!res.ok) die(`download failed: HTTP ${res.status} from ${url}`);
 const body = Buffer.from(await res.arrayBuffer());
-if (body.length < 100_000) die(`implausibly small payload (${body.length} bytes) - wrong URL or an HTML error page?`);
+if (body.length < 100_000) die(`implausibly small payload (${body.length} bytes) - wrong URL, truncated transfer?`);
+const head = body.subarray(0, 800).toString('utf8').toLowerCase();
+if (head.startsWith('<!doctype html') || head.startsWith('<html')) {
+  die('that URL served an HTML page, not the bundle. The SPA catch-all answers unknown paths with '
+    + 'index.html, so deploy a relay build that publishes public/cowork.cjs - or pass --ref <sha> '
+    + 'to pull bin/cowork.cjs from GitHub instead.');
+}
+
+const digest = createHash('sha256').update(body).digest('hex');
+// The relay publishes "<asset>.sha256" beside the file: catches a truncated or substituted download.
+const sidecar = await fetch(`${url}.sha256`, { redirect: 'follow' }).catch(() => null);
+if (sidecar?.ok) {
+  const expected = (await sidecar.text()).trim().split(/\s+/)[0].toLowerCase();
+  if (expected && expected !== digest) {
+    die(`digest mismatch - got ${digest}, expected ${expected}. Do not install this copy; the `
+      + 'transfer was truncated, cached mid-deploy, or tampered with. Retry, then compare against git.');
+  }
+  ok(`sha256 matches the published digest (${digest.slice(0, 16)}…)`);
+} else {
+  console.warn('  ! no .sha256 published beside that URL; comparing digests was skipped. Check it');
+  console.warn('    against `git show <ref>:bin/cowork.cjs | sha256sum` if the origin is not yours.');
+}
 
 const tmp = `${out}.part`;
 mkdirSync(dirname(out), { recursive: true });
@@ -126,10 +155,8 @@ writeFileSync(out, body);
 chmodSync(out, 0o755);
 rmSync(tmp, { force: true }); // the verified bytes are already at `out`
 
-const digest = createHash('sha256').update(body).digest('hex');
 ok(`handshake answered, ${names.length} tools`);
 ok(`server: ${out} (${body.length} bytes)`);
-ok(`sha256: ${digest}`);
 if (!hasInviteKey) die('downloaded build predates invite keys - pass --ref <branch> that has them');
 ok('cowork_connect advertises inviteKey (current security model)');
 

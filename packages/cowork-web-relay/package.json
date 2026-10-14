@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "node ../../scripts/sync-client-assets.mjs && vite build",
     "preview": "vite preview",
     "start": "NODE_ENV=production tsx server.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit"

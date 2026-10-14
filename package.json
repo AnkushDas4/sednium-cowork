@@ -14,11 +14,12 @@
     "dev:relay": "npm --workspace=@sednium/cowork-web-relay run dev",
     "dev:mcp": "npm --workspace=@sednium/cowork-mcp run dev",
     "bundle:mcp": "esbuild packages/cowork-mcp/src/index.ts --bundle --platform=node --format=cjs --outfile=bin/cowork.cjs",
-    "build": "npm run build --workspaces && npm run bundle:mcp",
+    "build": "npm run bundle:mcp && npm run build --workspaces",
     "test": "vitest run",
     "typecheck": "tsc -p packages/cowork-mcp/tsconfig.json --noEmit && npm --workspace=@sednium/cowork-web-relay run typecheck",
     "verify:relay": "node scripts/verify-relay.mjs",
-    "mcp:install": "node scripts/install-mcp.mjs"
+    "mcp:install": "node scripts/install-mcp.mjs",
+    "sync:assets": "node scripts/sync-client-assets.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.27.0",

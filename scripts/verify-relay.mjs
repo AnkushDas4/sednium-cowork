@@ -15,7 +15,14 @@ import { randomBytes } from 'node:crypto';
 
 const args = process.argv.slice(2);
 const slow = args.includes('--slow');
-const base = (args.find(a => !a.startsWith('--')) || process.env.COWORK_RELAY_URL || 'http://localhost:3000').replace(/\/+$/, '');
+const target = args.find(a => !a.startsWith('--')) || process.env.COWORK_RELAY_URL;
+if (!target) {
+  console.error('usage: node verify-relay.mjs <relay-url> [--slow]   e.g. https://cowork.sednium.com');
+  console.error('(or export COWORK_RELAY_URL). Refusing to guess a host: silently testing localhost:3000');
+  console.error('would report failures that belong to no deployment.');
+  process.exit(2);
+}
+const base = target.replace(/\/+$/, '');
 const token = () => randomBytes(32).toString('hex');
 const id = () => Math.random().toString(36).slice(2, 8);
 

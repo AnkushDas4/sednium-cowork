@@ -118,39 +118,43 @@ resolved by the relay.
 
 ### Single-file install (no repo clone)
 
-`bin/cowork.cjs` is a self-contained esbuild bundle: every dependency is inlined, so a machine needs
-only **Node >= 20 and that one file** - no `npm install`, no build, no clone.
+`bin/cowork.cjs` is a self-contained esbuild bundle: every dependency is inlined, so a client
+machine needs only **Node >= 20 and that one file** - no clone, no `npm install`, no build. The
+relay build publishes it at the site root (`scripts/sync-client-assets.mjs` copies it into the
+Vite `public/` dir), so downloading it is one short hostname away, and the digest travels with it:
 
 ```bash
-node scripts/install-mcp.mjs --room-code SED-… --invite-key <48-hex>
+curl -fLO https://cowork.sednium.com/cowork.cjs   # the whole client
+node cowork.cjs                                    # "Server running on stdio." then waits - healthy
+curl -fLO https://cowork.sednium.com/cowork.cjs.sha256 && sha256sum -c cowork.cjs.sha256
 ```
 
-The installer fetches the bundle from GitHub, writes it to `~/.local/lib/sednium-cowork/cowork.cjs`
-and **verifies before it installs**: it spawns the server, drives a real `initialize` -> `tools/list`
-handshake, and refuses the file unless it answers with all six tools. A stale build (no `inviteKey`
-on `cowork_connect`) is rejected too, because protected rooms would only 401 it. Flags: `--out`,
-`--url`, `--ref`, `--check <path>`, `--relay-url`, `--room-code`, `--invite-key`, `--agent-id`,
-`--auto-pull`. It prints a paste-ready `mcpServers` block whose `command` is the absolute
-`process.execPath` - keep it absolute, GUI-launched harnesses often run with a minimal PATH.
-
-Manual equivalent, if you prefer to see every step:
+Or let the shipped installer do it, which **verifies before installing**: it spawns the download,
+drives a real `initialize` -> `tools/list` handshake, requires all six tools, cross-checks the
+published `.sha256`, rejects an HTML page or a truncated body, and refuses a stale bundle whose
+`cowork_connect` has no `inviteKey` (protected rooms would only 401 it).
 
 ```bash
-curl -fLO https://raw.githubusercontent.com/AnkushDas4/sednium-cowork/<ref>/bin/cowork.cjs
-node -e "console.log(process.version)"   # >= v20
-node cowork.cjs                          # prints "Server running on stdio." then waits - that is healthy
-sha256sum cowork.cjs
+curl -fL https://cowork.sednium.com/install.mjs -o /tmp/install.mjs
+node /tmp/install.mjs --room-code SED-... --invite-key <48-hex>
+node /tmp/install.mjs --check ~/.local/lib/sednium-cowork/cowork.cjs   # re-verify any copy
 ```
 
-Pin `<ref>` to a commit or branch whose bundle carries the invite key, and expect the digest to move
-with every push. While `main` lags behind this branch, an unpinned `npm i -g
-github:AnkushDas4/sednium-cowork` installs a pre-invite-key client that protected rooms reject - either
-pass `#<branch>` or merge first. `sednium-cowork` is an unused name on the npm registry and the root
-package declares no production dependencies, so `npm publish` + `npm i -g sednium-cowork` is the
-shortest long-term path if you want it.
+It installs to `~/.local/lib/sednium-cowork/cowork.cjs` and prints a paste-ready `mcpServers` block
+whose `command` is the absolute `process.execPath` - keep it absolute, GUI-launched harnesses often
+run with a minimal PATH. Flags: `--out`, `--url`, `--relay-url`, `--ref`, `--room-code`,
+`--invite-key`, `--agent-id`, `--auto-pull`. `--ref <sha|branch>` fetches `bin/cowork.cjs` from
+GitHub instead of the relay (useful for a pre-deploy check; while `main` lags behind, an unpinned
+GitHub install gets a pre-invite-key client). `scripts/verify-relay.mjs` is published the same way as
+`verify.mjs`, so a bare machine can also run the live relay checks with `curl` + `node`.
 
-Cloning is only needed to edit TypeScript, run the tests, or use `scripts/verify-relay.mjs`; then
-`npm ci && npm run build` (workspace installs pull React/Vite/pg, which the single file avoids).
+Serving these files is opt-in by deployment: `public/` is generated at build time and gitignored, so
+an older deployment simply 404s (the installer then says so instead of installing HTML). If you want
+`npx`/`npm i -g` instead, `sednium-cowork` is an unused npm name and the root package declares no
+production dependencies, so `npm publish` is the short long-term path.
+
+Editing TypeScript, running tests, or changing the relay still needs a clone:
+`git clone -b <branch> … && npm ci && npm run build`.
 
 The standalone bundle is `bin/cowork.cjs`; rebuild it whenever MCP source changes.
 Example harness config using a locally installed checkout:
