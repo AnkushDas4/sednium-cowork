@@ -1,3 +1,4 @@
+import { relayRequest } from './relay.js';
 import React, { useState, useEffect } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
@@ -15,8 +16,9 @@ import type {
 type ThemeMode = 'dark' | 'light';
 
 export const App: React.FC = () => {
-  const [roomCode, setRoomCode] = useState<string>('');
+  const [roomCode, setRoomCode] = useState<string>(() => new URLSearchParams(window.location.search).get('room')?.trim().toUpperCase() || '');
   const [clientId, setClientId] = useState<string>('');
+  const [connectionError, setConnectionError] = useState('');
   const [connected, setConnected] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'stream' | 'agents'>('stream');
 
@@ -77,22 +79,20 @@ export const App: React.FC = () => {
     if (!connected || !roomCode || !clientId) return;
 
     let isMounted = true;
+    let polling = false;
+    let acknowledgements: string[] = [];
 
     const pollPresence = async () => {
+      if (polling) return;
+      polling = true;
       try {
-        const query = new URLSearchParams({
-          action: 'inbox',
-          roomCode,
-          clientId,
-          role: 'human',
-          status: 'Viewing Dashboard',
+        const data: PresenceResponse = await relayRequest('/api/presence', {
+          action: 'inbox', roomCode, clientId, role: 'human', status: 'Viewing Dashboard',
+          ack: acknowledgements,
         });
-
-        const res = await fetch(`/api/presence?${query.toString()}`);
-        if (!res.ok) return;
-
-        const data: PresenceResponse = await res.json();
         if (!isMounted) return;
+        acknowledgements = (data.messages || []).map(m => m.messageId);
+        setConnectionError('');
 
         setParticipants(data.participants || {});
         setFileLocks(data.fileLocks || {});
@@ -103,7 +103,7 @@ export const App: React.FC = () => {
           setMessages((prev) => {
             const existingIds = new Set(prev.map((m) => m.messageId));
             const newOnes = data.messages.filter((m) => !existingIds.has(m.messageId));
-            return [...prev, ...newOnes];
+            return [...prev, ...newOnes].slice(-500);
           });
         }
 
@@ -113,12 +113,12 @@ export const App: React.FC = () => {
             if (prev.length === 0) return data.recentHistory;
             const existingIds = new Set(prev.map((m) => m.messageId));
             const missing = data.recentHistory.filter((m) => !existingIds.has(m.messageId));
-            return [...missing, ...prev].sort((a, b) => a.timestamp - b.timestamp);
+            return [...missing, ...prev].sort((a, b) => a.timestamp - b.timestamp).slice(-500);
           });
         }
       } catch (err) {
-        console.warn('[Presence Poll Failed]', err);
-      }
+        if (isMounted) setConnectionError(err instanceof Error ? err.message : 'Relay unavailable');
+      } finally { polling = false; }
     };
 
     pollPresence();
@@ -131,6 +131,8 @@ export const App: React.FC = () => {
   }, [connected, roomCode, clientId]);
 
   const handleJoin = (joinedRoom: string, joinedId: string) => {
+    setMessages([]); setParticipants({}); setFileLocks({}); setLatestCommit(null);
+    setConnectionError('');
     setRoomCode(joinedRoom);
     setClientId(joinedId);
     setConnected(true);
@@ -158,26 +160,9 @@ export const App: React.FC = () => {
   const handleSendMessage = async (text: string) => {
     if (!roomCode || !clientId) return;
 
-    try {
-      const res = await fetch('/api/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomCode,
-          senderId: clientId,
-          targetId: 'all',
-          contentType: 'CHAT',
-          text,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        alert(`Failed to send: ${errorData.error || res.statusText}`);
-      }
-    } catch (err: any) {
-      alert(`Send error: ${err.message}`);
-    }
+    await relayRequest('/api/send', {
+      roomCode, senderId: clientId, targetId: 'all', contentType: 'CHAT', text,
+    });
   };
 
   return (
@@ -204,6 +189,7 @@ export const App: React.FC = () => {
             onNewRoom={(newCode) => handleJoin(newCode, clientId)}
           />
 
+          {connectionError && <div role="alert" className="p-2 text-sm text-red-500 bg-panel">Relay disconnected: {connectionError}</div>}
           {/* Mobile Tab Switcher */}
           <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-9 text-xs font-mono divide-x divide-grid shrink-0">
             <button
@@ -252,6 +238,8 @@ export const App: React.FC = () => {
               }`}
             >
               <ChatTerminal
+                key={roomCode}
+                participants={participants}
                 messages={messages}
                 currentClientId={clientId}
                 roomCode={roomCode}

@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { handleSend } from '../api/send.js';
-import { handlePresence } from '../api/presence.js';
+import { handleSend as send } from '../api/send.js';
+import { handlePresence as presence } from '../api/presence.js';
 import { resetStore } from '../api/_store.js';
+
+const token = 'a'.repeat(64);
+const handleSend = (p: Parameters<typeof send>[0]) => send(p, token);
+const handlePresence = (p: Parameters<typeof presence>[0]) => presence(p, token);
 
 describe('Relay API Handlers (send.ts & presence.ts)', () => {
   beforeEach(async () => {
@@ -41,8 +45,9 @@ describe('Relay API Handlers (send.ts & presence.ts)', () => {
     expect(presence.body.messages[0].text).toBe('Hello peer!');
     expect(presence.body.messages[0].senderId).toBe('loid-ai');
 
-    // Second poll drains inbox -> 0 unread
+    // Second poll acknowledges the delivered message -> 0 unread
     const secondPoll = await handlePresence({
+      ack: presence.body.messages.map((m: any) => m.messageId),
       roomCode: 'SED100',
       clientId: 'peer-ai',
       role: 'agent',

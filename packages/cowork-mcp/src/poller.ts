@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import type { CoWorkMessage, FileLockInfo, ParticipantInfo, CommitInfo, PresenceResponse } from './types.js';
 import { safePullRebase } from './git.js';
 
@@ -8,12 +9,21 @@ export interface PollerConfig {
   relayUrl: string;
   harness?: string;
   model?: string;
+  participantToken?: string;
+  autoPull?: boolean;
+  branch?: string;
+  remote?: string;
 }
 
 export class CoWorkPoller {
   private config: PollerConfig;
   private timer: NodeJS.Timeout | null = null;
   private isPolling = false;
+  private acknowledgements: string[] = [];
+  private seen = new Set<string>();
+  private needsPull = false;
+  private pulling = false;
+  private stopped = false;
   private currentStatus = 'Idle / Connected';
 
   private pendingInbox: CoWorkMessage[] = [];
@@ -31,9 +41,17 @@ export class CoWorkPoller {
       roomCode: config.roomCode.toUpperCase(),
       harness: config.harness || 'AI Agent',
       model: config.model,
+      participantToken: config.participantToken || randomBytes(32).toString('hex'),
+      branch: config.branch || 'main', remote: config.remote || 'origin',
     };
   }
 
+  public getHeaders(): Record<string, string> {
+    return { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': this.config.participantToken! };
+  }
+  public getBranch(): string { return this.config.branch!; }
+  public getRemote(): string { return this.config.remote!; }
+  public getParticipantToken(): string { return this.config.participantToken!; }
   public getRoomCode(): string {
     return this.config.roomCode;
   }
@@ -59,45 +77,40 @@ export class CoWorkPoller {
   }
 
   public setStatus(status: string): void {
-    this.currentStatus = status;
+    this.currentStatus = status.slice(0, 2048);
   }
 
   public start(): void {
     if (this.timer) return;
-    this.poll(); // Initial poll immediately
+    this.stopped = false;
+    void this.poll(); // Initial poll immediately
     this.timer = setInterval(() => this.poll(), 2000);
   }
 
   public stop(): void {
+    this.stopped = true;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
     }
   }
 
-  public async poll(): Promise<void> {
-    if (this.isPolling) return; // Prevent overlapping polls
+  public async poll(): Promise<boolean> {
+    if (this.isPolling || this.stopped) return false; // Prevent overlapping polls
     this.isPolling = true;
 
     try {
-      const url = new URL(`${this.config.relayUrl}/api/presence`);
-      url.searchParams.set('action', 'inbox');
-      url.searchParams.set('roomCode', this.config.roomCode);
-      url.searchParams.set('clientId', this.config.agentId);
-      url.searchParams.set('role', 'agent');
-      url.searchParams.set('status', this.currentStatus);
-      if (this.config.harness) url.searchParams.set('harness', this.config.harness);
-      if (this.config.model) url.searchParams.set('model', this.config.model);
-
-      const res = await fetch(url.toString(), {
-        headers: { 'Accept': 'application/json' },
+      const res = await fetch(`${this.config.relayUrl}/api/presence`, {
+        method: 'POST', headers: this.getHeaders(), signal: AbortSignal.timeout(10_000),
+        body: JSON.stringify({ action: 'inbox', roomCode: this.config.roomCode,
+          clientId: this.config.agentId, role: 'agent', status: this.currentStatus,
+          harness: this.config.harness, model: this.config.model, ack: this.acknowledgements }),
       });
-
-      if (!res.ok) {
-        return;
-      }
-
+      if (!res.ok) throw new Error(`Presence failed (${res.status})`);
       const data = (await res.json()) as PresenceResponse;
+      if (!data.ok) throw new Error('Presence rejected');
+      if (this.stopped) return false;
+      this.acknowledgements = (data.messages || []).map(m => m.messageId);
       this.fileLocks = data.fileLocks || {};
       this.participants = data.participants || {};
       this.latestCommit = data.latestCommit || null;
@@ -105,6 +118,9 @@ export class CoWorkPoller {
 
       if (data.messages && data.messages.length > 0) {
         for (const msg of data.messages) {
+          if (this.seen.has(msg.messageId)) continue;
+          this.seen.add(msg.messageId);
+          if (this.seen.size > 2000) this.seen.delete(this.seen.values().next().value!);
           this.pendingInbox.push(msg);
 
           // Notify any waiting listeners
@@ -112,23 +128,26 @@ export class CoWorkPoller {
             listener(msg);
           }
 
-          // AUTOMATIC GIT PULL ON PEER PUSH
-          if (msg.contentType === 'GIT_PUSH' && msg.senderId !== this.config.agentId) {
-            console.error(`[CoWork MCP] Peer @${msg.senderId} pushed commit (${msg.commitHash || 'latest'}). Auto-pulling...`);
-            const pullRes = await safePullRebase(this.config.repoPath);
-            if (pullRes.success) {
-              console.error(`[CoWork MCP] Auto-pull succeeded: ${pullRes.output}`);
-            } else if (pullRes.skipped) {
-              console.error(`[CoWork MCP] Auto-pull deferred: ${pullRes.output}`);
-            } else {
-              console.error(`[CoWork MCP] Auto-pull failed: ${pullRes.output}`);
-            }
+          if (this.config.autoPull && msg.contentType === 'GIT_PUSH' && msg.senderId !== this.config.agentId) {
+            this.needsPull = true;
           }
         }
       }
+      // Never block heartbeats on a slow Git operation. A busy Git lock is retried.
+      if (this.needsPull && !this.pulling && !this.stopped) {
+        this.pulling = true;
+        this.needsPull = false;
+        void safePullRebase(this.config.repoPath, this.config.branch, this.config.remote)
+          .then(result => {
+            if (result.skipped) this.needsPull = true;
+            if (!result.success) console.error(`[CoWork MCP] ${result.output}`);
+          }).finally(() => { this.pulling = false; });
+      }
+      return true;
     } catch (err: any) {
       // Background poll failure is logged to stderr so MCP JSON-RPC on stdout is not corrupted
       console.error(`[CoWork MCP Poller] Error: ${err.message || String(err)}`);
+      return false;
     } finally {
       this.isPolling = false;
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Terminal,
   KeyRound,
@@ -25,43 +25,41 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   onToggleTheme,
   onJoin,
 }) => {
+  const requestVersion = useRef(0);
   const [room, setRoom] = useState(initialRoom);
   const [clientId, setClientId] = useState(initialClientId);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchCollisionFreeCode = async () => {
+    const version = ++requestVersion.current;
     setIsRefreshing(true);
     try {
-      const res = await fetch('/api/presence?action=new-room');
+      const res = await fetch('/api/presence?action=new-room', { signal: AbortSignal.timeout(10000) });
       if (res.ok) {
         const data = await res.json();
         if (data.roomCode) {
-          setRoom(data.roomCode);
+          if (requestVersion.current === version) setRoom(data.roomCode);
           return;
         }
       }
     } catch {
-      // Fallback generator
+      // Show a failure rather than claiming an unreserved room was created.
     } finally {
       setIsRefreshing(false);
     }
 
-    // High-entropy fallback
-    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-    let code = 'SED-';
-    for (let i = 0; i < 4; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)];
-    }
-    setRoom(code);
+    if (requestVersion.current === version) alert('Cannot create room: relay unavailable. Please retry.');
   };
 
   useEffect(() => {
     if (initialRoom) {
+      requestVersion.current++;
       setRoom(initialRoom);
     } else {
       fetchCollisionFreeCode();
     }
     if (initialClientId) setClientId(initialClientId);
+    return () => { requestVersion.current++; };
   }, [initialRoom, initialClientId]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -135,7 +133,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               type="text"
               required
               value={room}
-              onChange={(e) => setRoom(e.target.value.toUpperCase())}
+              onChange={(e) => { requestVersion.current++; setRoom(e.target.value.toUpperCase()); }}
               placeholder="e.g. SED-409"
               className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00] tracking-wider"
             />

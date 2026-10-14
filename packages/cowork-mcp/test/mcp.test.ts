@@ -45,7 +45,7 @@ describe('MCP Poller & Relay Integration', () => {
     // 2. Peer sends message to loid-ai
     await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'b'.repeat(64) },
       body: JSON.stringify({
         roomCode: 'MCP-TEST-1',
         senderId: 'peer-ai',

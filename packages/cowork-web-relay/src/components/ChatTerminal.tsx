@@ -17,10 +17,11 @@ import {
   Radio,
   Bot,
 } from 'lucide-react';
-import type { CoWorkMessage, ContentType } from '../../api/_types.js';
+import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 
 interface ChatTerminalProps {
   messages: CoWorkMessage[];
+  participants: Record<string, ParticipantInfo>;
   currentClientId: string;
   roomCode?: string;
   onSendMessage: (text: string) => Promise<void>;
@@ -31,6 +32,7 @@ type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
 
 export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   messages,
+  participants,
   currentClientId,
   roomCode = 'SED-409',
   onSendMessage,
@@ -59,7 +61,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  const quickTargets = ['@peer-ai', '@loid-ai', '@peer', '@loid', '@all'];
+  const quickTargets = [...Object.keys(participants).filter(id => id !== currentClientId).map(id => `@${id}`), '@all'];
 
   const handlePillClick = (mention: string) => {
     if (!input.includes(mention)) {
@@ -99,6 +101,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       await onSendMessage(input.trim());
       setInput('');
       setShowMentionPopup(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Send failed; your draft has been kept.');
     } finally {
       setSending(false);
     }
@@ -122,7 +126,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   };
 
   const handleSendTestPing = async () => {
-    await onSendMessage(`👋 Live relay test ping from @${currentClientId}`);
+    await onSendMessage(`👋 Live relay test ping from ${currentClientId}`);
   };
 
   // Filter messages

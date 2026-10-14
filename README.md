@@ -1,197 +1,168 @@
-# Sednium CoWork (`cowork.sednium.com`)
+# Sednium CoWork
 
-> Dedicated Stateless Relay + Cyberpunk Web/Mobile HUD + Antigravity MCP Server for multi-developer, multi-agent AI pair programming.
+A React dashboard, HTTP collaboration relay, and local stdio MCP server for small trusted teams.
 
----
+## Storage: one Supabase PostgreSQL database
 
-## Architecture Overview
+Use **one Supabase project/database**. No Redis, Neon, or additional database is required.
+Local, preview, and production instances using the same `DATABASE_URL` share room data.
 
-```
-                      ┌─────────────────────────────────────────┐
-                      │    https://cowork.sednium.com           │
-                      │  (Vercel Serverless / Local Express)    │
-                      │                                         │
-                      │  • POST /api/send   (Multicast & Locks) │
-                      │  • GET  /api/presence (Atomic Drain)    │
-                      │  • React 19 + Tailwind Cyberpunk HUD    │
-                      └───────────────▲─────────────────────────┘
-                                      │
-            ┌─────────────────────────┴─────────────────────────┐
-            │                                                   │
-  HTTP 2s Polling + Locks                             HTTP 2s Polling + Locks
-            │                                                   │
-┌───────────▼───────────────┐                       ┌───────────▼───────────────┐
-│ Laptop 1 (CachyOS/Linux)  │                       │ Laptop 2 (Linux/Mac/PC)   │
-│ Antigravity AI: @loid-ai  │                       │ Antigravity AI: @peer-ai  │
-│ Human: @loid              │                       │ Human: @peer              │
-│ Local CoWork MCP Server   │                       │ Local CoWork MCP Server   │
-│ Auto-git sync on main     │                       │ Auto-git sync on main     │
-└───────────────────────────┘                       └───────────────────────────┘
-```
+1. In Supabase **Connect**, choose **URI → Transaction pooler** (port `6543`).
+2. Replace the password placeholder privately. Percent-encode special characters in the password.
+3. Set the complete URI as the server-side **`DATABASE_URL`** environment variable in Vercel.
+   Never put it in a `VITE_*` variable, frontend code, screenshots, or Git.
+4. Use the database owner connection from Supabase. On first use, the relay creates
+   `public.cowork_rooms` if missing, enables RLS, and revokes direct access from
+   `PUBLIC`, `anon`, and `authenticated`. Other application tables are not changed.
+5. Redeploy after environment changes. Test a newly generated room with two clients.
 
----
+TLS certificate verification is enabled by default for non-local hosts. Do not work around
+certificate failures by disabling verification; check the connection URI and certificate chain.
 
-## Key Features
+### Local development
 
-1. **Stateless HTTP Mailbox Relay**:
-   - Zero WebSockets, zero Cloudflare tunnels, zero auth barriers.
-   - Built on standard Vercel Serverless Functions (`/api/send` and `/api/presence`).
-2. **Dual-Mode Storage Engine**:
-   - **Zero-Config Mode (Default)**: In-memory singleton Map synchronized with `/tmp/cowork_state.json`. Works immediately on local dev and warm serverless functions.
-   - **Postgres Mode**: If `DATABASE_URL` is provided, automatically provisions `cowork_rooms` table for cross-cold-start resilience.
-3. **90-Second Lock TTL Safeguard**:
-   - File locks auto-expire if holding agent is inactive or disconnected for >90 seconds, preventing stalled work.
-4. **Safe Git Auto-Pull Subsystem**:
-   - Simple-git mutex lock prevents concurrent git operations or overlapping 2-second polls.
-   - Whenever an agent runs `cowork_sync_main` (`GIT_PUSH`), all peer MCPs automatically run `git pull --rebase --autostash origin main`.
-5. **Cyberpunk Nothing OS HUD**:
-   - Mobile and desktop responsive dark mode (`#09090b`), dot-matrix styling, JetBrains Mono font.
-   - Live split-screen agent telemetry (online pulse, status, locked file badges).
-   - Scannable QR code (`qrcode.react`) and one-click copy link for instant phone onboarding.
-   - Interactive @ command terminal with one-tap mention pills (`@peer-ai`, `@loid-ai`, `@all`).
+Node.js 20+ and Git are required.
 
----
-
-## Monorepo Layout
-
-```
-sednium-cowork/
-├── packages/
-│   ├── cowork-web-relay/     # Vercel Serverless Relay + Vite React HUD
-│   │   ├── api/
-│   │   │   ├── _types.ts     # Canonical data interfaces
-│   │   │   ├── _store.ts     # Dual-mode store with 90s TTL cleanup
-│   │   │   ├── send.ts       # POST /api/send handler
-│   │   │   └── presence.ts   # GET /api/presence handler
-│   │   ├── src/              # React 19 + Tailwind Cyberpunk UI
-│   │   ├── server.ts         # Unified Express dev runner (:3000)
-│   │   └── vercel.json       # Production Vercel serverless configuration
-│   └── cowork-mcp/           # Antigravity stdio MCP Server
-│       ├── src/
-│       │   ├── types.ts      # Canonical data interfaces
-│       │   ├── git.ts        # Mutex-protected git auto-pull & commit
-│       │   ├── poller.ts     # 2s background polling & inbox drainer
-│       │   └── index.ts      # Stdio MCP Server with 6 tools + ASCII QR
-│       └── dist/             # Compiled JS entrypoint
-```
-
----
-
-## Quickstart
-
-### 1. Install & Build
 ```bash
-git clone <repo-url> sednium-cowork
-cd sednium-cowork
-npm install
-npm run build
-```
-
-### 2. Run Relay & Web Dashboard Locally
-```bash
+npm ci
+cp .env.example .env
+# Edit .env privately with the SAME Supabase connection string, if desired.
 npm run dev:relay
 ```
-Open **`http://localhost:3000`** in your browser. Both the React HUD and the `/api/*` endpoints run unified on port 3000.
 
-### 3. Deploy to Vercel (`cowork.sednium.com`)
+Open `http://localhost:3000`. The Express runner explicitly loads the root `.env`.
+Without `DATABASE_URL`, local development uses temporary process memory (lost on restart).
+Production/Vercel **requires PostgreSQL** and fails with 503 on database errors. It never
+silently switches to memory or `/tmp` files.
+
+### Transaction and delivery guarantees
+
+- Every room mutation uses one checked-out connection, `BEGIN`, a room row lock
+  (`SELECT ... FOR UPDATE`), update, and `COMMIT`. Failures roll back.
+- Generated room codes contain 128 bits of cryptographic randomness and are inserted
+  with a unique primary key before being returned.
+- File paths are normalized. Live file leases are renewed by owner heartbeats and expire
+  after 90 seconds without renewal. Expired leases are not resurrected by a late heartbeat.
+- Presence returns up to 100 pending messages. The next successful client poll acknowledges
+  received message IDs. Lost responses are redelivered; clients deduplicate by message ID.
+- Acknowledgement means **received by the client**, not that an AI completed the task.
+  A client that retries a send after a timeout may create a duplicate message; recipients deduplicate
+  by content and message ID where possible, so keep sends idempotent.
+  MCP's pending local queue is not durable across a process crash after acknowledgement.
+- Room history retains 100 events; the dashboard fetches 50 and displays at most 500 locally.
+- Rooms allow up to 100 participants/inboxes and 1,000 pending messages per recipient.
+  Full recipient inboxes reject sends rather than silently dropping user messages.
+
+## Room and participant security
+
+Use **New Room** or connect without a room code, then share the generated invite privately.
+The room code is a **bearer invitation**: anyone with it can join with a new handle, read
+room history, and send messages. Short/custom room codes remain supported for compatibility
+but are guessable; do not use them for private work. There is no account/login system.
+
+Each participant reserves their handle with a private token. A different token cannot
+impersonate that existing handle, unlock its files, or drain its inbox.
+
+- Browser tokens are generated with Web Crypto and retained in localStorage.
+- MCP tokens are saved at `~/.config/sednium-cowork/participant-token` with mode `0600`.
+  `COWORK_PARTICIPANT_TOKEN` or `cowork_connect.participantToken` can override this.
+- Use different handles on different devices unless intentionally sharing the token.
+- Clearing browser storage or losing the MCP token requires a new handle (or restoring
+  the original token). There is no automatic identity takeover or token recovery.
+- Existing legacy handles become bound to the first authenticated participant after upgrade.
+  **Start fresh generated rooms when upgrading.**
+- These controls do not make messages from invited teammates trustworthy instructions.
+  Review agent instructions and leave automatic Git operations off unless the room is trusted.
+
+Internet-facing deployments still need deployment-level rate limiting/abuse protection.
+Room creation is public, and old rooms are not automatically deleted. Monitor database usage
+and remove retired rooms deliberately. File locks are advisory, not filesystem permissions;
+symlinks and filesystem-specific case aliases are not resolved by the relay.
+
+## MCP configuration
+
+The standalone bundle is `bin/cowork.cjs`; rebuild it whenever MCP source changes.
+Example harness config using a locally installed checkout:
+
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["/absolute/path/to/sednium-cowork/bin/cowork.cjs"],
+      "env": {
+        "COWORK_RELAY_URL": "https://your-relay-domain.example"
+      }
+    }
+  }
+}
+```
+
+The relay URL is configurable; the legacy default is `https://cowork.sednium.com`.
+Set it explicitly when testing a branch deployment. The database URL belongs only on the
+relay server; **do not give it to MCP clients**.
+
+| Tool | Parameters |
+|---|---|
+| `cowork_connect` | `agentId`, optional `roomCode`, `repoPath`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` |
+| `cowork_claim_files` | `files`, `taskDescription` |
+| `cowork_message_peer` | `targetId`, `message`, optional `contentType` |
+| `cowork_sync_main` | **`files`**, `commitMessage` |
+| `cowork_check_inbox` | optional `waitForSeconds` |
+| `cowork_watch_loop` | optional `durationSeconds` |
+
+Model labels come from explicit arguments/environment variables; missing model information
+is not guessed from a hardcoded product/version name. Relay failures are reported as errors,
+not as successful connections or deliveries.
+
+### Git safety / behavior changes
+
+- Automatic pulls are **off by default**; opt in with `autoPull: true` when connecting.
+- `branch` and `remote` default to `main` and `origin` but are configurable. Set `branch`
+  to the branch you actually intend to use. Operations refuse a different checkout.
+- Pulls require a clean worktree. Busy/dirty-tree pulls are deferred and retried while polling;
+  other pull failures are logged and require intervention. No automatic autostash.
+- Sync requires an explicit list of individual files. It refuses unrelated staged changes,
+  conflicts, missing selections, and unsafe remote divergence. It never uses `git add -A`.
+- Fetch failures stop the operation before staging/committing. Diverged or dirty-behind-remote
+  work must be synchronized manually. Successful pushes use `HEAD:refs/heads/<configured branch>`.
+- If the push succeeds but relay notification fails, the tool reports that partial success.
+  Do not blindly repeat the commit. Verify the remote, then coordinate with peers.
+- The historical name `cowork_sync_main` is retained for compatibility, but it uses the
+  configured branch. All peers should agree on the repository, branch, and remote.
+
+## Upgrade notes
+
+Deploy the relay and update/restart all MCP clients together. Old clients without participant
+tokens are rejected; clients without acknowledgement support would repeatedly receive messages.
+Refresh dashboards and create a fresh generated room after upgrading.
+
+The old disk cache is no longer used or imported. Existing PostgreSQL room rows remain intact.
+No migration changes unrelated tables. Database bootstrap requires table-owner/DDL privileges.
+
+## Verification
+
 ```bash
-cd packages/cowork-web-relay
-npx vercel deploy --prod
-```
-In your Vercel project settings, assign domain `cowork.sednium.com`. Optionally set `DATABASE_URL` for PostgreSQL persistence.
-
----
-
-## Configuring AI Harnesses (Antigravity, Claude, Cursor, Windsurf)
-
-The `sednium-cowork` MCP server is packaged as a **zero-dependency standalone executable** (`bin/cowork.cjs`). Teammates **do not need to clone this repository, install node_modules, or run any build scripts**.
-
-Any AI harness can run it dynamically via `npx`:
-
-### 1. Google Antigravity (`~/.gemini/config/mcp_config.json` or `~/.gemini/antigravity/mcp_config.json`)
-```json
-{
-  "mcpServers": {
-    "cowork": {
-      "command": "npx",
-      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
-      "env": {
-        "COWORK_RELAY_URL": "https://cowork.sednium.com"
-      }
-    }
-  }
-}
+npm test
+npm run typecheck
+npm run build
+npm audit --omit=dev
 ```
 
-### 2. Claude Desktop (`claude_desktop_config.json`)
-- **Linux**: `~/.config/Claude/claude_desktop_config.json`
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+Tests **always use isolated memory or a mocked PostgreSQL transport**, even if `DATABASE_URL`
+is inherited. They never connect to or clear your live database. PostgreSQL contract tests
+verify lock/update/rollback ordering, but do not replace a live Supabase smoke test.
+Git safety tests mock Git operations and never commit, pull, or push the working checkout.
 
-```json
-{
-  "mcpServers": {
-    "cowork": {
-      "command": "npx",
-      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
-      "env": {
-        "COWORK_RELAY_URL": "https://cowork.sednium.com"
-      }
-    }
-  }
-}
-```
+### Live smoke test (after deployment)
 
-### 3. Claude Code CLI
-Run directly in your terminal:
-```bash
-claude mcp add cowork npx -y --allow-git=all git+https://github.com/AnkushDas4/sednium-cowork.git -e COWORK_RELAY_URL=https://cowork.sednium.com
-```
+1. Create a fresh room and join from a browser plus two updated agents with distinct handles.
+2. Claim the same file simultaneously; exactly one agent must receive a conflict.
+3. Exchange messages and confirm repeated polls do not duplicate delivered messages.
+4. Keep a lock for over 90 seconds with heartbeats, then stop that agent and verify expiry.
+5. Try reusing an existing handle with a different token; expect 403.
+6. Check Supabase for `cowork_rooms`, RLS enabled, and no anon/authenticated access.
+7. Confirm no DATABASE_URL/password/token appears in browser assets or logs.
 
-### 4. Cursor & Windsurf (`.cursor/mcp.json` or `~/.codeium/windsurf/mcp_config.json`)
-```json
-{
-  "mcpServers": {
-    "cowork": {
-      "command": "npx",
-      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
-      "env": {
-        "COWORK_RELAY_URL": "https://cowork.sednium.com"
-      }
-    }
-  }
-}
-```
-
-*(Note: Once published to the public npm registry via `npm publish`, the args simplify to `["-y", "sednium-cowork"]`)*
-
----
-
-## Antigravity MCP Tools
-
-| Tool | Parameters | Description |
-|---|---|---|
-| `cowork_connect` | `roomCode?`, `agentId`, `repoPath?`, `relayUrl?` | Joins room, starts 2s poller, prints ASCII QR code + mobile join link. |
-| `cowork_claim_files` | `files`, `taskDescription` | Claims server-side file locks. Returns 409 Conflict if locked by peer AI. |
-| `cowork_message_peer` | `targetId`, `message`, `contentType?` | Sends `@peer-ai` task prompts or schema sync messages and drains inbox. |
-| `cowork_sync_main` | `commitMessage` | Runs git pull rebase, commits, pushes to main, unlocks files, and triggers peer auto-pull. |
-| `cowork_check_inbox` | `waitForSeconds?` | Drains pending incoming @ commands and returns current room locks. |
-| `cowork_watch_loop` | `durationSeconds?` | Keeps AI listening for incoming instructions and wakes up autonomously. |
-
----
-
-## Typical Team Workflow
-
-1. **Connect Agents**:
-   - Laptop 1 prompt: *"Connect to CoWork room `SED-409` as `loid-ai` in this repo."*
-   - Laptop 2 prompt: *"Connect to CoWork room `SED-409` as `peer-ai` in this repo."*
-   - Both engineers scan the QR code on their phones to view `https://cowork.sednium.com/?room=SED-409`.
-2. **Lock & Code**:
-   - Laptop 1 AI calls `cowork_claim_files(['src/api/auth.ts'], 'Writing OAuth endpoint')`.
-   - Laptop 2 AI is blocked from touching `src/api/auth.ts` until Laptop 1 syncs.
-3. **Sync & Auto-Rebase**:
-   - Laptop 1 AI runs `cowork_sync_main('feat: add OAuth endpoint')`.
-   - Within 2 seconds, Laptop 2 MCP receives `GIT_PUSH` and runs `git pull --rebase --autostash origin main` automatically.
-4. **Handoff**:
-   - Laptop 1 AI calls `cowork_message_peer('peer-ai', 'Auth routes are on main! Connect the login UI.')`.
-   - Laptop 2 AI receives the instruction and starts coding the frontend.
+Do not run destructive outage tests against your live shared database. Use the isolated tests
+for rollback, unavailable-storage, and failed Git scenarios.

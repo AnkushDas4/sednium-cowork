@@ -49,11 +49,14 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
     if (isGenerating || !onNewRoom) return;
     setIsGenerating(true);
     try {
-      const res = await fetch('/api/presence?action=new-room');
+      const res = await fetch('/api/presence?action=new-room', { signal: AbortSignal.timeout(10000) });
       const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Unable to create room');
       if (data.roomCode) {
         onNewRoom(data.roomCode);
       }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Unable to create room');
     } finally {
       setIsGenerating(false);
     }
@@ -64,10 +67,12 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
       : `https://cowork.sednium.com/?room=${encodeURIComponent(roomCode)}`;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { alert('Clipboard unavailable. Copy the link shown in the QR dialog.'); }
   };
 
   const participantEntries = Object.entries(participants);
@@ -79,7 +84,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   return (
     <header className="h-14 border-b border-grid bg-panel flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
-      <div className="flex items-center gap-3 px-4 md:px-5 shrink-0">
+      <div className="hidden md:flex items-center gap-3 px-4 md:px-5 shrink-0">
         <div className="w-7 h-7 bg-[#FF6B00] flex items-center justify-center rounded-sm shrink-0 shadow-sm">
           <Terminal className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
@@ -97,7 +102,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       <div className="flex items-center gap-2.5 px-4 shrink-0">
         <div className="flex items-center gap-1.5 font-mono">
           <Hash className="w-4 h-4 text-[#FF6B00]" strokeWidth={2.5} />
-          <span className="font-bold text-primary text-[15px] tracking-tight">{roomCode}</span>
+          <span title={roomCode} className="font-bold text-primary text-[15px] tracking-tight truncate max-w-[110px] lg:max-w-[220px]">{roomCode}</span>
         </div>
 
         <div className="flex items-center gap-1.5 ml-1">
@@ -141,7 +146,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       <div className="hidden lg:flex flex-1 items-center px-4 gap-2.5 overflow-hidden">
         <div className="flex items-center gap-1 text-[#FF6B00] shrink-0 font-mono text-xs">
           <GitBranch className="w-4 h-4" strokeWidth={2.2} />
-          <span className="font-bold">main</span>
+          <span className="font-bold">Git</span>
         </div>
         <span className="text-muted text-xs">/</span>
         {latestCommit ? (
@@ -158,7 +163,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           </div>
         ) : (
           <span className="text-muted text-xs truncate font-sans">
-            Waiting for first git push on main...
+            Waiting for first git push...
           </span>
         )}
       </div>

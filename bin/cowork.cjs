@@ -13,13 +13,13 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc) => {
+var __copyProps = (to2, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
     for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+      if (!__hasOwnProp.call(to2, key) && key !== except)
+        __defProp(to2, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
-  return to;
+  return to2;
 };
 var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
   // If the importer is in node compatibility mode or this is not an ESM
@@ -74,12 +74,12 @@ var require_code = __commonJS({
         return item === "" || item === '""';
       }
       get str() {
-        var _a2;
-        return (_a2 = this._str) !== null && _a2 !== void 0 ? _a2 : this._str = this._items.reduce((s, c3) => `${s}${c3}`, "");
+        var _a;
+        return (_a = this._str) !== null && _a !== void 0 ? _a : this._str = this._items.reduce((s, c3) => `${s}${c3}`, "");
       }
       get names() {
-        var _a2;
-        return (_a2 = this._names) !== null && _a2 !== void 0 ? _a2 : this._names = this._items.reduce((names, c3) => {
+        var _a;
+        return (_a = this._names) !== null && _a !== void 0 ? _a : this._names = this._items.reduce((names, c3) => {
           if (c3 instanceof Name)
             names[c3.str] = (names[c3.str] || 0) + 1;
           return names;
@@ -88,24 +88,24 @@ var require_code = __commonJS({
     };
     exports2._Code = _Code;
     exports2.nil = new _Code("");
-    function _2(strs, ...args) {
+    function _3(strs, ...args) {
       const code = [strs[0]];
-      let i2 = 0;
-      while (i2 < args.length) {
-        addCodeArg(code, args[i2]);
-        code.push(strs[++i2]);
+      let i = 0;
+      while (i < args.length) {
+        addCodeArg(code, args[i]);
+        code.push(strs[++i]);
       }
       return new _Code(code);
     }
-    exports2._ = _2;
+    exports2._ = _3;
     var plus = new _Code("+");
     function str(strs, ...args) {
       const expr = [safeStringify(strs[0])];
-      let i2 = 0;
-      while (i2 < args.length) {
+      let i = 0;
+      while (i < args.length) {
         expr.push(plus);
-        addCodeArg(expr, args[i2]);
-        expr.push(plus, safeStringify(strs[++i2]));
+        addCodeArg(expr, args[i]);
+        expr.push(plus, safeStringify(strs[++i]));
       }
       optimize(expr);
       return new _Code(expr);
@@ -121,54 +121,54 @@ var require_code = __commonJS({
     }
     exports2.addCodeArg = addCodeArg;
     function optimize(expr) {
-      let i2 = 1;
-      while (i2 < expr.length - 1) {
-        if (expr[i2] === plus) {
-          const res = mergeExprItems(expr[i2 - 1], expr[i2 + 1]);
+      let i = 1;
+      while (i < expr.length - 1) {
+        if (expr[i] === plus) {
+          const res = mergeExprItems(expr[i - 1], expr[i + 1]);
           if (res !== void 0) {
-            expr.splice(i2 - 1, 3, res);
+            expr.splice(i - 1, 3, res);
             continue;
           }
-          expr[i2++] = "+";
+          expr[i++] = "+";
         }
-        i2++;
+        i++;
       }
     }
-    function mergeExprItems(a, b2) {
-      if (b2 === '""')
+    function mergeExprItems(a, b3) {
+      if (b3 === '""')
         return a;
       if (a === '""')
-        return b2;
+        return b3;
       if (typeof a == "string") {
-        if (b2 instanceof Name || a[a.length - 1] !== '"')
+        if (b3 instanceof Name || a[a.length - 1] !== '"')
           return;
-        if (typeof b2 != "string")
-          return `${a.slice(0, -1)}${b2}"`;
-        if (b2[0] === '"')
-          return a.slice(0, -1) + b2.slice(1);
+        if (typeof b3 != "string")
+          return `${a.slice(0, -1)}${b3}"`;
+        if (b3[0] === '"')
+          return a.slice(0, -1) + b3.slice(1);
         return;
       }
-      if (typeof b2 == "string" && b2[0] === '"' && !(a instanceof Name))
-        return `"${a}${b2.slice(1)}`;
+      if (typeof b3 == "string" && b3[0] === '"' && !(a instanceof Name))
+        return `"${a}${b3.slice(1)}`;
       return;
     }
     function strConcat(c1, c22) {
       return c22.emptyStr() ? c1 : c1.emptyStr() ? c22 : str`${c1}${c22}`;
     }
     exports2.strConcat = strConcat;
-    function interpolate(x2) {
-      return typeof x2 == "number" || typeof x2 == "boolean" || x2 === null ? x2 : safeStringify(Array.isArray(x2) ? x2.join(",") : x2);
+    function interpolate(x3) {
+      return typeof x3 == "number" || typeof x3 == "boolean" || x3 === null ? x3 : safeStringify(Array.isArray(x3) ? x3.join(",") : x3);
     }
-    function stringify(x2) {
-      return new _Code(safeStringify(x2));
+    function stringify(x3) {
+      return new _Code(safeStringify(x3));
     }
     exports2.stringify = stringify;
-    function safeStringify(x2) {
-      return JSON.stringify(x2).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+    function safeStringify(x3) {
+      return JSON.stringify(x3).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
     }
     exports2.safeStringify = safeStringify;
     function getProperty(key) {
-      return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _2`[${key}]`;
+      return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _3`[${key}]`;
     }
     exports2.getProperty = getProperty;
     function getEsmExportName(key) {
@@ -225,8 +225,8 @@ var require_scope = __commonJS({
         return `${prefix}${ng.index++}`;
       }
       _nameGroup(prefix) {
-        var _a2, _b;
-        if (((_b = (_a2 = this._parent) === null || _a2 === void 0 ? void 0 : _a2._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
+        var _a, _b;
+        if (((_b = (_a = this._parent) === null || _a === void 0 ? void 0 : _a._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
           throw new Error(`CodeGen: prefix "${prefix}" is not allowed in this scope`);
         }
         return this._names[prefix] = { prefix, index: 0 };
@@ -259,21 +259,21 @@ var require_scope = __commonJS({
         return new ValueScopeName(prefix, this._newName(prefix));
       }
       value(nameOrPrefix, value) {
-        var _a2;
+        var _a;
         if (value.ref === void 0)
           throw new Error("CodeGen: ref must be passed in value");
         const name = this.toName(nameOrPrefix);
         const { prefix } = name;
-        const valueKey = (_a2 = value.key) !== null && _a2 !== void 0 ? _a2 : value.ref;
-        let vs = this._values[prefix];
-        if (vs) {
-          const _name = vs.get(valueKey);
+        const valueKey = (_a = value.key) !== null && _a !== void 0 ? _a : value.ref;
+        let vs2 = this._values[prefix];
+        if (vs2) {
+          const _name = vs2.get(valueKey);
           if (_name)
             return _name;
         } else {
-          vs = this._values[prefix] = /* @__PURE__ */ new Map();
+          vs2 = this._values[prefix] = /* @__PURE__ */ new Map();
         }
-        vs.set(valueKey, name);
+        vs2.set(valueKey, name);
         const s = this._scope[prefix] || (this._scope[prefix] = []);
         const itemIndex = s.length;
         s[itemIndex] = value.ref;
@@ -281,10 +281,10 @@ var require_scope = __commonJS({
         return name;
       }
       getValue(prefix, keyOrRef) {
-        const vs = this._values[prefix];
-        if (!vs)
+        const vs2 = this._values[prefix];
+        if (!vs2)
           return;
-        return vs.get(keyOrRef);
+        return vs2.get(keyOrRef);
       }
       scopeRefs(scopeName, values = this._values) {
         return this._reduceValues(values, (name) => {
@@ -303,11 +303,11 @@ var require_scope = __commonJS({
       _reduceValues(values, valueCode, usedValues = {}, getCode) {
         let code = code_1.nil;
         for (const prefix in values) {
-          const vs = values[prefix];
-          if (!vs)
+          const vs2 = values[prefix];
+          if (!vs2)
             continue;
           const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
-          vs.forEach((name) => {
+          vs2.forEach((name) => {
             if (nameSet.has(name))
               return;
             nameSet.set(name, UsedValueState.Started);
@@ -403,10 +403,10 @@ var require_codegen = __commonJS({
         this.name = name;
         this.rhs = rhs;
       }
-      render({ es5, _n }) {
+      render({ es5, _n: _n2 }) {
         const varKind = es5 ? scope_1.varKinds.var : this.varKind;
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
-        return `${varKind} ${this.name}${rhs};` + _n;
+        return `${varKind} ${this.name}${rhs};` + _n2;
       }
       optimizeNames(names, constants) {
         if (!names[this.name.str])
@@ -426,8 +426,8 @@ var require_codegen = __commonJS({
         this.rhs = rhs;
         this.sideEffects = sideEffects;
       }
-      render({ _n }) {
-        return `${this.lhs} = ${this.rhs};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.lhs} = ${this.rhs};` + _n2;
       }
       optimizeNames(names, constants) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
@@ -445,8 +445,8 @@ var require_codegen = __commonJS({
         super(lhs, rhs, sideEffects);
         this.op = op;
       }
-      render({ _n }) {
-        return `${this.lhs} ${this.op}= ${this.rhs};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.lhs} ${this.op}= ${this.rhs};` + _n2;
       }
     };
     var Label = class extends Node {
@@ -455,8 +455,8 @@ var require_codegen = __commonJS({
         this.label = label;
         this.names = {};
       }
-      render({ _n }) {
-        return `${this.label}:` + _n;
+      render({ _n: _n2 }) {
+        return `${this.label}:` + _n2;
       }
     };
     var Break = class extends Node {
@@ -465,9 +465,9 @@ var require_codegen = __commonJS({
         this.label = label;
         this.names = {};
       }
-      render({ _n }) {
+      render({ _n: _n2 }) {
         const label = this.label ? ` ${this.label}` : "";
-        return `break${label};` + _n;
+        return `break${label};` + _n2;
       }
     };
     var Throw = class extends Node {
@@ -475,8 +475,8 @@ var require_codegen = __commonJS({
         super();
         this.error = error2;
       }
-      render({ _n }) {
-        return `throw ${this.error};` + _n;
+      render({ _n: _n2 }) {
+        return `throw ${this.error};` + _n2;
       }
       get names() {
         return this.error.names;
@@ -487,8 +487,8 @@ var require_codegen = __commonJS({
         super();
         this.code = code;
       }
-      render({ _n }) {
-        return `${this.code};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.code};` + _n2;
       }
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
@@ -511,27 +511,27 @@ var require_codegen = __commonJS({
       }
       optimizeNodes() {
         const { nodes } = this;
-        let i2 = nodes.length;
-        while (i2--) {
-          const n = nodes[i2].optimizeNodes();
+        let i = nodes.length;
+        while (i--) {
+          const n = nodes[i].optimizeNodes();
           if (Array.isArray(n))
-            nodes.splice(i2, 1, ...n);
+            nodes.splice(i, 1, ...n);
           else if (n)
-            nodes[i2] = n;
+            nodes[i] = n;
           else
-            nodes.splice(i2, 1);
+            nodes.splice(i, 1);
         }
         return nodes.length > 0 ? this : void 0;
       }
       optimizeNames(names, constants) {
         const { nodes } = this;
-        let i2 = nodes.length;
-        while (i2--) {
-          const n = nodes[i2];
+        let i = nodes.length;
+        while (i--) {
+          const n = nodes[i];
           if (n.optimizeNames(names, constants))
             continue;
           subtractNames(names, n.names);
-          nodes.splice(i2, 1);
+          nodes.splice(i, 1);
         }
         return nodes.length > 0 ? this : void 0;
       }
@@ -567,8 +567,8 @@ var require_codegen = __commonJS({
           return this.nodes;
         let e = this.else;
         if (e) {
-          const ns = e.optimizeNodes();
-          e = this.else = Array.isArray(ns) ? new Else(ns) : ns;
+          const ns2 = e.optimizeNodes();
+          e = this.else = Array.isArray(ns2) ? new Else(ns2) : ns2;
         }
         if (e) {
           if (cond === false)
@@ -582,8 +582,8 @@ var require_codegen = __commonJS({
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2;
-        this.else = (_a2 = this.else) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        var _a;
+        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         if (!(super.optimizeNames(names, constants) || this.else))
           return;
         this.condition = optimizeExpr(this.condition, names, constants);
@@ -620,17 +620,17 @@ var require_codegen = __commonJS({
       }
     };
     var ForRange = class extends For {
-      constructor(varKind, name, from, to) {
+      constructor(varKind, name, from, to2) {
         super();
         this.varKind = varKind;
         this.name = name;
         this.from = from;
-        this.to = to;
+        this.to = to2;
       }
       render(opts) {
         const varKind = opts.es5 ? scope_1.varKinds.var : this.varKind;
-        const { name, from, to } = this;
-        return `for(${varKind} ${name}=${from}; ${name}<${to}; ${name}++)` + super.render(opts);
+        const { name, from, to: to2 } = this;
+        return `for(${varKind} ${name}=${from}; ${name}<${to2}; ${name}++)` + super.render(opts);
       }
       get names() {
         const names = addExprNames(super.names, this.from);
@@ -687,16 +687,16 @@ var require_codegen = __commonJS({
         return code;
       }
       optimizeNodes() {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNodes();
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNodes();
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNodes();
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNames(names, constants);
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
         return this;
       }
@@ -749,8 +749,8 @@ var require_codegen = __commonJS({
       // reserves unique name in the external scope and assigns value to it
       scopeValue(prefixOrName, value) {
         const name = this._extScope.value(prefixOrName, value);
-        const vs = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
-        vs.add(name);
+        const vs2 = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
+        vs2.add(name);
         return name;
       }
       getScopeValue(prefix, keyOrRef) {
@@ -849,17 +849,17 @@ var require_codegen = __commonJS({
         return this._for(new ForLoop(iteration), forBody);
       }
       // `for` statement for a range of values
-      forRange(nameOrPrefix, from, to, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
+      forRange(nameOrPrefix, from, to2, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
         const name = this._scope.toName(nameOrPrefix);
-        return this._for(new ForRange(varKind, name, from, to), () => forBody(name));
+        return this._for(new ForRange(varKind, name, from, to2), () => forBody(name));
       }
       // `for-of` statement (in es5 mode replace with a normal for loop)
       forOf(nameOrPrefix, iterable, forBody, varKind = scope_1.varKinds.const) {
         const name = this._scope.toName(nameOrPrefix);
         if (this.opts.es5) {
           const arr = iterable instanceof code_1.Name ? iterable : this.var("_arr", iterable);
-          return this.forRange("_i", 0, (0, code_1._)`${arr}.length`, (i2) => {
-            this.var(name, (0, code_1._)`${arr}[${i2}]`);
+          return this.forRange("_i", 0, (0, code_1._)`${arr}.length`, (i) => {
+            this.var(name, (0, code_1._)`${arr}[${i}]`);
             forBody(name);
           });
         }
@@ -961,13 +961,13 @@ var require_codegen = __commonJS({
         this._currNode.nodes.push(node);
         this._nodes.push(node);
       }
-      _endBlockNode(N1, N2) {
+      _endBlockNode(N1, N22) {
         const n = this._currNode;
-        if (n instanceof N1 || N2 && n instanceof N2) {
+        if (n instanceof N1 || N22 && n instanceof N22) {
           this._nodes.pop();
           return this;
         }
-        throw new Error(`CodeGen: not in block "${N2 ? `${N1.kind}/${N2.kind}` : N1.kind}"`);
+        throw new Error(`CodeGen: not in block "${N22 ? `${N1.kind}/${N22.kind}` : N1.kind}"`);
       }
       _elseNode(node) {
         const n = this._currNode;
@@ -981,12 +981,12 @@ var require_codegen = __commonJS({
         return this._nodes[0];
       }
       get _currNode() {
-        const ns = this._nodes;
-        return ns[ns.length - 1];
+        const ns2 = this._nodes;
+        return ns2[ns2.length - 1];
       }
       set _currNode(node) {
-        const ns = this._nodes;
-        ns[ns.length - 1] = node;
+        const ns2 = this._nodes;
+        ns2[ns2.length - 1] = node;
       }
     };
     exports2.CodeGen = CodeGen;
@@ -1027,8 +1027,8 @@ var require_codegen = __commonJS({
       for (const n in from)
         names[n] = (names[n] || 0) - (from[n] || 0);
     }
-    function not(x2) {
-      return typeof x2 == "boolean" || typeof x2 == "number" || x2 === null ? !x2 : (0, code_1._)`!${par(x2)}`;
+    function not(x3) {
+      return typeof x3 == "boolean" || typeof x3 == "number" || x3 === null ? !x3 : (0, code_1._)`!${par(x3)}`;
     }
     exports2.not = not;
     var andCode = mappend(exports2.operators.AND);
@@ -1037,15 +1037,15 @@ var require_codegen = __commonJS({
     }
     exports2.and = and;
     var orCode = mappend(exports2.operators.OR);
-    function or(...args) {
+    function or2(...args) {
       return args.reduce(orCode);
     }
-    exports2.or = or;
+    exports2.or = or2;
     function mappend(op) {
-      return (x2, y2) => x2 === code_1.nil ? y2 : y2 === code_1.nil ? x2 : (0, code_1._)`${par(x2)} ${op} ${par(y2)}`;
+      return (x3, y2) => x3 === code_1.nil ? y2 : y2 === code_1.nil ? x3 : (0, code_1._)`${par(x3)} ${op} ${par(y2)}`;
     }
-    function par(x2) {
-      return x2 instanceof code_1.Name ? x2 : (0, code_1._)`(${x2})`;
+    function par(x3) {
+      return x3 instanceof code_1.Name ? x3 : (0, code_1._)`(${x3})`;
     }
   }
 });
@@ -1065,17 +1065,17 @@ var require_util = __commonJS({
       return hash;
     }
     exports2.toHash = toHash;
-    function alwaysValidSchema(it, schema) {
+    function alwaysValidSchema(it2, schema) {
       if (typeof schema == "boolean")
         return schema;
       if (Object.keys(schema).length === 0)
         return true;
-      checkUnknownRules(it, schema);
-      return !schemaHasRules(schema, it.self.RULES.all);
+      checkUnknownRules(it2, schema);
+      return !schemaHasRules(schema, it2.self.RULES.all);
     }
     exports2.alwaysValidSchema = alwaysValidSchema;
-    function checkUnknownRules(it, schema = it.schema) {
-      const { opts, self } = it;
+    function checkUnknownRules(it2, schema = it2.schema) {
+      const { opts, self } = it2;
       if (!opts.strictSchema)
         return;
       if (typeof schema === "boolean")
@@ -1083,7 +1083,7 @@ var require_util = __commonJS({
       const rules = self.RULES.keywords;
       for (const key in schema) {
         if (!rules[key])
-          checkStrictMode(it, `unknown keyword: "${key}"`);
+          checkStrictMode(it2, `unknown keyword: "${key}"`);
       }
     }
     exports2.checkUnknownRules = checkUnknownRules;
@@ -1133,62 +1133,62 @@ var require_util = __commonJS({
       return str.replace(/~1/g, "/").replace(/~0/g, "~");
     }
     exports2.unescapeJsonPointer = unescapeJsonPointer;
-    function eachItem(xs, f) {
-      if (Array.isArray(xs)) {
-        for (const x2 of xs)
-          f(x2);
+    function eachItem(xs2, f3) {
+      if (Array.isArray(xs2)) {
+        for (const x3 of xs2)
+          f3(x3);
       } else {
-        f(xs);
+        f3(xs2);
       }
     }
     exports2.eachItem = eachItem;
     function makeMergeEvaluated({ mergeNames, mergeToName, mergeValues: mergeValues2, resultToName }) {
-      return (gen, from, to, toName) => {
-        const res = to === void 0 ? from : to instanceof codegen_1.Name ? (from instanceof codegen_1.Name ? mergeNames(gen, from, to) : mergeToName(gen, from, to), to) : from instanceof codegen_1.Name ? (mergeToName(gen, to, from), from) : mergeValues2(from, to);
+      return (gen, from, to2, toName) => {
+        const res = to2 === void 0 ? from : to2 instanceof codegen_1.Name ? (from instanceof codegen_1.Name ? mergeNames(gen, from, to2) : mergeToName(gen, from, to2), to2) : from instanceof codegen_1.Name ? (mergeToName(gen, to2, from), from) : mergeValues2(from, to2);
         return toName === codegen_1.Name && !(res instanceof codegen_1.Name) ? resultToName(gen, res) : res;
       };
     }
     exports2.mergeEvaluated = {
       props: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => {
-          gen.if((0, codegen_1._)`${from} === true`, () => gen.assign(to, true), () => gen.assign(to, (0, codegen_1._)`${to} || {}`).code((0, codegen_1._)`Object.assign(${to}, ${from})`));
+        mergeNames: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true && ${from} !== undefined`, () => {
+          gen.if((0, codegen_1._)`${from} === true`, () => gen.assign(to2, true), () => gen.assign(to2, (0, codegen_1._)`${to2} || {}`).code((0, codegen_1._)`Object.assign(${to2}, ${from})`));
         }),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => {
+        mergeToName: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true`, () => {
           if (from === true) {
-            gen.assign(to, true);
+            gen.assign(to2, true);
           } else {
-            gen.assign(to, (0, codegen_1._)`${to} || {}`);
-            setEvaluated(gen, to, from);
+            gen.assign(to2, (0, codegen_1._)`${to2} || {}`);
+            setEvaluated(gen, to2, from);
           }
         }),
-        mergeValues: (from, to) => from === true ? true : { ...from, ...to },
+        mergeValues: (from, to2) => from === true ? true : { ...from, ...to2 },
         resultToName: evaluatedPropsToName
       }),
       items: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => gen.assign(to, (0, codegen_1._)`${from} === true ? true : ${to} > ${from} ? ${to} : ${from}`)),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => gen.assign(to, from === true ? true : (0, codegen_1._)`${to} > ${from} ? ${to} : ${from}`)),
-        mergeValues: (from, to) => from === true ? true : Math.max(from, to),
+        mergeNames: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true && ${from} !== undefined`, () => gen.assign(to2, (0, codegen_1._)`${from} === true ? true : ${to2} > ${from} ? ${to2} : ${from}`)),
+        mergeToName: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true`, () => gen.assign(to2, from === true ? true : (0, codegen_1._)`${to2} > ${from} ? ${to2} : ${from}`)),
+        mergeValues: (from, to2) => from === true ? true : Math.max(from, to2),
         resultToName: (gen, items) => gen.var("items", items)
       })
     };
-    function evaluatedPropsToName(gen, ps) {
-      if (ps === true)
+    function evaluatedPropsToName(gen, ps2) {
+      if (ps2 === true)
         return gen.var("props", true);
       const props = gen.var("props", (0, codegen_1._)`{}`);
-      if (ps !== void 0)
-        setEvaluated(gen, props, ps);
+      if (ps2 !== void 0)
+        setEvaluated(gen, props, ps2);
       return props;
     }
     exports2.evaluatedPropsToName = evaluatedPropsToName;
-    function setEvaluated(gen, props, ps) {
-      Object.keys(ps).forEach((p2) => gen.assign((0, codegen_1._)`${props}${(0, codegen_1.getProperty)(p2)}`, true));
+    function setEvaluated(gen, props, ps2) {
+      Object.keys(ps2).forEach((p2) => gen.assign((0, codegen_1._)`${props}${(0, codegen_1.getProperty)(p2)}`, true));
     }
     exports2.setEvaluated = setEvaluated;
     var snippets = {};
-    function useFunc(gen, f) {
+    function useFunc(gen, f3) {
       return gen.scopeValue("func", {
-        ref: f,
-        code: snippets[f.code] || (snippets[f.code] = new code_1._Code(f.code))
+        ref: f3,
+        code: snippets[f3.code] || (snippets[f3.code] = new code_1._Code(f3.code))
       });
     }
     exports2.useFunc = useFunc;
@@ -1205,13 +1205,13 @@ var require_util = __commonJS({
       return jsPropertySyntax ? (0, codegen_1.getProperty)(dataProp).toString() : "/" + escapeJsonPointer(dataProp);
     }
     exports2.getErrorPath = getErrorPath;
-    function checkStrictMode(it, msg, mode = it.opts.strictSchema) {
+    function checkStrictMode(it2, msg, mode = it2.opts.strictSchema) {
       if (!mode)
         return;
       msg = `strict mode: ${msg}`;
       if (mode === true)
         throw new Error(msg);
-      it.self.logger.warn(msg);
+      it2.self.logger.warn(msg);
     }
     exports2.checkStrictMode = checkStrictMode;
   }
@@ -1272,23 +1272,23 @@ var require_errors = __commonJS({
       message: ({ keyword, schemaType }) => schemaType ? (0, codegen_1.str)`"${keyword}" keyword must be ${schemaType} ($data)` : (0, codegen_1.str)`"${keyword}" keyword is invalid ($data)`
     };
     function reportError(cxt, error2 = exports2.keywordError, errorPaths, overrideAllErrors) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
+      const { it: it2 } = cxt;
+      const { gen, compositeRule, allErrors } = it2;
       const errObj = errorObjectCode(cxt, error2, errorPaths);
       if (overrideAllErrors !== null && overrideAllErrors !== void 0 ? overrideAllErrors : compositeRule || allErrors) {
         addError(gen, errObj);
       } else {
-        returnErrors(it, (0, codegen_1._)`[${errObj}]`);
+        returnErrors(it2, (0, codegen_1._)`[${errObj}]`);
       }
     }
     exports2.reportError = reportError;
     function reportExtraError(cxt, error2 = exports2.keywordError, errorPaths) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
+      const { it: it2 } = cxt;
+      const { gen, compositeRule, allErrors } = it2;
       const errObj = errorObjectCode(cxt, error2, errorPaths);
       addError(gen, errObj);
       if (!(compositeRule || allErrors)) {
-        returnErrors(it, names_1.default.vErrors);
+        returnErrors(it2, names_1.default.vErrors);
       }
     }
     exports2.reportExtraError = reportExtraError;
@@ -1297,15 +1297,15 @@ var require_errors = __commonJS({
       gen.if((0, codegen_1._)`${names_1.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_1._)`${names_1.default.vErrors}.length`, errsCount), () => gen.assign(names_1.default.vErrors, null)));
     }
     exports2.resetErrorsCount = resetErrorsCount;
-    function extendErrors({ gen, keyword, schemaValue, data, errsCount, it }) {
+    function extendErrors({ gen, keyword, schemaValue, data, errsCount, it: it2 }) {
       if (errsCount === void 0)
         throw new Error("ajv implementation error");
       const err = gen.name("err");
-      gen.forRange("i", errsCount, names_1.default.errors, (i2) => {
-        gen.const(err, (0, codegen_1._)`${names_1.default.vErrors}[${i2}]`);
-        gen.if((0, codegen_1._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_1._)`${err}.instancePath`, (0, codegen_1.strConcat)(names_1.default.instancePath, it.errorPath)));
-        gen.assign((0, codegen_1._)`${err}.schemaPath`, (0, codegen_1.str)`${it.errSchemaPath}/${keyword}`);
-        if (it.opts.verbose) {
+      gen.forRange("i", errsCount, names_1.default.errors, (i) => {
+        gen.const(err, (0, codegen_1._)`${names_1.default.vErrors}[${i}]`);
+        gen.if((0, codegen_1._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_1._)`${err}.instancePath`, (0, codegen_1.strConcat)(names_1.default.instancePath, it2.errorPath)));
+        gen.assign((0, codegen_1._)`${err}.schemaPath`, (0, codegen_1.str)`${it2.errSchemaPath}/${keyword}`);
+        if (it2.opts.verbose) {
           gen.assign((0, codegen_1._)`${err}.schema`, schemaValue);
           gen.assign((0, codegen_1._)`${err}.data`, data);
         }
@@ -1317,16 +1317,16 @@ var require_errors = __commonJS({
       gen.if((0, codegen_1._)`${names_1.default.vErrors} === null`, () => gen.assign(names_1.default.vErrors, (0, codegen_1._)`[${err}]`), (0, codegen_1._)`${names_1.default.vErrors}.push(${err})`);
       gen.code((0, codegen_1._)`${names_1.default.errors}++`);
     }
-    function returnErrors(it, errs) {
-      const { gen, validateName, schemaEnv } = it;
+    function returnErrors(it2, errs) {
+      const { gen, validateName, schemaEnv } = it2;
       if (schemaEnv.$async) {
-        gen.throw((0, codegen_1._)`new ${it.ValidationError}(${errs})`);
+        gen.throw((0, codegen_1._)`new ${it2.ValidationError}(${errs})`);
       } else {
         gen.assign((0, codegen_1._)`${validateName}.errors`, errs);
         gen.return(false);
       }
     }
-    var E2 = {
+    var E3 = {
       keyword: new codegen_1.Name("keyword"),
       schemaPath: new codegen_1.Name("schemaPath"),
       // also used in JTD errors
@@ -1343,9 +1343,9 @@ var require_errors = __commonJS({
       return errorObject(cxt, error2, errorPaths);
     }
     function errorObject(cxt, error2, errorPaths = {}) {
-      const { gen, it } = cxt;
+      const { gen, it: it2 } = cxt;
       const keyValues = [
-        errorInstancePath(it, errorPaths),
+        errorInstancePath(it2, errorPaths),
         errorSchemaPath(cxt, errorPaths)
       ];
       extraErrorProps(cxt, error2, keyValues);
@@ -1360,20 +1360,20 @@ var require_errors = __commonJS({
       if (schemaPath) {
         schPath = (0, codegen_1.str)`${schPath}${(0, util_1.getErrorPath)(schemaPath, util_1.Type.Str)}`;
       }
-      return [E2.schemaPath, schPath];
+      return [E3.schemaPath, schPath];
     }
     function extraErrorProps(cxt, { params, message }, keyValues) {
-      const { keyword, data, schemaValue, it } = cxt;
-      const { opts, propertyName, topSchemaRef, schemaPath } = it;
-      keyValues.push([E2.keyword, keyword], [E2.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
+      const { keyword, data, schemaValue, it: it2 } = cxt;
+      const { opts, propertyName, topSchemaRef, schemaPath } = it2;
+      keyValues.push([E3.keyword, keyword], [E3.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
       if (opts.messages) {
-        keyValues.push([E2.message, typeof message == "function" ? message(cxt) : message]);
+        keyValues.push([E3.message, typeof message == "function" ? message(cxt) : message]);
       }
       if (opts.verbose) {
-        keyValues.push([E2.schema, schemaValue], [E2.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
+        keyValues.push([E3.schema, schemaValue], [E3.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
       }
       if (propertyName)
-        keyValues.push([E2.propertyName, propertyName]);
+        keyValues.push([E3.propertyName, propertyName]);
     }
   }
 });
@@ -1390,10 +1390,10 @@ var require_boolSchema = __commonJS({
     var boolError = {
       message: "boolean schema is false"
     };
-    function topBoolOrEmptySchema(it) {
-      const { gen, schema, validateName } = it;
+    function topBoolOrEmptySchema(it2) {
+      const { gen, schema, validateName } = it2;
       if (schema === false) {
-        falseSchemaError(it, false);
+        falseSchemaError(it2, false);
       } else if (typeof schema == "object" && schema.$async === true) {
         gen.return(names_1.default.data);
       } else {
@@ -1402,18 +1402,18 @@ var require_boolSchema = __commonJS({
       }
     }
     exports2.topBoolOrEmptySchema = topBoolOrEmptySchema;
-    function boolOrEmptySchema(it, valid) {
-      const { gen, schema } = it;
+    function boolOrEmptySchema(it2, valid) {
+      const { gen, schema } = it2;
       if (schema === false) {
         gen.var(valid, false);
-        falseSchemaError(it);
+        falseSchemaError(it2);
       } else {
         gen.var(valid, true);
       }
     }
     exports2.boolOrEmptySchema = boolOrEmptySchema;
-    function falseSchemaError(it, overrideAllErrors) {
-      const { gen, data } = it;
+    function falseSchemaError(it2, overrideAllErrors) {
+      const { gen, data } = it2;
       const cxt = {
         gen,
         keyword: "false schema",
@@ -1422,7 +1422,7 @@ var require_boolSchema = __commonJS({
         schemaCode: false,
         schemaValue: false,
         params: {},
-        it
+        it: it2
       };
       (0, errors_1.reportError)(cxt, boolError, void 0, overrideAllErrors);
     }
@@ -1437,8 +1437,8 @@ var require_rules = __commonJS({
     exports2.getRules = exports2.isJSONType = void 0;
     var _jsonTypes = ["string", "number", "integer", "boolean", "null", "object", "array"];
     var jsonTypes = new Set(_jsonTypes);
-    function isJSONType(x2) {
-      return typeof x2 == "string" && jsonTypes.has(x2);
+    function isJSONType(x3) {
+      return typeof x3 == "string" && jsonTypes.has(x3);
     }
     exports2.isJSONType = isJSONType;
     function getRules() {
@@ -1476,8 +1476,8 @@ var require_applicability = __commonJS({
     }
     exports2.shouldUseGroup = shouldUseGroup;
     function shouldUseRule(schema, rule) {
-      var _a2;
-      return schema[rule.keyword] !== void 0 || ((_a2 = rule.definition.implements) === null || _a2 === void 0 ? void 0 : _a2.some((kwd) => schema[kwd] !== void 0));
+      var _a;
+      return schema[rule.keyword] !== void 0 || ((_a = rule.definition.implements) === null || _a === void 0 ? void 0 : _a.some((kwd) => schema[kwd] !== void 0));
     }
     exports2.shouldUseRule = shouldUseRule;
   }
@@ -1515,24 +1515,24 @@ var require_dataType = __commonJS({
       return types;
     }
     exports2.getSchemaTypes = getSchemaTypes;
-    function getJSONTypes(ts) {
-      const types = Array.isArray(ts) ? ts : ts ? [ts] : [];
+    function getJSONTypes(ts2) {
+      const types = Array.isArray(ts2) ? ts2 : ts2 ? [ts2] : [];
       if (types.every(rules_1.isJSONType))
         return types;
       throw new Error("type must be JSONType or JSONType[]: " + types.join(","));
     }
     exports2.getJSONTypes = getJSONTypes;
-    function coerceAndCheckDataType(it, types) {
-      const { gen, data, opts } = it;
+    function coerceAndCheckDataType(it2, types) {
+      const { gen, data, opts } = it2;
       const coerceTo = coerceToTypes(types, opts.coerceTypes);
-      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it, types[0]));
+      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it2, types[0]));
       if (checkTypes) {
         const wrongType = checkDataTypes(types, data, opts.strictNumbers, DataType.Wrong);
         gen.if(wrongType, () => {
           if (coerceTo.length)
-            coerceData(it, types, coerceTo);
+            coerceData(it2, types, coerceTo);
           else
-            reportTypeError(it);
+            reportTypeError(it2);
         });
       }
       return checkTypes;
@@ -1542,8 +1542,8 @@ var require_dataType = __commonJS({
     function coerceToTypes(types, coerceTypes) {
       return coerceTypes ? types.filter((t2) => COERCIBLE.has(t2) || coerceTypes === "array" && t2 === "array") : [];
     }
-    function coerceData(it, types, coerceTo) {
-      const { gen, data, opts } = it;
+    function coerceData(it2, types, coerceTo) {
+      const { gen, data, opts } = it2;
       const dataType = gen.let("dataType", (0, codegen_1._)`typeof ${data}`);
       const coerced = gen.let("coerced", (0, codegen_1._)`undefined`);
       if (opts.coerceTypes === "array") {
@@ -1556,11 +1556,11 @@ var require_dataType = __commonJS({
         }
       }
       gen.else();
-      reportTypeError(it);
+      reportTypeError(it2);
       gen.endIf();
       gen.if((0, codegen_1._)`${coerced} !== undefined`, () => {
         gen.assign(data, coerced);
-        assignParentData(it, coerced);
+        assignParentData(it2, coerced);
       });
       function coerceSpecificType(t2) {
         switch (t2) {
@@ -1644,14 +1644,14 @@ var require_dataType = __commonJS({
       message: ({ schema }) => `must be ${schema}`,
       params: ({ schema, schemaValue }) => typeof schema == "string" ? (0, codegen_1._)`{type: ${schema}}` : (0, codegen_1._)`{type: ${schemaValue}}`
     };
-    function reportTypeError(it) {
-      const cxt = getTypeErrorContext(it);
+    function reportTypeError(it2) {
+      const cxt = getTypeErrorContext(it2);
       (0, errors_1.reportError)(cxt, typeError);
     }
     exports2.reportTypeError = reportTypeError;
-    function getTypeErrorContext(it) {
-      const { gen, data, schema } = it;
-      const schemaCode = (0, util_1.schemaRefOrVal)(it, schema, "type");
+    function getTypeErrorContext(it2) {
+      const { gen, data, schema } = it2;
+      const schemaCode = (0, util_1.schemaRefOrVal)(it2, schema, "type");
       return {
         gen,
         keyword: "type",
@@ -1661,7 +1661,7 @@ var require_dataType = __commonJS({
         schemaValue: schemaCode,
         parentSchema: schema,
         params: {},
-        it
+        it: it2
       };
     }
   }
@@ -1675,24 +1675,24 @@ var require_defaults = __commonJS({
     exports2.assignDefaults = void 0;
     var codegen_1 = require_codegen();
     var util_1 = require_util();
-    function assignDefaults(it, ty) {
-      const { properties, items } = it.schema;
+    function assignDefaults(it2, ty) {
+      const { properties, items } = it2.schema;
       if (ty === "object" && properties) {
         for (const key in properties) {
-          assignDefault(it, key, properties[key].default);
+          assignDefault(it2, key, properties[key].default);
         }
       } else if (ty === "array" && Array.isArray(items)) {
-        items.forEach((sch, i2) => assignDefault(it, i2, sch.default));
+        items.forEach((sch, i) => assignDefault(it2, i, sch.default));
       }
     }
     exports2.assignDefaults = assignDefaults;
-    function assignDefault(it, prop, defaultValue) {
-      const { gen, compositeRule, data, opts } = it;
+    function assignDefault(it2, prop, defaultValue) {
+      const { gen, compositeRule, data, opts } = it2;
       if (defaultValue === void 0)
         return;
       const childData = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(prop)}`;
       if (compositeRule) {
-        (0, util_1.checkStrictMode)(it, `default is ignored for: ${childData}`);
+        (0, util_1.checkStrictMode)(it2, `default is ignored for: ${childData}`);
         return;
       }
       let condition = (0, codegen_1._)`${childData} === undefined`;
@@ -1715,8 +1715,8 @@ var require_code2 = __commonJS({
     var names_1 = require_names();
     var util_2 = require_util();
     function checkReportMissingProp(cxt, prop) {
-      const { gen, data, it } = cxt;
-      gen.if(noPropertyInData(gen, data, prop, it.opts.ownProperties), () => {
+      const { gen, data, it: it2 } = cxt;
+      gen.if(noPropertyInData(gen, data, prop, it2.opts.ownProperties), () => {
         cxt.setParams({ missingProperty: (0, codegen_1._)`${prop}` }, true);
         cxt.error();
       });
@@ -1757,19 +1757,19 @@ var require_code2 = __commonJS({
       return schemaMap ? Object.keys(schemaMap).filter((p2) => p2 !== "__proto__") : [];
     }
     exports2.allSchemaProperties = allSchemaProperties;
-    function schemaProperties(it, schemaMap) {
-      return allSchemaProperties(schemaMap).filter((p2) => !(0, util_1.alwaysValidSchema)(it, schemaMap[p2]));
+    function schemaProperties(it2, schemaMap) {
+      return allSchemaProperties(schemaMap).filter((p2) => !(0, util_1.alwaysValidSchema)(it2, schemaMap[p2]));
     }
     exports2.schemaProperties = schemaProperties;
-    function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }, func, context, passSchema) {
+    function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it: it2 }, func, context, passSchema) {
       const dataAndSchema = passSchema ? (0, codegen_1._)`${schemaCode}, ${data}, ${topSchemaRef}${schemaPath}` : data;
       const valCxt = [
         [names_1.default.instancePath, (0, codegen_1.strConcat)(names_1.default.instancePath, errorPath)],
-        [names_1.default.parentData, it.parentData],
-        [names_1.default.parentDataProperty, it.parentDataProperty],
+        [names_1.default.parentData, it2.parentData],
+        [names_1.default.parentDataProperty, it2.parentDataProperty],
         [names_1.default.rootData, names_1.default.rootData]
       ];
-      if (it.opts.dynamicRef)
+      if (it2.opts.dynamicRef)
         valCxt.push([names_1.default.dynamicAnchors, names_1.default.dynamicAnchors]);
       const args = (0, codegen_1._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
       return context !== codegen_1.nil ? (0, codegen_1._)`${func}.call(${context}, ${args})` : (0, codegen_1._)`${func}(${args})`;
@@ -1777,20 +1777,20 @@ var require_code2 = __commonJS({
     exports2.callValidateCode = callValidateCode;
     var newRegExp = (0, codegen_1._)`new RegExp`;
     function usePattern({ gen, it: { opts } }, pattern) {
-      const u = opts.unicodeRegExp ? "u" : "";
+      const u2 = opts.unicodeRegExp ? "u" : "";
       const { regExp } = opts.code;
-      const rx = regExp(pattern, u);
+      const rx = regExp(pattern, u2);
       return gen.scopeValue("pattern", {
         key: rx.toString(),
         ref: rx,
-        code: (0, codegen_1._)`${regExp.code === "new RegExp" ? newRegExp : (0, util_2.useFunc)(gen, regExp)}(${pattern}, ${u})`
+        code: (0, codegen_1._)`${regExp.code === "new RegExp" ? newRegExp : (0, util_2.useFunc)(gen, regExp)}(${pattern}, ${u2})`
       });
     }
     exports2.usePattern = usePattern;
     function validateArray(cxt) {
-      const { gen, data, keyword, it } = cxt;
+      const { gen, data, keyword, it: it2 } = cxt;
       const valid = gen.name("valid");
-      if (it.allErrors) {
+      if (it2.allErrors) {
         const validArr = gen.let("valid", true);
         validateItems(() => gen.assign(validArr, false));
         return validArr;
@@ -1800,10 +1800,10 @@ var require_code2 = __commonJS({
       return valid;
       function validateItems(notValid) {
         const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-        gen.forRange("i", 0, len, (i2) => {
+        gen.forRange("i", 0, len, (i) => {
           cxt.subschema({
             keyword,
-            dataProp: i2,
+            dataProp: i,
             dataPropType: util_1.Type.Num
           }, valid);
           gen.if((0, codegen_1.not)(valid), notValid);
@@ -1812,18 +1812,18 @@ var require_code2 = __commonJS({
     }
     exports2.validateArray = validateArray;
     function validateUnion(cxt) {
-      const { gen, schema, keyword, it } = cxt;
+      const { gen, schema, keyword, it: it2 } = cxt;
       if (!Array.isArray(schema))
         throw new Error("ajv implementation error");
-      const alwaysValid = schema.some((sch) => (0, util_1.alwaysValidSchema)(it, sch));
-      if (alwaysValid && !it.opts.unevaluated)
+      const alwaysValid = schema.some((sch) => (0, util_1.alwaysValidSchema)(it2, sch));
+      if (alwaysValid && !it2.opts.unevaluated)
         return;
       const valid = gen.let("valid", false);
       const schValid = gen.name("_valid");
-      gen.block(() => schema.forEach((_sch, i2) => {
+      gen.block(() => schema.forEach((_sch, i) => {
         const schCxt = cxt.subschema({
           keyword,
-          schemaProp: i2,
+          schemaProp: i,
           compositeRule: true
         }, schValid);
         gen.assign(valid, (0, codegen_1._)`${valid} || ${schValid}`);
@@ -1848,16 +1848,16 @@ var require_keyword = __commonJS({
     var code_1 = require_code2();
     var errors_1 = require_errors();
     function macroKeywordCode(cxt, def) {
-      const { gen, keyword, schema, parentSchema, it } = cxt;
-      const macroSchema = def.macro.call(it.self, schema, parentSchema, it);
+      const { gen, keyword, schema, parentSchema, it: it2 } = cxt;
+      const macroSchema = def.macro.call(it2.self, schema, parentSchema, it2);
       const schemaRef = useKeyword(gen, keyword, macroSchema);
-      if (it.opts.validateSchema !== false)
-        it.self.validateSchema(macroSchema, true);
+      if (it2.opts.validateSchema !== false)
+        it2.self.validateSchema(macroSchema, true);
       const valid = gen.name("valid");
       cxt.subschema({
         schema: macroSchema,
         schemaPath: codegen_1.nil,
-        errSchemaPath: `${it.errSchemaPath}/${keyword}`,
+        errSchemaPath: `${it2.errSchemaPath}/${keyword}`,
         topSchemaRef: schemaRef,
         compositeRule: true
       }, valid);
@@ -1865,14 +1865,14 @@ var require_keyword = __commonJS({
     }
     exports2.macroKeywordCode = macroKeywordCode;
     function funcKeywordCode(cxt, def) {
-      var _a2;
-      const { gen, keyword, schema, parentSchema, $data, it } = cxt;
-      checkAsyncKeyword(it, def);
-      const validate = !$data && def.compile ? def.compile.call(it.self, schema, parentSchema, it) : def.validate;
+      var _a;
+      const { gen, keyword, schema, parentSchema, $data, it: it2 } = cxt;
+      checkAsyncKeyword(it2, def);
+      const validate = !$data && def.compile ? def.compile.call(it2.self, schema, parentSchema, it2) : def.validate;
       const validateRef = useKeyword(gen, keyword, validate);
       const valid = gen.let("valid");
       cxt.block$data(valid, validateKeyword);
-      cxt.ok((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid);
+      cxt.ok((_a = def.valid) !== null && _a !== void 0 ? _a : valid);
       function validateKeyword() {
         if (def.errors === false) {
           assignValid();
@@ -1888,7 +1888,7 @@ var require_keyword = __commonJS({
       }
       function validateAsync() {
         const ruleErrs = gen.let("ruleErrs", null);
-        gen.try(() => assignValid((0, codegen_1._)`await `), (e) => gen.assign(valid, false).if((0, codegen_1._)`${e} instanceof ${it.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1._)`${e}.errors`), () => gen.throw(e)));
+        gen.try(() => assignValid((0, codegen_1._)`await `), (e) => gen.assign(valid, false).if((0, codegen_1._)`${e} instanceof ${it2.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1._)`${e}.errors`), () => gen.throw(e)));
         return ruleErrs;
       }
       function validateSync() {
@@ -1898,19 +1898,19 @@ var require_keyword = __commonJS({
         return validateErrs;
       }
       function assignValid(_await = def.async ? (0, codegen_1._)`await ` : codegen_1.nil) {
-        const passCxt = it.opts.passContext ? names_1.default.this : names_1.default.self;
+        const passCxt = it2.opts.passContext ? names_1.default.this : names_1.default.self;
         const passSchema = !("compile" in def && !$data || def.schema === false);
         gen.assign(valid, (0, codegen_1._)`${_await}${(0, code_1.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def.modifying);
       }
       function reportErrs(errors) {
-        var _a3;
-        gen.if((0, codegen_1.not)((_a3 = def.valid) !== null && _a3 !== void 0 ? _a3 : valid), errors);
+        var _a2;
+        gen.if((0, codegen_1.not)((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid), errors);
       }
     }
     exports2.funcKeywordCode = funcKeywordCode;
     function modifyData(cxt) {
-      const { gen, data, it } = cxt;
-      gen.if(it.parentData, () => gen.assign(data, (0, codegen_1._)`${it.parentData}[${it.parentDataProperty}]`));
+      const { gen, data, it: it2 } = cxt;
+      gen.if(it2.parentData, () => gen.assign(data, (0, codegen_1._)`${it2.parentData}[${it2.parentDataProperty}]`));
     }
     function addErrs(cxt, errs) {
       const { gen } = cxt;
@@ -1929,7 +1929,7 @@ var require_keyword = __commonJS({
       return gen.scopeValue("keyword", typeof result == "function" ? { ref: result } : { ref: result, code: (0, codegen_1.stringify)(result) });
     }
     function validSchemaType(schema, schemaType, allowUndefined = false) {
-      return !schemaType.length || schemaType.some((st) => st === "array" ? Array.isArray(schema) : st === "object" ? schema && typeof schema == "object" && !Array.isArray(schema) : typeof schema == st || allowUndefined && typeof schema == "undefined");
+      return !schemaType.length || schemaType.some((st2) => st2 === "array" ? Array.isArray(schema) : st2 === "object" ? schema && typeof schema == "object" && !Array.isArray(schema) : typeof schema == st2 || allowUndefined && typeof schema == "undefined");
     }
     exports2.validSchemaType = validSchemaType;
     function validateKeywordUsage({ schema, opts, self, errSchemaPath }, def, keyword) {
@@ -1963,20 +1963,20 @@ var require_subschema = __commonJS({
     exports2.extendSubschemaMode = exports2.extendSubschemaData = exports2.getSubschema = void 0;
     var codegen_1 = require_codegen();
     var util_1 = require_util();
-    function getSubschema(it, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
+    function getSubschema(it2, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
       if (keyword !== void 0 && schema !== void 0) {
         throw new Error('both "keyword" and "schema" passed, only one allowed');
       }
       if (keyword !== void 0) {
-        const sch = it.schema[keyword];
+        const sch = it2.schema[keyword];
         return schemaProp === void 0 ? {
           schema: sch,
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}`
+          schemaPath: (0, codegen_1._)`${it2.schemaPath}${(0, codegen_1.getProperty)(keyword)}`,
+          errSchemaPath: `${it2.errSchemaPath}/${keyword}`
         } : {
           schema: sch[schemaProp],
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}${(0, codegen_1.getProperty)(schemaProp)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}/${(0, util_1.escapeFragment)(schemaProp)}`
+          schemaPath: (0, codegen_1._)`${it2.schemaPath}${(0, codegen_1.getProperty)(keyword)}${(0, codegen_1.getProperty)(schemaProp)}`,
+          errSchemaPath: `${it2.errSchemaPath}/${keyword}/${(0, util_1.escapeFragment)(schemaProp)}`
         };
       }
       if (schema !== void 0) {
@@ -1993,14 +1993,14 @@ var require_subschema = __commonJS({
       throw new Error('either "keyword" or "schema" must be passed');
     }
     exports2.getSubschema = getSubschema;
-    function extendSubschemaData(subschema, it, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
+    function extendSubschemaData(subschema, it2, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
       if (data !== void 0 && dataProp !== void 0) {
         throw new Error('both "data" and "dataProp" passed, only one allowed');
       }
-      const { gen } = it;
+      const { gen } = it2;
       if (dataProp !== void 0) {
-        const { errorPath, dataPathArr, opts } = it;
-        const nextData = gen.let("data", (0, codegen_1._)`${it.data}${(0, codegen_1.getProperty)(dataProp)}`, true);
+        const { errorPath, dataPathArr, opts } = it2;
+        const nextData = gen.let("data", (0, codegen_1._)`${it2.data}${(0, codegen_1.getProperty)(dataProp)}`, true);
         dataContextProps(nextData);
         subschema.errorPath = (0, codegen_1.str)`${errorPath}${(0, util_1.getErrorPath)(dataProp, dpType, opts.jsPropertySyntax)}`;
         subschema.parentDataProperty = (0, codegen_1._)`${dataProp}`;
@@ -2016,11 +2016,11 @@ var require_subschema = __commonJS({
         subschema.dataTypes = dataTypes;
       function dataContextProps(_nextData) {
         subschema.data = _nextData;
-        subschema.dataLevel = it.dataLevel + 1;
+        subschema.dataLevel = it2.dataLevel + 1;
         subschema.dataTypes = [];
-        it.definedProperties = /* @__PURE__ */ new Set();
-        subschema.parentData = it.data;
-        subschema.dataNames = [...it.dataNames, _nextData];
+        it2.definedProperties = /* @__PURE__ */ new Set();
+        subschema.parentData = it2.data;
+        subschema.dataNames = [...it2.dataNames, _nextData];
       }
     }
     exports2.extendSubschemaData = extendSubschemaData;
@@ -2042,33 +2042,33 @@ var require_subschema = __commonJS({
 var require_fast_deep_equal = __commonJS({
   "node_modules/fast-deep-equal/index.js"(exports2, module2) {
     "use strict";
-    module2.exports = function equal(a, b2) {
-      if (a === b2) return true;
-      if (a && b2 && typeof a == "object" && typeof b2 == "object") {
-        if (a.constructor !== b2.constructor) return false;
-        var length, i2, keys;
+    module2.exports = function equal(a, b3) {
+      if (a === b3) return true;
+      if (a && b3 && typeof a == "object" && typeof b3 == "object") {
+        if (a.constructor !== b3.constructor) return false;
+        var length, i, keys;
         if (Array.isArray(a)) {
           length = a.length;
-          if (length != b2.length) return false;
-          for (i2 = length; i2-- !== 0; )
-            if (!equal(a[i2], b2[i2])) return false;
+          if (length != b3.length) return false;
+          for (i = length; i-- !== 0; )
+            if (!equal(a[i], b3[i])) return false;
           return true;
         }
-        if (a.constructor === RegExp) return a.source === b2.source && a.flags === b2.flags;
-        if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b2.valueOf();
-        if (a.toString !== Object.prototype.toString) return a.toString() === b2.toString();
+        if (a.constructor === RegExp) return a.source === b3.source && a.flags === b3.flags;
+        if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b3.valueOf();
+        if (a.toString !== Object.prototype.toString) return a.toString() === b3.toString();
         keys = Object.keys(a);
         length = keys.length;
-        if (length !== Object.keys(b2).length) return false;
-        for (i2 = length; i2-- !== 0; )
-          if (!Object.prototype.hasOwnProperty.call(b2, keys[i2])) return false;
-        for (i2 = length; i2-- !== 0; ) {
-          var key = keys[i2];
-          if (!equal(a[key], b2[key])) return false;
+        if (length !== Object.keys(b3).length) return false;
+        for (i = length; i-- !== 0; )
+          if (!Object.prototype.hasOwnProperty.call(b3, keys[i])) return false;
+        for (i = length; i-- !== 0; ) {
+          var key = keys[i];
+          if (!equal(a[key], b3[key])) return false;
         }
         return true;
       }
-      return a !== a && b2 !== b2;
+      return a !== a && b3 !== b3;
     };
   }
 });
@@ -2140,8 +2140,8 @@ var require_json_schema_traverse = __commonJS({
           var sch = schema[key];
           if (Array.isArray(sch)) {
             if (key in traverse.arrayKeywords) {
-              for (var i2 = 0; i2 < sch.length; i2++)
-                _traverse(opts, pre, post, sch[i2], jsonPtr + "/" + key + "/" + i2, rootSchema, jsonPtr, key, schema, i2);
+              for (var i = 0; i < sch.length; i++)
+                _traverse(opts, pre, post, sch[i], jsonPtr + "/" + key + "/" + i, rootSchema, jsonPtr, key, schema, i);
             }
           } else if (key in traverse.propsKeywords) {
             if (sch && typeof sch == "object") {
@@ -2233,8 +2233,8 @@ var require_resolve = __commonJS({
       }
       return count;
     }
-    function getFullPath(resolver, id = "", normalize2) {
-      if (normalize2 !== false)
+    function getFullPath(resolver, id = "", normalize) {
+      if (normalize !== false)
         id = normalizeId(id);
       const p2 = resolver.parse(id);
       return _getFullPath(resolver, p2);
@@ -2265,7 +2265,7 @@ var require_resolve = __commonJS({
       const pathPrefix = getFullPath(uriResolver, schId, false);
       const localRefs = {};
       const schemaRefs = /* @__PURE__ */ new Set();
-      traverse(schema, { allKeys: true }, (sch, jsonPtr, _2, parentJsonPtr) => {
+      traverse(schema, { allKeys: true }, (sch, jsonPtr, _3, parentJsonPtr) => {
         if (parentJsonPtr === void 0)
           return;
         const fullPath = pathPrefix + jsonPtr;
@@ -2335,15 +2335,15 @@ var require_validate = __commonJS({
     var resolve_1 = require_resolve();
     var util_1 = require_util();
     var errors_1 = require_errors();
-    function validateFunctionCode(it) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          topSchemaObjCode(it);
+    function validateFunctionCode(it2) {
+      if (isSchemaObj(it2)) {
+        checkKeywords(it2);
+        if (schemaCxtHasRules(it2)) {
+          topSchemaObjCode(it2);
           return;
         }
       }
-      validateFunction(it, () => (0, boolSchema_1.topBoolOrEmptySchema)(it));
+      validateFunction(it2, () => (0, boolSchema_1.topBoolOrEmptySchema)(it2));
     }
     exports2.validateFunctionCode = validateFunctionCode;
     function validateFunction({ gen, validateName, schema, schemaEnv, opts }, body) {
@@ -2377,40 +2377,40 @@ var require_validate = __commonJS({
           gen.var(names_1.default.dynamicAnchors, (0, codegen_1._)`{}`);
       });
     }
-    function topSchemaObjCode(it) {
-      const { schema, opts, gen } = it;
-      validateFunction(it, () => {
+    function topSchemaObjCode(it2) {
+      const { schema, opts, gen } = it2;
+      validateFunction(it2, () => {
         if (opts.$comment && schema.$comment)
-          commentKeyword(it);
-        checkNoDefault(it);
+          commentKeyword(it2);
+        checkNoDefault(it2);
         gen.let(names_1.default.vErrors, null);
         gen.let(names_1.default.errors, 0);
         if (opts.unevaluated)
-          resetEvaluated(it);
-        typeAndKeywords(it);
-        returnResults(it);
+          resetEvaluated(it2);
+        typeAndKeywords(it2);
+        returnResults(it2);
       });
       return;
     }
-    function resetEvaluated(it) {
-      const { gen, validateName } = it;
-      it.evaluated = gen.const("evaluated", (0, codegen_1._)`${validateName}.evaluated`);
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1._)`${it.evaluated}.props`, (0, codegen_1._)`undefined`));
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1._)`${it.evaluated}.items`, (0, codegen_1._)`undefined`));
+    function resetEvaluated(it2) {
+      const { gen, validateName } = it2;
+      it2.evaluated = gen.const("evaluated", (0, codegen_1._)`${validateName}.evaluated`);
+      gen.if((0, codegen_1._)`${it2.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1._)`${it2.evaluated}.props`, (0, codegen_1._)`undefined`));
+      gen.if((0, codegen_1._)`${it2.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1._)`${it2.evaluated}.items`, (0, codegen_1._)`undefined`));
     }
     function funcSourceUrl(schema, opts) {
       const schId = typeof schema == "object" && schema[opts.schemaId];
       return schId && (opts.code.source || opts.code.process) ? (0, codegen_1._)`/*# sourceURL=${schId} */` : codegen_1.nil;
     }
-    function subschemaCode(it, valid) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          subSchemaObjCode(it, valid);
+    function subschemaCode(it2, valid) {
+      if (isSchemaObj(it2)) {
+        checkKeywords(it2);
+        if (schemaCxtHasRules(it2)) {
+          subSchemaObjCode(it2, valid);
           return;
         }
       }
-      (0, boolSchema_1.boolOrEmptySchema)(it, valid);
+      (0, boolSchema_1.boolOrEmptySchema)(it2, valid);
     }
     function schemaCxtHasRules({ schema, self }) {
       if (typeof schema == "boolean")
@@ -2420,49 +2420,49 @@ var require_validate = __commonJS({
           return true;
       return false;
     }
-    function isSchemaObj(it) {
-      return typeof it.schema != "boolean";
+    function isSchemaObj(it2) {
+      return typeof it2.schema != "boolean";
     }
-    function subSchemaObjCode(it, valid) {
-      const { schema, gen, opts } = it;
+    function subSchemaObjCode(it2, valid) {
+      const { schema, gen, opts } = it2;
       if (opts.$comment && schema.$comment)
-        commentKeyword(it);
-      updateContext(it);
-      checkAsyncSchema(it);
+        commentKeyword(it2);
+      updateContext(it2);
+      checkAsyncSchema(it2);
       const errsCount = gen.const("_errs", names_1.default.errors);
-      typeAndKeywords(it, errsCount);
+      typeAndKeywords(it2, errsCount);
       gen.var(valid, (0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
     }
-    function checkKeywords(it) {
-      (0, util_1.checkUnknownRules)(it);
-      checkRefsAndKeywords(it);
+    function checkKeywords(it2) {
+      (0, util_1.checkUnknownRules)(it2);
+      checkRefsAndKeywords(it2);
     }
-    function typeAndKeywords(it, errsCount) {
-      if (it.opts.jtd)
-        return schemaKeywords(it, [], false, errsCount);
-      const types = (0, dataType_1.getSchemaTypes)(it.schema);
-      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it, types);
-      schemaKeywords(it, types, !checkedTypes, errsCount);
+    function typeAndKeywords(it2, errsCount) {
+      if (it2.opts.jtd)
+        return schemaKeywords(it2, [], false, errsCount);
+      const types = (0, dataType_1.getSchemaTypes)(it2.schema);
+      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it2, types);
+      schemaKeywords(it2, types, !checkedTypes, errsCount);
     }
-    function checkRefsAndKeywords(it) {
-      const { schema, errSchemaPath, opts, self } = it;
+    function checkRefsAndKeywords(it2) {
+      const { schema, errSchemaPath, opts, self } = it2;
       if (schema.$ref && opts.ignoreKeywordsWithRef && (0, util_1.schemaHasRulesButRef)(schema, self.RULES)) {
         self.logger.warn(`$ref: keywords ignored in schema at path "${errSchemaPath}"`);
       }
     }
-    function checkNoDefault(it) {
-      const { schema, opts } = it;
+    function checkNoDefault(it2) {
+      const { schema, opts } = it2;
       if (schema.default !== void 0 && opts.useDefaults && opts.strictSchema) {
-        (0, util_1.checkStrictMode)(it, "default is ignored in the schema root");
+        (0, util_1.checkStrictMode)(it2, "default is ignored in the schema root");
       }
     }
-    function updateContext(it) {
-      const schId = it.schema[it.opts.schemaId];
+    function updateContext(it2) {
+      const schId = it2.schema[it2.opts.schemaId];
       if (schId)
-        it.baseId = (0, resolve_1.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
+        it2.baseId = (0, resolve_1.resolveUrl)(it2.opts.uriResolver, it2.baseId, schId);
     }
-    function checkAsyncSchema(it) {
-      if (it.schema.$async && !it.schemaEnv.$async)
+    function checkAsyncSchema(it2) {
+      if (it2.schema.$async && !it2.schemaEnv.$async)
         throw new Error("async schema in sync schema");
     }
     function commentKeyword({ gen, schemaEnv, schema, errSchemaPath, opts }) {
@@ -2475,14 +2475,14 @@ var require_validate = __commonJS({
         gen.code((0, codegen_1._)`${names_1.default.self}.opts.$comment(${msg}, ${schemaPath}, ${rootName}.schema)`);
       }
     }
-    function returnResults(it) {
-      const { gen, schemaEnv, validateName, ValidationError, opts } = it;
+    function returnResults(it2) {
+      const { gen, schemaEnv, validateName, ValidationError, opts } = it2;
       if (schemaEnv.$async) {
         gen.if((0, codegen_1._)`${names_1.default.errors} === 0`, () => gen.return(names_1.default.data), () => gen.throw((0, codegen_1._)`new ${ValidationError}(${names_1.default.vErrors})`));
       } else {
         gen.assign((0, codegen_1._)`${validateName}.errors`, names_1.default.vErrors);
         if (opts.unevaluated)
-          assignEvaluated(it);
+          assignEvaluated(it2);
         gen.return((0, codegen_1._)`${names_1.default.errors} === 0`);
       }
     }
@@ -2492,15 +2492,15 @@ var require_validate = __commonJS({
       if (items instanceof codegen_1.Name)
         gen.assign((0, codegen_1._)`${evaluated}.items`, items);
     }
-    function schemaKeywords(it, types, typeErrors, errsCount) {
-      const { gen, schema, data, allErrors, opts, self } = it;
+    function schemaKeywords(it2, types, typeErrors, errsCount) {
+      const { gen, schema, data, allErrors, opts, self } = it2;
       const { RULES } = self;
       if (schema.$ref && (opts.ignoreKeywordsWithRef || !(0, util_1.schemaHasRulesButRef)(schema, RULES))) {
-        gen.block(() => keywordCode(it, "$ref", RULES.all.$ref.definition));
+        gen.block(() => keywordCode(it2, "$ref", RULES.all.$ref.definition));
         return;
       }
       if (!opts.jtd)
-        checkStrictTypes(it, types);
+        checkStrictTypes(it2, types);
       gen.block(() => {
         for (const group of RULES.rules)
           groupKeywords(group);
@@ -2511,66 +2511,66 @@ var require_validate = __commonJS({
           return;
         if (group.type) {
           gen.if((0, dataType_2.checkDataType)(group.type, data, opts.strictNumbers));
-          iterateKeywords(it, group);
+          iterateKeywords(it2, group);
           if (types.length === 1 && types[0] === group.type && typeErrors) {
             gen.else();
-            (0, dataType_2.reportTypeError)(it);
+            (0, dataType_2.reportTypeError)(it2);
           }
           gen.endIf();
         } else {
-          iterateKeywords(it, group);
+          iterateKeywords(it2, group);
         }
         if (!allErrors)
           gen.if((0, codegen_1._)`${names_1.default.errors} === ${errsCount || 0}`);
       }
     }
-    function iterateKeywords(it, group) {
-      const { gen, schema, opts: { useDefaults } } = it;
+    function iterateKeywords(it2, group) {
+      const { gen, schema, opts: { useDefaults } } = it2;
       if (useDefaults)
-        (0, defaults_1.assignDefaults)(it, group.type);
+        (0, defaults_1.assignDefaults)(it2, group.type);
       gen.block(() => {
         for (const rule of group.rules) {
           if ((0, applicability_1.shouldUseRule)(schema, rule)) {
-            keywordCode(it, rule.keyword, rule.definition, group.type);
+            keywordCode(it2, rule.keyword, rule.definition, group.type);
           }
         }
       });
     }
-    function checkStrictTypes(it, types) {
-      if (it.schemaEnv.meta || !it.opts.strictTypes)
+    function checkStrictTypes(it2, types) {
+      if (it2.schemaEnv.meta || !it2.opts.strictTypes)
         return;
-      checkContextTypes(it, types);
-      if (!it.opts.allowUnionTypes)
-        checkMultipleTypes(it, types);
-      checkKeywordTypes(it, it.dataTypes);
+      checkContextTypes(it2, types);
+      if (!it2.opts.allowUnionTypes)
+        checkMultipleTypes(it2, types);
+      checkKeywordTypes(it2, it2.dataTypes);
     }
-    function checkContextTypes(it, types) {
+    function checkContextTypes(it2, types) {
       if (!types.length)
         return;
-      if (!it.dataTypes.length) {
-        it.dataTypes = types;
+      if (!it2.dataTypes.length) {
+        it2.dataTypes = types;
         return;
       }
       types.forEach((t2) => {
-        if (!includesType(it.dataTypes, t2)) {
-          strictTypesError(it, `type "${t2}" not allowed by context "${it.dataTypes.join(",")}"`);
+        if (!includesType(it2.dataTypes, t2)) {
+          strictTypesError(it2, `type "${t2}" not allowed by context "${it2.dataTypes.join(",")}"`);
         }
       });
-      narrowSchemaTypes(it, types);
+      narrowSchemaTypes(it2, types);
     }
-    function checkMultipleTypes(it, ts) {
-      if (ts.length > 1 && !(ts.length === 2 && ts.includes("null"))) {
-        strictTypesError(it, "use allowUnionTypes to allow union type keyword");
+    function checkMultipleTypes(it2, ts2) {
+      if (ts2.length > 1 && !(ts2.length === 2 && ts2.includes("null"))) {
+        strictTypesError(it2, "use allowUnionTypes to allow union type keyword");
       }
     }
-    function checkKeywordTypes(it, ts) {
-      const rules = it.self.RULES.all;
+    function checkKeywordTypes(it2, ts2) {
+      const rules = it2.self.RULES.all;
       for (const keyword in rules) {
         const rule = rules[keyword];
-        if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it.schema, rule)) {
+        if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it2.schema, rule)) {
           const { type } = rule.definition;
-          if (type.length && !type.some((t2) => hasApplicableType(ts, t2))) {
-            strictTypesError(it, `missing type "${type.join(",")}" for keyword "${keyword}"`);
+          if (type.length && !type.some((t2) => hasApplicableType(ts2, t2))) {
+            strictTypesError(it2, `missing type "${type.join(",")}" for keyword "${keyword}"`);
           }
         }
       }
@@ -2578,41 +2578,41 @@ var require_validate = __commonJS({
     function hasApplicableType(schTs, kwdT) {
       return schTs.includes(kwdT) || kwdT === "number" && schTs.includes("integer");
     }
-    function includesType(ts, t2) {
-      return ts.includes(t2) || t2 === "integer" && ts.includes("number");
+    function includesType(ts2, t2) {
+      return ts2.includes(t2) || t2 === "integer" && ts2.includes("number");
     }
-    function narrowSchemaTypes(it, withTypes) {
-      const ts = [];
-      for (const t2 of it.dataTypes) {
+    function narrowSchemaTypes(it2, withTypes) {
+      const ts2 = [];
+      for (const t2 of it2.dataTypes) {
         if (includesType(withTypes, t2))
-          ts.push(t2);
+          ts2.push(t2);
         else if (withTypes.includes("integer") && t2 === "number")
-          ts.push("integer");
+          ts2.push("integer");
       }
-      it.dataTypes = ts;
+      it2.dataTypes = ts2;
     }
-    function strictTypesError(it, msg) {
-      const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+    function strictTypesError(it2, msg) {
+      const schemaPath = it2.schemaEnv.baseId + it2.errSchemaPath;
       msg += ` at "${schemaPath}" (strictTypes)`;
-      (0, util_1.checkStrictMode)(it, msg, it.opts.strictTypes);
+      (0, util_1.checkStrictMode)(it2, msg, it2.opts.strictTypes);
     }
     var KeywordCxt = class {
-      constructor(it, def, keyword) {
-        (0, keyword_1.validateKeywordUsage)(it, def, keyword);
-        this.gen = it.gen;
-        this.allErrors = it.allErrors;
+      constructor(it2, def, keyword) {
+        (0, keyword_1.validateKeywordUsage)(it2, def, keyword);
+        this.gen = it2.gen;
+        this.allErrors = it2.allErrors;
         this.keyword = keyword;
-        this.data = it.data;
-        this.schema = it.schema[keyword];
-        this.$data = def.$data && it.opts.$data && this.schema && this.schema.$data;
-        this.schemaValue = (0, util_1.schemaRefOrVal)(it, this.schema, keyword, this.$data);
+        this.data = it2.data;
+        this.schema = it2.schema[keyword];
+        this.$data = def.$data && it2.opts.$data && this.schema && this.schema.$data;
+        this.schemaValue = (0, util_1.schemaRefOrVal)(it2, this.schema, keyword, this.$data);
         this.schemaType = def.schemaType;
-        this.parentSchema = it.schema;
+        this.parentSchema = it2.schema;
         this.params = {};
-        this.it = it;
+        this.it = it2;
         this.def = def;
         if (this.$data) {
-          this.schemaCode = it.gen.const("vSchema", getData(this.$data, it));
+          this.schemaCode = it2.gen.const("vSchema", getData(this.$data, it2));
         } else {
           this.schemaCode = this.schemaValue;
           if (!(0, keyword_1.validSchemaType)(this.schema, def.schemaType, def.allowUndefined)) {
@@ -2620,7 +2620,7 @@ var require_validate = __commonJS({
           }
         }
         if ("code" in def ? def.trackErrors : def.errors !== false) {
-          this.errsCount = it.gen.const("_errs", names_1.default.errors);
+          this.errsCount = it2.gen.const("_errs", names_1.default.errors);
         }
       }
       result(condition, successAction, failAction) {
@@ -2667,18 +2667,18 @@ var require_validate = __commonJS({
         const { schemaCode } = this;
         this.fail((0, codegen_1._)`${schemaCode} !== undefined && (${(0, codegen_1.or)(this.invalid$data(), condition)})`);
       }
-      error(append2, errorParams, errorPaths) {
+      error(append, errorParams, errorPaths) {
         if (errorParams) {
           this.setParams(errorParams);
-          this._error(append2, errorPaths);
+          this._error(append, errorPaths);
           this.setParams({});
           return;
         }
-        this._error(append2, errorPaths);
+        this._error(append, errorPaths);
       }
-      _error(append2, errorPaths) {
+      _error(append, errorPaths) {
         ;
-        (append2 ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
+        (append ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
       }
       $dataError() {
         (0, errors_1.reportError)(this, this.def.$dataError || errors_1.keyword$DataError);
@@ -2720,14 +2720,14 @@ var require_validate = __commonJS({
         gen.else();
       }
       invalid$data() {
-        const { gen, schemaCode, schemaType, def, it } = this;
+        const { gen, schemaCode, schemaType, def, it: it2 } = this;
         return (0, codegen_1.or)(wrong$DataType(), invalid$DataSchema());
         function wrong$DataType() {
           if (schemaType.length) {
             if (!(schemaCode instanceof codegen_1.Name))
               throw new Error("ajv implementation error");
-            const st = Array.isArray(schemaType) ? schemaType : [schemaType];
-            return (0, codegen_1._)`${(0, dataType_2.checkDataTypes)(st, schemaCode, it.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
+            const st2 = Array.isArray(schemaType) ? schemaType : [schemaType];
+            return (0, codegen_1._)`${(0, dataType_2.checkDataTypes)(st2, schemaCode, it2.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
           }
           return codegen_1.nil;
         }
@@ -2748,27 +2748,27 @@ var require_validate = __commonJS({
         return nextContext;
       }
       mergeEvaluated(schemaCxt, toName) {
-        const { it, gen } = this;
-        if (!it.opts.unevaluated)
+        const { it: it2, gen } = this;
+        if (!it2.opts.unevaluated)
           return;
-        if (it.props !== true && schemaCxt.props !== void 0) {
-          it.props = util_1.mergeEvaluated.props(gen, schemaCxt.props, it.props, toName);
+        if (it2.props !== true && schemaCxt.props !== void 0) {
+          it2.props = util_1.mergeEvaluated.props(gen, schemaCxt.props, it2.props, toName);
         }
-        if (it.items !== true && schemaCxt.items !== void 0) {
-          it.items = util_1.mergeEvaluated.items(gen, schemaCxt.items, it.items, toName);
+        if (it2.items !== true && schemaCxt.items !== void 0) {
+          it2.items = util_1.mergeEvaluated.items(gen, schemaCxt.items, it2.items, toName);
         }
       }
       mergeValidEvaluated(schemaCxt, valid) {
-        const { it, gen } = this;
-        if (it.opts.unevaluated && (it.props !== true || it.items !== true)) {
+        const { it: it2, gen } = this;
+        if (it2.opts.unevaluated && (it2.props !== true || it2.items !== true)) {
           gen.if(valid, () => this.mergeEvaluated(schemaCxt, codegen_1.Name));
           return true;
         }
       }
     };
     exports2.KeywordCxt = KeywordCxt;
-    function keywordCode(it, keyword, def, ruleType) {
-      const cxt = new KeywordCxt(it, def, keyword);
+    function keywordCode(it2, keyword, def, ruleType) {
+      const cxt = new KeywordCxt(it2, def, keyword);
       if ("code" in def) {
         def.code(cxt, ruleType);
       } else if (cxt.$data && def.validate) {
@@ -2872,7 +2872,7 @@ var require_compile = __commonJS({
     var validate_1 = require_validate();
     var SchemaEnv = class {
       constructor(env) {
-        var _a2;
+        var _a;
         this.refs = {};
         this.dynamicAnchors = {};
         let schema;
@@ -2881,7 +2881,7 @@ var require_compile = __commonJS({
         this.schema = env.schema;
         this.schemaId = env.schemaId;
         this.root = env.root || this;
-        this.baseId = (_a2 = env.baseId) !== null && _a2 !== void 0 ? _a2 : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
+        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
         this.schemaPath = env.schemaPath;
         this.localRefs = env.localRefs;
         this.meta = env.meta;
@@ -2977,14 +2977,14 @@ var require_compile = __commonJS({
     }
     exports2.compileSchema = compileSchema;
     function resolveRef(root, baseId, ref) {
-      var _a2;
+      var _a;
       ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, ref);
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
       let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
-        const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
+        const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
         if (schema)
           _sch = new SchemaEnv({ schema, schemaId, root, baseId });
@@ -3053,8 +3053,8 @@ var require_compile = __commonJS({
       "definitions"
     ]);
     function getJsonPointer(parsedRef, { baseId, schema, root }) {
-      var _a2;
-      if (((_a2 = parsedRef.fragment) === null || _a2 === void 0 ? void 0 : _a2[0]) !== "/")
+      var _a;
+      if (((_a = parsedRef.fragment) === null || _a === void 0 ? void 0 : _a[0]) !== "/")
         return;
       for (const part of parsedRef.fragment.slice(1).split("/")) {
         if (typeof schema === "boolean")
@@ -3116,8 +3116,8 @@ var require_utils = __commonJS({
     var BYTE_HEX = new Array(256);
     {
       const HEX_DIGITS = "0123456789ABCDEF";
-      for (let i2 = 0; i2 < 256; i2++) {
-        BYTE_HEX[i2] = "%" + HEX_DIGITS[i2 >> 4] + HEX_DIGITS[i2 & 15];
+      for (let i = 0; i < 256; i++) {
+        BYTE_HEX[i] = "%" + HEX_DIGITS[i >> 4] + HEX_DIGITS[i & 15];
       }
     }
     function percentEncodeNonAscii(cp) {
@@ -3132,24 +3132,24 @@ var require_utils = __commonJS({
     function stringArrayToHexStripped(input) {
       let acc = "";
       let code = 0;
-      let i2 = 0;
-      for (i2 = 0; i2 < input.length; i2++) {
-        code = input[i2].charCodeAt(0);
+      let i = 0;
+      for (i = 0; i < input.length; i++) {
+        code = input[i].charCodeAt(0);
         if (code === 48) {
           continue;
         }
         if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
           return "";
         }
-        acc += input[i2];
+        acc += input[i];
         break;
       }
-      for (i2 += 1; i2 < input.length; i2++) {
-        code = input[i2].charCodeAt(0);
+      for (i += 1; i < input.length; i++) {
+        code = input[i].charCodeAt(0);
         if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
           return "";
         }
-        acc += input[i2];
+        acc += input[i];
       }
       return acc;
     }
@@ -3159,10 +3159,10 @@ var require_utils = __commonJS({
     var nonSimpleDomain = RegExp.prototype.test.bind(/[^!"$&'()*+,\-.;=_`a-z{}~]/u);
     function isZoneIdentifier(zone) {
       if (zone.length === 0) return false;
-      for (let i2 = 0; i2 < zone.length; i2++) {
-        if (isZoneCharacter(zone[i2])) continue;
-        if (zone[i2] === "%" && i2 + 2 < zone.length && isHexPair(zone.slice(i2 + 1, i2 + 3))) {
-          i2 += 2;
+      for (let i = 0; i < zone.length; i++) {
+        if (isZoneCharacter(zone[i])) continue;
+        if (zone[i] === "%" && i + 2 < zone.length && isHexPair(zone.slice(i + 1, i + 3))) {
+          i += 2;
           continue;
         }
         return false;
@@ -3174,9 +3174,9 @@ var require_utils = __commonJS({
       let bestLength = 0;
       let runStart = -1;
       let runLength = 0;
-      for (let i2 = 0; i2 < hextets.length; i2++) {
-        if (hextets[i2] === "0") {
-          if (runStart === -1) runStart = i2;
+      for (let i = 0; i < hextets.length; i++) {
+        if (hextets[i] === "0") {
+          if (runStart === -1) runStart = i;
           runLength++;
           if (runLength > bestLength) {
             bestLength = runLength;
@@ -3203,16 +3203,16 @@ var require_utils = __commonJS({
       }
       const parts = left.concat(right);
       let hextetCount = 0;
-      for (let i2 = 0; i2 < parts.length; i2++) {
-        const part = parts[i2];
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
         if (part === "") return void 0;
         if (part.indexOf(".") !== -1) {
-          if (i2 !== parts.length - 1 || compression !== -1 && right.length === 0 || !isIPv4(part)) return void 0;
+          if (i !== parts.length - 1 || compression !== -1 && right.length === 0 || !isIPv4(part)) return void 0;
           hextetCount += 2;
           continue;
         }
         if (!isHextet(part)) return void 0;
-        parts[i2] = parseInt(part, 16).toString(16);
+        parts[i] = parseInt(part, 16).toString(16);
         hextetCount++;
       }
       if (compression === -1) {
@@ -3221,8 +3221,8 @@ var require_utils = __commonJS({
       }
       if (hextetCount >= 8) return void 0;
       const expanded = parts.slice(0, left.length);
-      for (let i2 = hextetCount; i2 < 8; i2++) expanded.push("0");
-      for (let i2 = left.length; i2 < parts.length; i2++) expanded.push(parts[i2]);
+      for (let i = hextetCount; i < 8; i++) expanded.push("0");
+      for (let i = left.length; i < parts.length; i++) expanded.push(parts[i]);
       return compressIPv6ZeroRun(expanded);
     }
     function normalizeIPv6(host) {
@@ -3255,13 +3255,13 @@ var require_utils = __commonJS({
     }
     function findToken(str, token) {
       let ind = 0;
-      for (let i2 = 0; i2 < str.length; i2++) {
-        if (str[i2] === token) ind++;
+      for (let i = 0; i < str.length; i++) {
+        if (str[i] === token) ind++;
       }
       return ind;
     }
-    function removeDotSegments(path3) {
-      let input = path3;
+    function removeDotSegments(path4) {
+      let input = path4;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3339,18 +3339,18 @@ var require_utils = __commonJS({
     var HOST_DELIM_RE = /[@/?#:]/g;
     var HOST_DELIM_NO_COLON_RE = /[@/?#]/g;
     function reescapeHostDelimiters(host, isIP) {
-      const re = isIP ? HOST_DELIM_NO_COLON_RE : HOST_DELIM_RE;
-      re.lastIndex = 0;
-      return host.replace(re, (ch) => HOST_DELIMS[ch]);
+      const re2 = isIP ? HOST_DELIM_NO_COLON_RE : HOST_DELIM_RE;
+      re2.lastIndex = 0;
+      return host.replace(re2, (ch) => HOST_DELIMS[ch]);
     }
     function normalizePercentEncoding(input, decodeUnreserved = false) {
       if (input.indexOf("%") === -1) {
         return input;
       }
       let output = "";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        if (input[i2] === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        if (input[i] === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             const normalizedHex = hex.toUpperCase();
             const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
@@ -3359,20 +3359,20 @@ var require_utils = __commonJS({
             } else {
               output += "%" + normalizedHex;
             }
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
-        output += input[i2];
+        output += input[i];
       }
       return output;
     }
     function normalizePathEncoding(input) {
       let output = "";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        const ch = input[i2];
-        if (ch === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             const normalizedHex = hex.toUpperCase();
             const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
@@ -3381,23 +3381,23 @@ var require_utils = __commonJS({
             } else {
               output += "%" + normalizedHex;
             }
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
         if (isPathCharacter(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i2);
+          const code = input.charCodeAt(i);
           if (code < 128) {
             output += isEscapeSafe(code) ? ch : BYTE_HEX[code];
           } else if (code < 55296 || code > 57343) {
             output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i2 + 1 < input.length) {
-            const low = input.charCodeAt(i2 + 1);
+          } else if (code <= 56319 && i + 1 < input.length) {
+            const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
               output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
-              i2++;
+              i++;
             } else {
               output += percentEncodeNonAscii(65533);
             }
@@ -3411,13 +3411,13 @@ var require_utils = __commonJS({
     function serializePathEncoding(input, pathNoScheme = false) {
       let output = "";
       let firstSegment = pathNoScheme && input[0] !== "/";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        const ch = input[i2];
-        if (ch === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             output += "%" + hex.toUpperCase();
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
@@ -3427,16 +3427,16 @@ var require_utils = __commonJS({
         if (isPathCharacter(ch) && (ch !== ":" || !firstSegment)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i2);
+          const code = input.charCodeAt(i);
           if (code < 128) {
             output += BYTE_HEX[code];
           } else if (code < 55296 || code > 57343) {
             output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i2 + 1 < input.length) {
-            const low = input.charCodeAt(i2 + 1);
+          } else if (code <= 56319 && i + 1 < input.length) {
+            const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
               output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
-              i2++;
+              i++;
             } else {
               output += percentEncodeNonAscii(65533);
             }
@@ -3449,29 +3449,29 @@ var require_utils = __commonJS({
     }
     function encodeComponent(input, isAllowed) {
       let output = "";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        const ch = input[i2];
-        if (ch === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             output += "%" + hex.toUpperCase();
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
         if (isAllowed(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i2);
+          const code = input.charCodeAt(i);
           if (code < 128) {
             output += BYTE_HEX[code];
           } else if (code < 55296 || code > 57343) {
             output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i2 + 1 < input.length) {
-            const low = input.charCodeAt(i2 + 1);
+          } else if (code <= 56319 && i + 1 < input.length) {
+            const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
               output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
-              i2++;
+              i++;
             } else {
               output += percentEncodeNonAscii(65533);
             }
@@ -3496,10 +3496,10 @@ var require_utils = __commonJS({
     }
     function normalizeQueryFragmentEncoding(input) {
       let output = "";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        const ch = input[i2];
-        if (ch === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+        if (ch === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             const normalizedHex = hex.toUpperCase();
             const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
@@ -3508,23 +3508,23 @@ var require_utils = __commonJS({
             } else {
               output += "%" + normalizedHex;
             }
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
         if (isQueryFragmentCharacter(ch)) {
           output += ch;
         } else {
-          const code = input.charCodeAt(i2);
+          const code = input.charCodeAt(i);
           if (code < 128) {
             output += isEscapeSafe(code) ? ch : BYTE_HEX[code];
           } else if (code < 55296 || code > 57343) {
             output += percentEncodeNonAscii(code);
-          } else if (code <= 56319 && i2 + 1 < input.length) {
-            const low = input.charCodeAt(i2 + 1);
+          } else if (code <= 56319 && i + 1 < input.length) {
+            const low = input.charCodeAt(i + 1);
             if (low >= 56320 && low <= 57343) {
               output += percentEncodeNonAscii(65536 + (code - 55296 << 10) + (low - 56320));
-              i2++;
+              i++;
             } else {
               output += percentEncodeNonAscii(65533);
             }
@@ -3537,16 +3537,16 @@ var require_utils = __commonJS({
     }
     function escapePreservingEscapes(input) {
       let output = "";
-      for (let i2 = 0; i2 < input.length; i2++) {
-        if (input[i2] === "%" && i2 + 2 < input.length) {
-          const hex = input.slice(i2 + 1, i2 + 3);
+      for (let i = 0; i < input.length; i++) {
+        if (input[i] === "%" && i + 2 < input.length) {
+          const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             output += "%" + hex.toUpperCase();
-            i2 += 2;
+            i += 2;
             continue;
           }
         }
-        output += escape(input[i2]);
+        output += escape(input[i]);
       }
       return output;
     }
@@ -3670,8 +3670,8 @@ var require_schemes = __commonJS({
       }
       if (wsComponent.resourceName) {
         const queryIndex = wsComponent.resourceName.indexOf("?");
-        const path3 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
-        wsComponent.path = path3 && path3 !== "/" ? path3 : void 0;
+        const path4 = queryIndex === -1 ? wsComponent.resourceName : wsComponent.resourceName.slice(0, queryIndex);
+        wsComponent.path = path4 && path4 !== "/" ? path4 : void 0;
         wsComponent.query = queryIndex === -1 ? void 0 : wsComponent.resourceName.slice(queryIndex + 1);
         wsComponent.resourceName = void 0;
       }
@@ -3748,7 +3748,7 @@ var require_schemes = __commonJS({
         serialize: httpSerialize
       }
     );
-    var ws = (
+    var ws2 = (
       /** @type {SchemeHandler} */
       {
         scheme: "ws",
@@ -3761,9 +3761,9 @@ var require_schemes = __commonJS({
       /** @type {SchemeHandler} */
       {
         scheme: "wss",
-        domainHost: ws.domainHost,
-        parse: ws.parse,
-        serialize: ws.serialize
+        domainHost: ws2.domainHost,
+        parse: ws2.parse,
+        serialize: ws2.serialize
       }
     );
     var urn = (
@@ -3789,7 +3789,7 @@ var require_schemes = __commonJS({
       {
         http,
         https,
-        ws,
+        ws: ws2,
         wss,
         urn,
         "urn:uuid": urnuuid
@@ -3829,7 +3829,7 @@ var require_fast_uri = __commonJS({
       }
       return decodedScheme;
     }
-    function normalize2(uri, options) {
+    function normalize(uri, options) {
       if (typeof uri === "string") {
         uri = /** @type {T} */
         normalizeString(uri, options);
@@ -4207,7 +4207,7 @@ var require_fast_uri = __commonJS({
     }
     var fastUri = {
       SCHEMES,
-      normalize: normalize2,
+      normalize,
       resolve,
       resolveComponent,
       equal,
@@ -4312,23 +4312,23 @@ var require_core = __commonJS({
     };
     var MAX_EXPRESSION = 200;
     function requiredOptions(o2) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+      var _a, _b, _c, _d, _e2, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r2, _s2, _t2, _u, _v, _w, _x, _y, _z, _0;
       const s = o2.strict;
-      const _optz = (_a2 = o2.code) === null || _a2 === void 0 ? void 0 : _a2.optimize;
+      const _optz = (_a = o2.code) === null || _a === void 0 ? void 0 : _a.optimize;
       const optimize = _optz === true || _optz === void 0 ? 1 : _optz || 0;
       const regExp = (_c = (_b = o2.code) === null || _b === void 0 ? void 0 : _b.regExp) !== null && _c !== void 0 ? _c : defaultRegExp;
       const uriResolver = (_d = o2.uriResolver) !== null && _d !== void 0 ? _d : uri_1.default;
       return {
-        strictSchema: (_f = (_e = o2.strictSchema) !== null && _e !== void 0 ? _e : s) !== null && _f !== void 0 ? _f : true,
+        strictSchema: (_f = (_e2 = o2.strictSchema) !== null && _e2 !== void 0 ? _e2 : s) !== null && _f !== void 0 ? _f : true,
         strictNumbers: (_h = (_g = o2.strictNumbers) !== null && _g !== void 0 ? _g : s) !== null && _h !== void 0 ? _h : true,
         strictTypes: (_k = (_j = o2.strictTypes) !== null && _j !== void 0 ? _j : s) !== null && _k !== void 0 ? _k : "log",
         strictTuples: (_m = (_l = o2.strictTuples) !== null && _l !== void 0 ? _l : s) !== null && _m !== void 0 ? _m : "log",
         strictRequired: (_p = (_o = o2.strictRequired) !== null && _o !== void 0 ? _o : s) !== null && _p !== void 0 ? _p : false,
         code: o2.code ? { ...o2.code, optimize, regExp } : { optimize, regExp },
         loopRequired: (_q = o2.loopRequired) !== null && _q !== void 0 ? _q : MAX_EXPRESSION,
-        loopEnum: (_r = o2.loopEnum) !== null && _r !== void 0 ? _r : MAX_EXPRESSION,
-        meta: (_s = o2.meta) !== null && _s !== void 0 ? _s : true,
-        messages: (_t = o2.messages) !== null && _t !== void 0 ? _t : true,
+        loopEnum: (_r2 = o2.loopEnum) !== null && _r2 !== void 0 ? _r2 : MAX_EXPRESSION,
+        meta: (_s2 = o2.meta) !== null && _s2 !== void 0 ? _s2 : true,
+        messages: (_t2 = o2.messages) !== null && _t2 !== void 0 ? _t2 : true,
         inlineRefs: (_u = o2.inlineRefs) !== null && _u !== void 0 ? _u : true,
         schemaId: (_v = o2.schemaId) !== null && _v !== void 0 ? _v : "$id",
         addUsedSchema: (_w = o2.addUsedSchema) !== null && _w !== void 0 ? _w : true,
@@ -4387,17 +4387,17 @@ var require_core = __commonJS({
         return this.opts.defaultMeta = typeof meta == "object" ? meta[schemaId] || meta : void 0;
       }
       validate(schemaKeyRef, data) {
-        let v;
+        let v2;
         if (typeof schemaKeyRef == "string") {
-          v = this.getSchema(schemaKeyRef);
-          if (!v)
+          v2 = this.getSchema(schemaKeyRef);
+          if (!v2)
             throw new Error(`no schema with key or ref "${schemaKeyRef}"`);
         } else {
-          v = this.compile(schemaKeyRef);
+          v2 = this.compile(schemaKeyRef);
         }
-        const valid = v(data);
-        if (!("$async" in v))
-          this.errors = v.errors;
+        const valid = v2(data);
+        if (!("$async" in v2))
+          this.errors = v2.errors;
         return valid;
       }
       compile(schema, _meta) {
@@ -4607,9 +4607,9 @@ var require_core = __commonJS({
         delete RULES.keywords[keyword];
         delete RULES.all[keyword];
         for (const group of RULES.rules) {
-          const i2 = group.rules.findIndex((rule) => rule.keyword === keyword);
-          if (i2 >= 0)
-            group.rules.splice(i2, 1);
+          const i = group.rules.findIndex((rule) => rule.keyword === keyword);
+          if (i >= 0)
+            group.rules.splice(i, 1);
         }
         return this;
       }
@@ -4788,7 +4788,7 @@ var require_core = __commonJS({
       }
     }
     function addRule(keyword, definition, dataType) {
-      var _a2;
+      var _a;
       const post = definition === null || definition === void 0 ? void 0 : definition.post;
       if (dataType && post)
         throw new Error('keyword with "post" flag cannot have "type"');
@@ -4814,12 +4814,12 @@ var require_core = __commonJS({
       else
         ruleGroup.rules.push(rule);
       RULES.all[keyword] = rule;
-      (_a2 = definition.implements) === null || _a2 === void 0 ? void 0 : _a2.forEach((kwd) => this.addKeyword(kwd));
+      (_a = definition.implements) === null || _a === void 0 ? void 0 : _a.forEach((kwd) => this.addKeyword(kwd));
     }
     function addBeforeRule(ruleGroup, rule, before) {
-      const i2 = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
-      if (i2 >= 0) {
-        ruleGroup.rules.splice(i2, 0, rule);
+      const i = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
+      if (i >= 0) {
+        ruleGroup.rules.splice(i, 0, rule);
       } else {
         ruleGroup.rules.push(rule);
         this.logger.warn(`rule ${before} is not defined`);
@@ -4873,14 +4873,14 @@ var require_ref = __commonJS({
       keyword: "$ref",
       schemaType: "string",
       code(cxt) {
-        const { gen, schema: $ref, it } = cxt;
-        const { baseId, schemaEnv: env, validateName, opts, self } = it;
+        const { gen, schema: $ref, it: it2 } = cxt;
+        const { baseId, schemaEnv: env, validateName, opts, self } = it2;
         const { root } = env;
         if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
           return callRootRef();
         const schOrEnv = compile_1.resolveRef.call(self, root, baseId, $ref);
         if (schOrEnv === void 0)
-          throw new ref_error_1.default(it.opts.uriResolver, baseId, $ref);
+          throw new ref_error_1.default(it2.opts.uriResolver, baseId, $ref);
         if (schOrEnv instanceof compile_1.SchemaEnv)
           return callValidate(schOrEnv);
         return inlineRefSchema(schOrEnv);
@@ -4891,8 +4891,8 @@ var require_ref = __commonJS({
           return callRef(cxt, (0, codegen_1._)`${rootName}.validate`, root, root.$async);
         }
         function callValidate(sch) {
-          const v = getValidate(cxt, sch);
-          callRef(cxt, v, sch, sch.$async);
+          const v2 = getValidate(cxt, sch);
+          callRef(cxt, v2, sch, sch.$async);
         }
         function inlineRefSchema(sch) {
           const schName = gen.scopeValue("schema", opts.code.source === true ? { ref: sch, code: (0, codegen_1.stringify)(sch) } : { ref: sch });
@@ -4914,9 +4914,9 @@ var require_ref = __commonJS({
       return sch.validate ? gen.scopeValue("validate", { ref: sch.validate }) : (0, codegen_1._)`${gen.scopeValue("wrapper", { ref: sch })}.validate`;
     }
     exports2.getValidate = getValidate;
-    function callRef(cxt, v, sch, $async) {
-      const { gen, it } = cxt;
-      const { allErrors, schemaEnv: env, opts } = it;
+    function callRef(cxt, v2, sch, $async) {
+      const { gen, it: it2 } = cxt;
+      const { allErrors, schemaEnv: env, opts } = it2;
       const passCxt = opts.passContext ? names_1.default.this : codegen_1.nil;
       if ($async)
         callAsyncRef();
@@ -4927,12 +4927,12 @@ var require_ref = __commonJS({
           throw new Error("async schema referenced by sync schema");
         const valid = gen.let("valid");
         gen.try(() => {
-          gen.code((0, codegen_1._)`await ${(0, code_1.callValidateCode)(cxt, v, passCxt)}`);
-          addEvaluatedFrom(v);
+          gen.code((0, codegen_1._)`await ${(0, code_1.callValidateCode)(cxt, v2, passCxt)}`);
+          addEvaluatedFrom(v2);
           if (!allErrors)
             gen.assign(valid, true);
         }, (e) => {
-          gen.if((0, codegen_1._)`!(${e} instanceof ${it.ValidationError})`, () => gen.throw(e));
+          gen.if((0, codegen_1._)`!(${e} instanceof ${it2.ValidationError})`, () => gen.throw(e));
           addErrorsFrom(e);
           if (!allErrors)
             gen.assign(valid, false);
@@ -4940,7 +4940,7 @@ var require_ref = __commonJS({
         cxt.ok(valid);
       }
       function callSyncRef() {
-        cxt.result((0, code_1.callValidateCode)(cxt, v, passCxt), () => addEvaluatedFrom(v), () => addErrorsFrom(v));
+        cxt.result((0, code_1.callValidateCode)(cxt, v2, passCxt), () => addEvaluatedFrom(v2), () => addErrorsFrom(v2));
       }
       function addErrorsFrom(source) {
         const errs = (0, codegen_1._)`${source}.errors`;
@@ -4948,28 +4948,28 @@ var require_ref = __commonJS({
         gen.assign(names_1.default.errors, (0, codegen_1._)`${names_1.default.vErrors}.length`);
       }
       function addEvaluatedFrom(source) {
-        var _a2;
-        if (!it.opts.unevaluated)
+        var _a;
+        if (!it2.opts.unevaluated)
           return;
-        const schEvaluated = (_a2 = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a2 === void 0 ? void 0 : _a2.evaluated;
-        if (it.props !== true) {
+        const schEvaluated = (_a = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a === void 0 ? void 0 : _a.evaluated;
+        if (it2.props !== true) {
           if (schEvaluated && !schEvaluated.dynamicProps) {
             if (schEvaluated.props !== void 0) {
-              it.props = util_1.mergeEvaluated.props(gen, schEvaluated.props, it.props);
+              it2.props = util_1.mergeEvaluated.props(gen, schEvaluated.props, it2.props);
             }
           } else {
             const props = gen.var("props", (0, codegen_1._)`${source}.evaluated.props`);
-            it.props = util_1.mergeEvaluated.props(gen, props, it.props, codegen_1.Name);
+            it2.props = util_1.mergeEvaluated.props(gen, props, it2.props, codegen_1.Name);
           }
         }
-        if (it.items !== true) {
+        if (it2.items !== true) {
           if (schEvaluated && !schEvaluated.dynamicItems) {
             if (schEvaluated.items !== void 0) {
-              it.items = util_1.mergeEvaluated.items(gen, schEvaluated.items, it.items);
+              it2.items = util_1.mergeEvaluated.items(gen, schEvaluated.items, it2.items);
             }
           } else {
             const items = gen.var("items", (0, codegen_1._)`${source}.evaluated.items`);
-            it.items = util_1.mergeEvaluated.items(gen, items, it.items, codegen_1.Name);
+            it2.items = util_1.mergeEvaluated.items(gen, items, it2.items, codegen_1.Name);
           }
         }
       }
@@ -5049,8 +5049,8 @@ var require_multipleOf = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, schemaCode, it } = cxt;
-        const prec = it.opts.multipleOfPrecision;
+        const { gen, data, schemaCode, it: it2 } = cxt;
+        const prec = it2.opts.multipleOfPrecision;
         const res = gen.let("res");
         const invalid = prec ? (0, codegen_1._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1._)`${res} !== parseInt(${res})`;
         cxt.fail$data((0, codegen_1._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid}))`);
@@ -5108,9 +5108,9 @@ var require_limitLength = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { keyword, data, schemaCode, it } = cxt;
+        const { keyword, data, schemaCode, it: it2 } = cxt;
         const op = keyword === "maxLength" ? codegen_1.operators.GT : codegen_1.operators.LT;
-        const len = it.opts.unicode === false ? (0, codegen_1._)`${data}.length` : (0, codegen_1._)`${(0, util_1.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
+        const len = it2.opts.unicode === false ? (0, codegen_1._)`${data}.length` : (0, codegen_1._)`${(0, util_1.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
         cxt.fail$data((0, codegen_1._)`${len} ${op} ${schemaCode}`);
       }
     };
@@ -5137,13 +5137,13 @@ var require_pattern = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, $data, schema, schemaCode, it } = cxt;
-        const u = it.opts.unicodeRegExp ? "u" : "";
+        const { gen, data, $data, schema, schemaCode, it: it2 } = cxt;
+        const u2 = it2.opts.unicodeRegExp ? "u" : "";
         if ($data) {
-          const { regExp } = it.opts.code;
+          const { regExp } = it2.opts.code;
           const regExpCode = regExp.code === "new RegExp" ? (0, codegen_1._)`new RegExp` : (0, util_1.useFunc)(gen, regExp);
           const valid = gen.let("valid");
-          gen.try(() => gen.assign(valid, (0, codegen_1._)`${regExpCode}(${schemaCode}, ${u}).test(${data})`), () => gen.assign(valid, false));
+          gen.try(() => gen.assign(valid, (0, codegen_1._)`${regExpCode}(${schemaCode}, ${u2}).test(${data})`), () => gen.assign(valid, false));
           cxt.fail$data((0, codegen_1._)`!${valid}`);
         } else {
           const regExp = (0, code_1.usePattern)(cxt, schema);
@@ -5203,12 +5203,12 @@ var require_required = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, schemaCode, data, $data, it } = cxt;
-        const { opts } = it;
+        const { gen, schema, schemaCode, data, $data, it: it2 } = cxt;
+        const { opts } = it2;
         if (!$data && schema.length === 0)
           return;
         const useLoop = schema.length >= opts.loopRequired;
-        if (it.allErrors)
+        if (it2.allErrors)
           allErrorsMode();
         else
           exitOnErrorMode();
@@ -5217,9 +5217,9 @@ var require_required = __commonJS({
           const { definedProperties } = cxt.it;
           for (const requiredKey of schema) {
             if ((props === null || props === void 0 ? void 0 : props[requiredKey]) === void 0 && !definedProperties.has(requiredKey)) {
-              const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+              const schemaPath = it2.schemaEnv.baseId + it2.errSchemaPath;
               const msg = `required property "${requiredKey}" is not defined at "${schemaPath}" (strictRequired)`;
-              (0, util_1.checkStrictMode)(it, msg, it.opts.strictRequired);
+              (0, util_1.checkStrictMode)(it2, msg, it2.opts.strictRequired);
             }
           }
         }
@@ -5316,8 +5316,8 @@ var require_uniqueItems = __commonJS({
     var util_1 = require_util();
     var equal_1 = require_equal();
     var error2 = {
-      message: ({ params: { i: i2, j: j2 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j2} and ${i2} are identical)`,
-      params: ({ params: { i: i2, j: j2 } }) => (0, codegen_1._)`{i: ${i2}, j: ${j2}}`
+      message: ({ params: { i, j: j3 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j3} and ${i} are identical)`,
+      params: ({ params: { i, j: j3 } }) => (0, codegen_1._)`{i: ${i}, j: ${j3}}`
     };
     var def = {
       keyword: "uniqueItems",
@@ -5326,7 +5326,7 @@ var require_uniqueItems = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, $data, schema, parentSchema, schemaCode, it } = cxt;
+        const { gen, data, $data, schema, parentSchema, schemaCode, it: it2 } = cxt;
         if (!$data && !schema)
           return;
         const valid = gen.let("valid");
@@ -5334,35 +5334,35 @@ var require_uniqueItems = __commonJS({
         cxt.block$data(valid, validateUniqueItems, (0, codegen_1._)`${schemaCode} === false`);
         cxt.ok(valid);
         function validateUniqueItems() {
-          const i2 = gen.let("i", (0, codegen_1._)`${data}.length`);
-          const j2 = gen.let("j");
-          cxt.setParams({ i: i2, j: j2 });
+          const i = gen.let("i", (0, codegen_1._)`${data}.length`);
+          const j3 = gen.let("j");
+          cxt.setParams({ i, j: j3 });
           gen.assign(valid, true);
-          gen.if((0, codegen_1._)`${i2} > 1`, () => (canOptimize() ? loopN : loopN2)(i2, j2));
+          gen.if((0, codegen_1._)`${i} > 1`, () => (canOptimize() ? loopN : loopN2)(i, j3));
         }
         function canOptimize() {
           return itemTypes.length > 0 && !itemTypes.some((t2) => t2 === "object" || t2 === "array");
         }
-        function loopN(i2, j2) {
+        function loopN(i, j3) {
           const item = gen.name("item");
-          const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it.opts.strictNumbers, dataType_1.DataType.Wrong);
+          const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it2.opts.strictNumbers, dataType_1.DataType.Wrong);
           const indices = gen.const("indices", (0, codegen_1._)`{}`);
-          gen.for((0, codegen_1._)`;${i2}--;`, () => {
-            gen.let(item, (0, codegen_1._)`${data}[${i2}]`);
+          gen.for((0, codegen_1._)`;${i}--;`, () => {
+            gen.let(item, (0, codegen_1._)`${data}[${i}]`);
             gen.if(wrongType, (0, codegen_1._)`continue`);
             if (itemTypes.length > 1)
               gen.if((0, codegen_1._)`typeof ${item} == "string"`, (0, codegen_1._)`${item} += "_"`);
             gen.if((0, codegen_1._)`typeof ${indices}[${item}] == "number"`, () => {
-              gen.assign(j2, (0, codegen_1._)`${indices}[${item}]`);
+              gen.assign(j3, (0, codegen_1._)`${indices}[${item}]`);
               cxt.error();
               gen.assign(valid, false).break();
-            }).code((0, codegen_1._)`${indices}[${item}] = ${i2}`);
+            }).code((0, codegen_1._)`${indices}[${item}] = ${i}`);
           });
         }
-        function loopN2(i2, j2) {
+        function loopN2(i, j3) {
           const eql = (0, util_1.useFunc)(gen, equal_1.default);
           const outer = gen.name("outer");
-          gen.label(outer).for((0, codegen_1._)`;${i2}--;`, () => gen.for((0, codegen_1._)`${j2} = ${i2}; ${j2}--;`, () => gen.if((0, codegen_1._)`${eql}(${data}[${i2}], ${data}[${j2}])`, () => {
+          gen.label(outer).for((0, codegen_1._)`;${i}--;`, () => gen.for((0, codegen_1._)`${j3} = ${i}; ${j3}--;`, () => gen.if((0, codegen_1._)`${eql}(${data}[${i}], ${data}[${j3}])`, () => {
             cxt.error();
             gen.assign(valid, false).break(outer);
           })));
@@ -5420,10 +5420,10 @@ var require_enum = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, $data, schema, schemaCode, it } = cxt;
+        const { gen, data, $data, schema, schemaCode, it: it2 } = cxt;
         if (!$data && schema.length === 0)
           throw new Error("enum must have non-empty array");
-        const useLoop = schema.length >= it.opts.loopEnum;
+        const useLoop = schema.length >= it2.opts.loopEnum;
         let eql;
         const getEql = () => eql !== null && eql !== void 0 ? eql : eql = (0, util_1.useFunc)(gen, equal_1.default);
         let valid;
@@ -5434,16 +5434,16 @@ var require_enum = __commonJS({
           if (!Array.isArray(schema))
             throw new Error("ajv implementation error");
           const vSchema = gen.const("vSchema", schemaCode);
-          valid = (0, codegen_1.or)(...schema.map((_x, i2) => equalCode(vSchema, i2)));
+          valid = (0, codegen_1.or)(...schema.map((_x, i) => equalCode(vSchema, i)));
         }
         cxt.pass(valid);
         function loopEnum() {
           gen.assign(valid, false);
-          gen.forOf("v", schemaCode, (v) => gen.if((0, codegen_1._)`${getEql()}(${data}, ${v})`, () => gen.assign(valid, true).break()));
+          gen.forOf("v", schemaCode, (v2) => gen.if((0, codegen_1._)`${getEql()}(${data}, ${v2})`, () => gen.assign(valid, true).break()));
         }
-        function equalCode(vSchema, i2) {
-          const sch = schema[i2];
-          return typeof sch === "object" && sch !== null ? (0, codegen_1._)`${getEql()}(${data}, ${vSchema}[${i2}])` : (0, codegen_1._)`${data} === ${sch}`;
+        function equalCode(vSchema, i) {
+          const sch = schema[i];
+          return typeof sch === "object" && sch !== null ? (0, codegen_1._)`${getEql()}(${data}, ${vSchema}[${i}])` : (0, codegen_1._)`${data} === ${sch}`;
         }
       }
     };
@@ -5508,31 +5508,31 @@ var require_additionalItems = __commonJS({
       before: "uniqueItems",
       error: error2,
       code(cxt) {
-        const { parentSchema, it } = cxt;
+        const { parentSchema, it: it2 } = cxt;
         const { items } = parentSchema;
         if (!Array.isArray(items)) {
-          (0, util_1.checkStrictMode)(it, '"additionalItems" is ignored when "items" is not an array of schemas');
+          (0, util_1.checkStrictMode)(it2, '"additionalItems" is ignored when "items" is not an array of schemas');
           return;
         }
         validateAdditionalItems(cxt, items);
       }
     };
     function validateAdditionalItems(cxt, items) {
-      const { gen, schema, data, keyword, it } = cxt;
-      it.items = true;
+      const { gen, schema, data, keyword, it: it2 } = cxt;
+      it2.items = true;
       const len = gen.const("len", (0, codegen_1._)`${data}.length`);
       if (schema === false) {
         cxt.setParams({ len: items.length });
         cxt.pass((0, codegen_1._)`${len} <= ${items.length}`);
-      } else if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it, schema)) {
+      } else if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it2, schema)) {
         const valid = gen.var("valid", (0, codegen_1._)`${len} <= ${items.length}`);
         gen.if((0, codegen_1.not)(valid), () => validateItems(valid));
         cxt.ok(valid);
       }
       function validateItems(valid) {
-        gen.forRange("i", items.length, len, (i2) => {
-          cxt.subschema({ keyword, dataProp: i2, dataPropType: util_1.Type.Num }, valid);
-          if (!it.allErrors)
+        gen.forRange("i", items.length, len, (i) => {
+          cxt.subschema({ keyword, dataProp: i, dataPropType: util_1.Type.Num }, valid);
+          if (!it2.allErrors)
             gen.if((0, codegen_1.not)(valid), () => gen.break());
         });
       }
@@ -5557,40 +5557,40 @@ var require_items = __commonJS({
       schemaType: ["object", "array", "boolean"],
       before: "uniqueItems",
       code(cxt) {
-        const { schema, it } = cxt;
+        const { schema, it: it2 } = cxt;
         if (Array.isArray(schema))
           return validateTuple(cxt, "additionalItems", schema);
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        it2.items = true;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         cxt.ok((0, code_1.validateArray)(cxt));
       }
     };
     function validateTuple(cxt, extraItems, schArr = cxt.schema) {
-      const { gen, parentSchema, data, keyword, it } = cxt;
+      const { gen, parentSchema, data, keyword, it: it2 } = cxt;
       checkStrictTuple(parentSchema);
-      if (it.opts.unevaluated && schArr.length && it.items !== true) {
-        it.items = util_1.mergeEvaluated.items(gen, schArr.length, it.items);
+      if (it2.opts.unevaluated && schArr.length && it2.items !== true) {
+        it2.items = util_1.mergeEvaluated.items(gen, schArr.length, it2.items);
       }
       const valid = gen.name("valid");
       const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-      schArr.forEach((sch, i2) => {
-        if ((0, util_1.alwaysValidSchema)(it, sch))
+      schArr.forEach((sch, i) => {
+        if ((0, util_1.alwaysValidSchema)(it2, sch))
           return;
-        gen.if((0, codegen_1._)`${len} > ${i2}`, () => cxt.subschema({
+        gen.if((0, codegen_1._)`${len} > ${i}`, () => cxt.subschema({
           keyword,
-          schemaProp: i2,
-          dataProp: i2
+          schemaProp: i,
+          dataProp: i
         }, valid));
         cxt.ok(valid);
       });
       function checkStrictTuple(sch) {
-        const { opts, errSchemaPath } = it;
-        const l = schArr.length;
-        const fullTuple = l === sch.minItems && (l === sch.maxItems || sch[extraItems] === false);
+        const { opts, errSchemaPath } = it2;
+        const l3 = schArr.length;
+        const fullTuple = l3 === sch.minItems && (l3 === sch.maxItems || sch[extraItems] === false);
         if (opts.strictTuples && !fullTuple) {
-          const msg = `"${keyword}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
-          (0, util_1.checkStrictMode)(it, msg, opts.strictTuples);
+          const msg = `"${keyword}" is ${l3}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
+          (0, util_1.checkStrictMode)(it2, msg, opts.strictTuples);
         }
       }
     }
@@ -5636,10 +5636,10 @@ var require_items2020 = __commonJS({
       before: "uniqueItems",
       error: error2,
       code(cxt) {
-        const { schema, parentSchema, it } = cxt;
+        const { schema, parentSchema, it: it2 } = cxt;
         const { prefixItems } = parentSchema;
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        it2.items = true;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         if (prefixItems)
           (0, additionalItems_1.validateAdditionalItems)(cxt, prefixItems);
@@ -5670,11 +5670,11 @@ var require_contains = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, data, it } = cxt;
+        const { gen, schema, parentSchema, data, it: it2 } = cxt;
         let min;
         let max;
         const { minContains, maxContains } = parentSchema;
-        if (it.opts.next) {
+        if (it2.opts.next) {
           min = minContains === void 0 ? 1 : minContains;
           max = maxContains;
         } else {
@@ -5683,22 +5683,22 @@ var require_contains = __commonJS({
         const len = gen.const("len", (0, codegen_1._)`${data}.length`);
         cxt.setParams({ min, max });
         if (max === void 0 && min === 0) {
-          (0, util_1.checkStrictMode)(it, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
+          (0, util_1.checkStrictMode)(it2, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
           return;
         }
         if (max !== void 0 && min > max) {
-          (0, util_1.checkStrictMode)(it, `"minContains" > "maxContains" is always invalid`);
+          (0, util_1.checkStrictMode)(it2, `"minContains" > "maxContains" is always invalid`);
           cxt.fail();
           return;
         }
-        if ((0, util_1.alwaysValidSchema)(it, schema)) {
+        if ((0, util_1.alwaysValidSchema)(it2, schema)) {
           let cond = (0, codegen_1._)`${len} >= ${min}`;
           if (max !== void 0)
             cond = (0, codegen_1._)`${cond} && ${len} <= ${max}`;
           cxt.pass(cond);
           return;
         }
-        it.items = true;
+        it2.items = true;
         const valid = gen.name("valid");
         if (max === void 0 && min === 1) {
           validateItems(valid, () => gen.if(valid, () => gen.break()));
@@ -5717,10 +5717,10 @@ var require_contains = __commonJS({
           validateItems(schValid, () => gen.if(schValid, () => checkLimits(count)));
         }
         function validateItems(_valid, block) {
-          gen.forRange("i", 0, len, (i2) => {
+          gen.forRange("i", 0, len, (i) => {
             cxt.subschema({
               keyword: "contains",
-              dataProp: i2,
+              dataProp: i,
               dataPropType: util_1.Type.Num,
               compositeRule: true
             }, _valid);
@@ -5788,7 +5788,7 @@ var require_dependencies = __commonJS({
       return [propertyDeps, schemaDeps];
     }
     function validatePropertyDeps(cxt, propertyDeps = cxt.schema) {
-      const { gen, data, it } = cxt;
+      const { gen, data, it: it2 } = cxt;
       if (Object.keys(propertyDeps).length === 0)
         return;
       const missing = gen.let("missing");
@@ -5796,13 +5796,13 @@ var require_dependencies = __commonJS({
         const deps = propertyDeps[prop];
         if (deps.length === 0)
           continue;
-        const hasProperty = (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties);
+        const hasProperty = (0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties);
         cxt.setParams({
           property: prop,
           depsCount: deps.length,
           deps: deps.join(", ")
         });
-        if (it.allErrors) {
+        if (it2.allErrors) {
           gen.if(hasProperty, () => {
             for (const depProp of deps) {
               (0, code_1.checkReportMissingProp)(cxt, depProp);
@@ -5817,13 +5817,13 @@ var require_dependencies = __commonJS({
     }
     exports2.validatePropertyDeps = validatePropertyDeps;
     function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
-      const { gen, data, keyword, it } = cxt;
+      const { gen, data, keyword, it: it2 } = cxt;
       const valid = gen.name("valid");
       for (const prop in schemaDeps) {
-        if ((0, util_1.alwaysValidSchema)(it, schemaDeps[prop]))
+        if ((0, util_1.alwaysValidSchema)(it2, schemaDeps[prop]))
           continue;
         gen.if(
-          (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties),
+          (0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties),
           () => {
             const schCxt = cxt.subschema({ keyword, schemaProp: prop }, valid);
             cxt.mergeValidEvaluated(schCxt, valid);
@@ -5856,8 +5856,8 @@ var require_propertyNames = __commonJS({
       schemaType: ["object", "boolean"],
       error: error2,
       code(cxt) {
-        const { gen, schema, data, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        const { gen, schema, data, it: it2 } = cxt;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         const valid = gen.name("valid");
         gen.forIn("key", data, (key) => {
@@ -5871,7 +5871,7 @@ var require_propertyNames = __commonJS({
           }, valid);
           gen.if((0, codegen_1.not)(valid), () => {
             cxt.error(true);
-            if (!it.allErrors)
+            if (!it2.allErrors)
               gen.break();
           });
         });
@@ -5903,12 +5903,12 @@ var require_additionalProperties = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, data, errsCount, it } = cxt;
+        const { gen, schema, parentSchema, data, errsCount, it: it2 } = cxt;
         if (!errsCount)
           throw new Error("ajv implementation error");
-        const { allErrors, opts } = it;
-        it.props = true;
-        if (opts.removeAdditional !== "all" && (0, util_1.alwaysValidSchema)(it, schema))
+        const { allErrors, opts } = it2;
+        it2.props = true;
+        if (opts.removeAdditional !== "all" && (0, util_1.alwaysValidSchema)(it2, schema))
           return;
         const props = (0, code_1.allSchemaProperties)(parentSchema.properties);
         const patProps = (0, code_1.allSchemaProperties)(parentSchema.patternProperties);
@@ -5925,7 +5925,7 @@ var require_additionalProperties = __commonJS({
         function isAdditional(key) {
           let definedProp;
           if (props.length > 8) {
-            const propsSchema = (0, util_1.schemaRefOrVal)(it, parentSchema.properties, "properties");
+            const propsSchema = (0, util_1.schemaRefOrVal)(it2, parentSchema.properties, "properties");
             definedProp = (0, code_1.isOwnProperty)(gen, propsSchema, key);
           } else if (props.length) {
             definedProp = (0, codegen_1.or)(...props.map((p2) => (0, codegen_1._)`${key} === ${p2}`));
@@ -5952,7 +5952,7 @@ var require_additionalProperties = __commonJS({
               gen.break();
             return;
           }
-          if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it, schema)) {
+          if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it2, schema)) {
             const valid = gen.name("valid");
             if (opts.removeAdditional === "failing") {
               applyAdditionalSchema(key, valid, false);
@@ -6002,18 +6002,18 @@ var require_properties = __commonJS({
       type: "object",
       schemaType: "object",
       code(cxt) {
-        const { gen, schema, parentSchema, data, it } = cxt;
-        if (it.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
-          additionalProperties_1.default.code(new validate_1.KeywordCxt(it, additionalProperties_1.default, "additionalProperties"));
+        const { gen, schema, parentSchema, data, it: it2 } = cxt;
+        if (it2.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
+          additionalProperties_1.default.code(new validate_1.KeywordCxt(it2, additionalProperties_1.default, "additionalProperties"));
         }
         const allProps = (0, code_1.allSchemaProperties)(schema);
         for (const prop of allProps) {
-          it.definedProperties.add(prop);
+          it2.definedProperties.add(prop);
         }
-        if (it.opts.unevaluated && allProps.length && it.props !== true) {
-          it.props = util_1.mergeEvaluated.props(gen, (0, util_1.toHash)(allProps), it.props);
+        if (it2.opts.unevaluated && allProps.length && it2.props !== true) {
+          it2.props = util_1.mergeEvaluated.props(gen, (0, util_1.toHash)(allProps), it2.props);
         }
-        const properties = allProps.filter((p2) => !(0, util_1.alwaysValidSchema)(it, schema[p2]));
+        const properties = allProps.filter((p2) => !(0, util_1.alwaysValidSchema)(it2, schema[p2]));
         if (properties.length === 0)
           return;
         const valid = gen.name("valid");
@@ -6021,9 +6021,9 @@ var require_properties = __commonJS({
           if (hasDefault(prop)) {
             applyPropertySchema(prop);
           } else {
-            gen.if((0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties));
+            gen.if((0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties));
             applyPropertySchema(prop);
-            if (!it.allErrors)
+            if (!it2.allErrors)
               gen.else().var(valid, true);
             gen.endIf();
           }
@@ -6031,7 +6031,7 @@ var require_properties = __commonJS({
           cxt.ok(valid);
         }
         function hasDefault(prop) {
-          return it.opts.useDefaults && !it.compositeRule && schema[prop].default !== void 0;
+          return it2.opts.useDefaults && !it2.compositeRule && schema[prop].default !== void 0;
         }
         function applyPropertySchema(prop) {
           cxt.subschema({
@@ -6060,25 +6060,25 @@ var require_patternProperties = __commonJS({
       type: "object",
       schemaType: "object",
       code(cxt) {
-        const { gen, schema, data, parentSchema, it } = cxt;
-        const { opts } = it;
+        const { gen, schema, data, parentSchema, it: it2 } = cxt;
+        const { opts } = it2;
         const patterns = (0, code_1.allSchemaProperties)(schema);
-        const alwaysValidPatterns = patterns.filter((p2) => (0, util_1.alwaysValidSchema)(it, schema[p2]));
-        if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it.opts.unevaluated || it.props === true)) {
+        const alwaysValidPatterns = patterns.filter((p2) => (0, util_1.alwaysValidSchema)(it2, schema[p2]));
+        if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it2.opts.unevaluated || it2.props === true)) {
           return;
         }
         const checkProperties = opts.strictSchema && !opts.allowMatchingProperties && parentSchema.properties;
         const valid = gen.name("valid");
-        if (it.props !== true && !(it.props instanceof codegen_1.Name)) {
-          it.props = (0, util_2.evaluatedPropsToName)(gen, it.props);
+        if (it2.props !== true && !(it2.props instanceof codegen_1.Name)) {
+          it2.props = (0, util_2.evaluatedPropsToName)(gen, it2.props);
         }
-        const { props } = it;
+        const { props } = it2;
         validatePatternProperties();
         function validatePatternProperties() {
           for (const pat of patterns) {
             if (checkProperties)
               checkMatchingProperties(pat);
-            if (it.allErrors) {
+            if (it2.allErrors) {
               validateProperties(pat);
             } else {
               gen.var(valid, true);
@@ -6090,7 +6090,7 @@ var require_patternProperties = __commonJS({
         function checkMatchingProperties(pat) {
           for (const prop in checkProperties) {
             if (new RegExp(pat).test(prop)) {
-              (0, util_1.checkStrictMode)(it, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
+              (0, util_1.checkStrictMode)(it2, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
             }
           }
         }
@@ -6106,9 +6106,9 @@ var require_patternProperties = __commonJS({
                   dataPropType: util_2.Type.Str
                 }, valid);
               }
-              if (it.opts.unevaluated && props !== true) {
+              if (it2.opts.unevaluated && props !== true) {
                 gen.assign((0, codegen_1._)`${props}[${key}]`, true);
-              } else if (!alwaysValid && !it.allErrors) {
+              } else if (!alwaysValid && !it2.allErrors) {
                 gen.if((0, codegen_1.not)(valid), () => gen.break());
               }
             });
@@ -6131,8 +6131,8 @@ var require_not = __commonJS({
       schemaType: ["object", "boolean"],
       trackErrors: true,
       code(cxt) {
-        const { gen, schema, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema)) {
+        const { gen, schema, it: it2 } = cxt;
+        if ((0, util_1.alwaysValidSchema)(it2, schema)) {
           cxt.fail();
           return;
         }
@@ -6185,10 +6185,10 @@ var require_oneOf = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, it } = cxt;
+        const { gen, schema, parentSchema, it: it2 } = cxt;
         if (!Array.isArray(schema))
           throw new Error("ajv implementation error");
-        if (it.opts.discriminator && parentSchema.discriminator)
+        if (it2.opts.discriminator && parentSchema.discriminator)
           return;
         const schArr = schema;
         const valid = gen.let("valid", false);
@@ -6198,23 +6198,23 @@ var require_oneOf = __commonJS({
         gen.block(validateOneOf);
         cxt.result(valid, () => cxt.reset(), () => cxt.error(true));
         function validateOneOf() {
-          schArr.forEach((sch, i2) => {
+          schArr.forEach((sch, i) => {
             let schCxt;
-            if ((0, util_1.alwaysValidSchema)(it, sch)) {
+            if ((0, util_1.alwaysValidSchema)(it2, sch)) {
               gen.var(schValid, true);
             } else {
               schCxt = cxt.subschema({
                 keyword: "oneOf",
-                schemaProp: i2,
+                schemaProp: i,
                 compositeRule: true
               }, schValid);
             }
-            if (i2 > 0) {
-              gen.if((0, codegen_1._)`${schValid} && ${valid}`).assign(valid, false).assign(passing, (0, codegen_1._)`[${passing}, ${i2}]`).else();
+            if (i > 0) {
+              gen.if((0, codegen_1._)`${schValid} && ${valid}`).assign(valid, false).assign(passing, (0, codegen_1._)`[${passing}, ${i}]`).else();
             }
             gen.if(schValid, () => {
               gen.assign(valid, true);
-              gen.assign(passing, i2);
+              gen.assign(passing, i);
               if (schCxt)
                 cxt.mergeEvaluated(schCxt, codegen_1.Name);
             });
@@ -6236,14 +6236,14 @@ var require_allOf = __commonJS({
       keyword: "allOf",
       schemaType: "array",
       code(cxt) {
-        const { gen, schema, it } = cxt;
+        const { gen, schema, it: it2 } = cxt;
         if (!Array.isArray(schema))
           throw new Error("ajv implementation error");
         const valid = gen.name("valid");
-        schema.forEach((sch, i2) => {
-          if ((0, util_1.alwaysValidSchema)(it, sch))
+        schema.forEach((sch, i) => {
+          if ((0, util_1.alwaysValidSchema)(it2, sch))
             return;
-          const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i2 }, valid);
+          const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i }, valid);
           cxt.ok(valid);
           cxt.mergeEvaluated(schCxt);
         });
@@ -6270,12 +6270,12 @@ var require_if = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, parentSchema, it } = cxt;
+        const { gen, parentSchema, it: it2 } = cxt;
         if (parentSchema.then === void 0 && parentSchema.else === void 0) {
-          (0, util_1.checkStrictMode)(it, '"if" without "then" and "else" is ignored');
+          (0, util_1.checkStrictMode)(it2, '"if" without "then" and "else" is ignored');
         }
-        const hasThen = hasSchema(it, "then");
-        const hasElse = hasSchema(it, "else");
+        const hasThen = hasSchema(it2, "then");
+        const hasElse = hasSchema(it2, "else");
         if (!hasThen && !hasElse)
           return;
         const valid = gen.let("valid", true);
@@ -6314,9 +6314,9 @@ var require_if = __commonJS({
         }
       }
     };
-    function hasSchema(it, keyword) {
-      const schema = it.schema[keyword];
-      return schema !== void 0 && !(0, util_1.alwaysValidSchema)(it, schema);
+    function hasSchema(it2, keyword) {
+      const schema = it2.schema[keyword];
+      return schema !== void 0 && !(0, util_1.alwaysValidSchema)(it2, schema);
     }
     exports2.default = def;
   }
@@ -6331,9 +6331,9 @@ var require_thenElse = __commonJS({
     var def = {
       keyword: ["then", "else"],
       schemaType: ["object", "boolean"],
-      code({ keyword, parentSchema, it }) {
+      code({ keyword, parentSchema, it: it2 }) {
         if (parentSchema.if === void 0)
-          (0, util_1.checkStrictMode)(it, `"${keyword}" without "if" is ignored`);
+          (0, util_1.checkStrictMode)(it2, `"${keyword}" without "if" is ignored`);
       }
     };
     exports2.default = def;
@@ -6405,8 +6405,8 @@ var require_format = __commonJS({
       $data: true,
       error: error2,
       code(cxt, ruleType) {
-        const { gen, data, $data, schema, schemaCode, it } = cxt;
-        const { opts, errSchemaPath, schemaEnv, self } = it;
+        const { gen, data, $data, schema, schemaCode, it: it2 } = cxt;
+        const { opts, errSchemaPath, schemaEnv, self } = it2;
         if (!opts.validateFormats)
           return;
         if ($data)
@@ -6568,9 +6568,9 @@ var require_discriminator = __commonJS({
       schemaType: "object",
       error: error2,
       code(cxt) {
-        const { gen, data, schema, parentSchema, it } = cxt;
+        const { gen, data, schema, parentSchema, it: it2 } = cxt;
         const { oneOf } = parentSchema;
-        if (!it.opts.discriminator) {
+        if (!it2.opts.discriminator) {
           throw new Error("discriminator: requires discriminator option");
         }
         const tagName = schema.propertyName;
@@ -6602,26 +6602,26 @@ var require_discriminator = __commonJS({
           return _valid;
         }
         function getMapping() {
-          var _a2;
+          var _a;
           const oneOfMapping = {};
           const topRequired = hasRequired(parentSchema);
           let tagRequired = true;
-          for (let i2 = 0; i2 < oneOf.length; i2++) {
-            let sch = oneOf[i2];
-            if ((sch === null || sch === void 0 ? void 0 : sch.$ref) && !(0, util_1.schemaHasRulesButRef)(sch, it.self.RULES)) {
+          for (let i = 0; i < oneOf.length; i++) {
+            let sch = oneOf[i];
+            if ((sch === null || sch === void 0 ? void 0 : sch.$ref) && !(0, util_1.schemaHasRulesButRef)(sch, it2.self.RULES)) {
               const ref = sch.$ref;
-              sch = compile_1.resolveRef.call(it.self, it.schemaEnv.root, it.baseId, ref);
+              sch = compile_1.resolveRef.call(it2.self, it2.schemaEnv.root, it2.baseId, ref);
               if (sch instanceof compile_1.SchemaEnv)
                 sch = sch.schema;
               if (sch === void 0)
-                throw new ref_error_1.default(it.opts.uriResolver, it.baseId, ref);
+                throw new ref_error_1.default(it2.opts.uriResolver, it2.baseId, ref);
             }
-            const propSch = (_a2 = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a2 === void 0 ? void 0 : _a2[tagName];
+            const propSch = (_a = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a === void 0 ? void 0 : _a[tagName];
             if (typeof propSch != "object") {
               throw new Error(`discriminator: oneOf subschemas (or referenced schemas) must have "properties/${tagName}"`);
             }
             tagRequired = tagRequired && (topRequired || hasRequired(sch));
-            addMappings(propSch, i2);
+            addMappings(propSch, i);
           }
           if (!tagRequired)
             throw new Error(`discriminator: "${tagName}" must be required`);
@@ -6629,22 +6629,22 @@ var require_discriminator = __commonJS({
           function hasRequired({ required: required2 }) {
             return Array.isArray(required2) && required2.includes(tagName);
           }
-          function addMappings(sch, i2) {
+          function addMappings(sch, i) {
             if (sch.const) {
-              addMapping(sch.const, i2);
+              addMapping(sch.const, i);
             } else if (sch.enum) {
               for (const tagValue of sch.enum) {
-                addMapping(tagValue, i2);
+                addMapping(tagValue, i);
               }
             } else {
               throw new Error(`discriminator: "properties/${tagName}" must have "const" or "enum"`);
             }
           }
-          function addMapping(tagValue, i2) {
+          function addMapping(tagValue, i) {
             if (typeof tagValue != "string" || tagValue in oneOfMapping) {
               throw new Error(`discriminator: "${tagName}" values must be unique strings`);
             }
-            oneOfMapping[tagValue] = i2;
+            oneOfMapping[tagValue] = i;
           }
         }
       }
@@ -6825,7 +6825,7 @@ var require_ajv = __commonJS({
     var Ajv2 = class extends core_1.default {
       _addVocabularies() {
         super._addVocabularies();
-        draft7_1.default.forEach((v) => this.addVocabulary(v));
+        draft7_1.default.forEach((v2) => this.addVocabulary(v2));
         if (this.opts.discriminator)
           this.addKeyword(discriminator_1.default);
       }
@@ -6981,7 +6981,7 @@ var require_formats = __commonJS({
         const matches = TIME.exec(str);
         if (!matches)
           return false;
-        const hr = +matches[1];
+        const hr2 = +matches[1];
         const min = +matches[2];
         const sec = +matches[3];
         const tz = matches[4];
@@ -6990,10 +6990,10 @@ var require_formats = __commonJS({
         const tzM = +(matches[7] || 0);
         if (tzH > 23 || tzM > 59 || strictTimeZone && !tz)
           return false;
-        if (hr <= 23 && min <= 59 && sec < 60)
+        if (hr2 <= 23 && min <= 59 && sec < 60)
           return true;
         const utcMin = min - tzM * tzSign;
-        const utcHr = hr - tzH * tzSign - (utcMin < 0 ? 1 : 0);
+        const utcHr = hr2 - tzH * tzSign - (utcMin < 0 ? 1 : 0);
         return (utcHr === 23 || utcHr === -1) && (utcMin === 59 || utcMin === -1) && sec < 61;
       };
     }
@@ -7126,12 +7126,12 @@ var require_code3 = __commonJS({
         return item === "" || item === '""';
       }
       get str() {
-        var _a2;
-        return (_a2 = this._str) !== null && _a2 !== void 0 ? _a2 : this._str = this._items.reduce((s, c3) => `${s}${c3}`, "");
+        var _a;
+        return (_a = this._str) !== null && _a !== void 0 ? _a : this._str = this._items.reduce((s, c3) => `${s}${c3}`, "");
       }
       get names() {
-        var _a2;
-        return (_a2 = this._names) !== null && _a2 !== void 0 ? _a2 : this._names = this._items.reduce((names, c3) => {
+        var _a;
+        return (_a = this._names) !== null && _a !== void 0 ? _a : this._names = this._items.reduce((names, c3) => {
           if (c3 instanceof Name)
             names[c3.str] = (names[c3.str] || 0) + 1;
           return names;
@@ -7140,24 +7140,24 @@ var require_code3 = __commonJS({
     };
     exports2._Code = _Code;
     exports2.nil = new _Code("");
-    function _2(strs, ...args) {
+    function _3(strs, ...args) {
       const code = [strs[0]];
-      let i2 = 0;
-      while (i2 < args.length) {
-        addCodeArg(code, args[i2]);
-        code.push(strs[++i2]);
+      let i = 0;
+      while (i < args.length) {
+        addCodeArg(code, args[i]);
+        code.push(strs[++i]);
       }
       return new _Code(code);
     }
-    exports2._ = _2;
+    exports2._ = _3;
     var plus = new _Code("+");
     function str(strs, ...args) {
       const expr = [safeStringify(strs[0])];
-      let i2 = 0;
-      while (i2 < args.length) {
+      let i = 0;
+      while (i < args.length) {
         expr.push(plus);
-        addCodeArg(expr, args[i2]);
-        expr.push(plus, safeStringify(strs[++i2]));
+        addCodeArg(expr, args[i]);
+        expr.push(plus, safeStringify(strs[++i]));
       }
       optimize(expr);
       return new _Code(expr);
@@ -7173,54 +7173,54 @@ var require_code3 = __commonJS({
     }
     exports2.addCodeArg = addCodeArg;
     function optimize(expr) {
-      let i2 = 1;
-      while (i2 < expr.length - 1) {
-        if (expr[i2] === plus) {
-          const res = mergeExprItems(expr[i2 - 1], expr[i2 + 1]);
+      let i = 1;
+      while (i < expr.length - 1) {
+        if (expr[i] === plus) {
+          const res = mergeExprItems(expr[i - 1], expr[i + 1]);
           if (res !== void 0) {
-            expr.splice(i2 - 1, 3, res);
+            expr.splice(i - 1, 3, res);
             continue;
           }
-          expr[i2++] = "+";
+          expr[i++] = "+";
         }
-        i2++;
+        i++;
       }
     }
-    function mergeExprItems(a, b2) {
-      if (b2 === '""')
+    function mergeExprItems(a, b3) {
+      if (b3 === '""')
         return a;
       if (a === '""')
-        return b2;
+        return b3;
       if (typeof a == "string") {
-        if (b2 instanceof Name || a[a.length - 1] !== '"')
+        if (b3 instanceof Name || a[a.length - 1] !== '"')
           return;
-        if (typeof b2 != "string")
-          return `${a.slice(0, -1)}${b2}"`;
-        if (b2[0] === '"')
-          return a.slice(0, -1) + b2.slice(1);
+        if (typeof b3 != "string")
+          return `${a.slice(0, -1)}${b3}"`;
+        if (b3[0] === '"')
+          return a.slice(0, -1) + b3.slice(1);
         return;
       }
-      if (typeof b2 == "string" && b2[0] === '"' && !(a instanceof Name))
-        return `"${a}${b2.slice(1)}`;
+      if (typeof b3 == "string" && b3[0] === '"' && !(a instanceof Name))
+        return `"${a}${b3.slice(1)}`;
       return;
     }
     function strConcat(c1, c22) {
       return c22.emptyStr() ? c1 : c1.emptyStr() ? c22 : str`${c1}${c22}`;
     }
     exports2.strConcat = strConcat;
-    function interpolate(x2) {
-      return typeof x2 == "number" || typeof x2 == "boolean" || x2 === null ? x2 : safeStringify(Array.isArray(x2) ? x2.join(",") : x2);
+    function interpolate(x3) {
+      return typeof x3 == "number" || typeof x3 == "boolean" || x3 === null ? x3 : safeStringify(Array.isArray(x3) ? x3.join(",") : x3);
     }
-    function stringify(x2) {
-      return new _Code(safeStringify(x2));
+    function stringify(x3) {
+      return new _Code(safeStringify(x3));
     }
     exports2.stringify = stringify;
-    function safeStringify(x2) {
-      return JSON.stringify(x2).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+    function safeStringify(x3) {
+      return JSON.stringify(x3).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
     }
     exports2.safeStringify = safeStringify;
     function getProperty(key) {
-      return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _2`[${key}]`;
+      return typeof key == "string" && exports2.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _3`[${key}]`;
     }
     exports2.getProperty = getProperty;
     function regexpCode(rx) {
@@ -7270,8 +7270,8 @@ var require_scope2 = __commonJS({
         return `${prefix}${ng.index++}`;
       }
       _nameGroup(prefix) {
-        var _a2, _b;
-        if (((_b = (_a2 = this._parent) === null || _a2 === void 0 ? void 0 : _a2._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
+        var _a, _b;
+        if (((_b = (_a = this._parent) === null || _a === void 0 ? void 0 : _a._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
           throw new Error(`CodeGen: prefix "${prefix}" is not allowed in this scope`);
         }
         return this._names[prefix] = { prefix, index: 0 };
@@ -7304,21 +7304,21 @@ var require_scope2 = __commonJS({
         return new ValueScopeName(prefix, this._newName(prefix));
       }
       value(nameOrPrefix, value) {
-        var _a2;
+        var _a;
         if (value.ref === void 0)
           throw new Error("CodeGen: ref must be passed in value");
         const name = this.toName(nameOrPrefix);
         const { prefix } = name;
-        const valueKey = (_a2 = value.key) !== null && _a2 !== void 0 ? _a2 : value.ref;
-        let vs = this._values[prefix];
-        if (vs) {
-          const _name = vs.get(valueKey);
+        const valueKey = (_a = value.key) !== null && _a !== void 0 ? _a : value.ref;
+        let vs2 = this._values[prefix];
+        if (vs2) {
+          const _name = vs2.get(valueKey);
           if (_name)
             return _name;
         } else {
-          vs = this._values[prefix] = /* @__PURE__ */ new Map();
+          vs2 = this._values[prefix] = /* @__PURE__ */ new Map();
         }
-        vs.set(valueKey, name);
+        vs2.set(valueKey, name);
         const s = this._scope[prefix] || (this._scope[prefix] = []);
         const itemIndex = s.length;
         s[itemIndex] = value.ref;
@@ -7326,10 +7326,10 @@ var require_scope2 = __commonJS({
         return name;
       }
       getValue(prefix, keyOrRef) {
-        const vs = this._values[prefix];
-        if (!vs)
+        const vs2 = this._values[prefix];
+        if (!vs2)
           return;
-        return vs.get(keyOrRef);
+        return vs2.get(keyOrRef);
       }
       scopeRefs(scopeName, values = this._values) {
         return this._reduceValues(values, (name) => {
@@ -7348,11 +7348,11 @@ var require_scope2 = __commonJS({
       _reduceValues(values, valueCode, usedValues = {}, getCode) {
         let code = code_1.nil;
         for (const prefix in values) {
-          const vs = values[prefix];
-          if (!vs)
+          const vs2 = values[prefix];
+          if (!vs2)
             continue;
           const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
-          vs.forEach((name) => {
+          vs2.forEach((name) => {
             if (nameSet.has(name))
               return;
             nameSet.set(name, UsedValueState.Started);
@@ -7448,10 +7448,10 @@ var require_codegen2 = __commonJS({
         this.name = name;
         this.rhs = rhs;
       }
-      render({ es5, _n }) {
+      render({ es5, _n: _n2 }) {
         const varKind = es5 ? scope_1.varKinds.var : this.varKind;
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
-        return `${varKind} ${this.name}${rhs};` + _n;
+        return `${varKind} ${this.name}${rhs};` + _n2;
       }
       optimizeNames(names, constants) {
         if (!names[this.name.str])
@@ -7471,8 +7471,8 @@ var require_codegen2 = __commonJS({
         this.rhs = rhs;
         this.sideEffects = sideEffects;
       }
-      render({ _n }) {
-        return `${this.lhs} = ${this.rhs};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.lhs} = ${this.rhs};` + _n2;
       }
       optimizeNames(names, constants) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
@@ -7490,8 +7490,8 @@ var require_codegen2 = __commonJS({
         super(lhs, rhs, sideEffects);
         this.op = op;
       }
-      render({ _n }) {
-        return `${this.lhs} ${this.op}= ${this.rhs};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.lhs} ${this.op}= ${this.rhs};` + _n2;
       }
     };
     var Label = class extends Node {
@@ -7500,8 +7500,8 @@ var require_codegen2 = __commonJS({
         this.label = label;
         this.names = {};
       }
-      render({ _n }) {
-        return `${this.label}:` + _n;
+      render({ _n: _n2 }) {
+        return `${this.label}:` + _n2;
       }
     };
     var Break = class extends Node {
@@ -7510,9 +7510,9 @@ var require_codegen2 = __commonJS({
         this.label = label;
         this.names = {};
       }
-      render({ _n }) {
+      render({ _n: _n2 }) {
         const label = this.label ? ` ${this.label}` : "";
-        return `break${label};` + _n;
+        return `break${label};` + _n2;
       }
     };
     var Throw = class extends Node {
@@ -7520,8 +7520,8 @@ var require_codegen2 = __commonJS({
         super();
         this.error = error2;
       }
-      render({ _n }) {
-        return `throw ${this.error};` + _n;
+      render({ _n: _n2 }) {
+        return `throw ${this.error};` + _n2;
       }
       get names() {
         return this.error.names;
@@ -7532,8 +7532,8 @@ var require_codegen2 = __commonJS({
         super();
         this.code = code;
       }
-      render({ _n }) {
-        return `${this.code};` + _n;
+      render({ _n: _n2 }) {
+        return `${this.code};` + _n2;
       }
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
@@ -7556,27 +7556,27 @@ var require_codegen2 = __commonJS({
       }
       optimizeNodes() {
         const { nodes } = this;
-        let i2 = nodes.length;
-        while (i2--) {
-          const n = nodes[i2].optimizeNodes();
+        let i = nodes.length;
+        while (i--) {
+          const n = nodes[i].optimizeNodes();
           if (Array.isArray(n))
-            nodes.splice(i2, 1, ...n);
+            nodes.splice(i, 1, ...n);
           else if (n)
-            nodes[i2] = n;
+            nodes[i] = n;
           else
-            nodes.splice(i2, 1);
+            nodes.splice(i, 1);
         }
         return nodes.length > 0 ? this : void 0;
       }
       optimizeNames(names, constants) {
         const { nodes } = this;
-        let i2 = nodes.length;
-        while (i2--) {
-          const n = nodes[i2];
+        let i = nodes.length;
+        while (i--) {
+          const n = nodes[i];
           if (n.optimizeNames(names, constants))
             continue;
           subtractNames(names, n.names);
-          nodes.splice(i2, 1);
+          nodes.splice(i, 1);
         }
         return nodes.length > 0 ? this : void 0;
       }
@@ -7612,8 +7612,8 @@ var require_codegen2 = __commonJS({
           return this.nodes;
         let e = this.else;
         if (e) {
-          const ns = e.optimizeNodes();
-          e = this.else = Array.isArray(ns) ? new Else(ns) : ns;
+          const ns2 = e.optimizeNodes();
+          e = this.else = Array.isArray(ns2) ? new Else(ns2) : ns2;
         }
         if (e) {
           if (cond === false)
@@ -7627,8 +7627,8 @@ var require_codegen2 = __commonJS({
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2;
-        this.else = (_a2 = this.else) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        var _a;
+        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         if (!(super.optimizeNames(names, constants) || this.else))
           return;
         this.condition = optimizeExpr(this.condition, names, constants);
@@ -7665,17 +7665,17 @@ var require_codegen2 = __commonJS({
       }
     };
     var ForRange = class extends For {
-      constructor(varKind, name, from, to) {
+      constructor(varKind, name, from, to2) {
         super();
         this.varKind = varKind;
         this.name = name;
         this.from = from;
-        this.to = to;
+        this.to = to2;
       }
       render(opts) {
         const varKind = opts.es5 ? scope_1.varKinds.var : this.varKind;
-        const { name, from, to } = this;
-        return `for(${varKind} ${name}=${from}; ${name}<${to}; ${name}++)` + super.render(opts);
+        const { name, from, to: to2 } = this;
+        return `for(${varKind} ${name}=${from}; ${name}<${to2}; ${name}++)` + super.render(opts);
       }
       get names() {
         const names = addExprNames(super.names, this.from);
@@ -7732,16 +7732,16 @@ var require_codegen2 = __commonJS({
         return code;
       }
       optimizeNodes() {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNodes();
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNodes();
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNodes();
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
       optimizeNames(names, constants) {
-        var _a2, _b;
+        var _a, _b;
         super.optimizeNames(names, constants);
-        (_a2 = this.catch) === null || _a2 === void 0 ? void 0 : _a2.optimizeNames(names, constants);
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
         return this;
       }
@@ -7794,8 +7794,8 @@ var require_codegen2 = __commonJS({
       // reserves unique name in the external scope and assigns value to it
       scopeValue(prefixOrName, value) {
         const name = this._extScope.value(prefixOrName, value);
-        const vs = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
-        vs.add(name);
+        const vs2 = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
+        vs2.add(name);
         return name;
       }
       getScopeValue(prefix, keyOrRef) {
@@ -7894,17 +7894,17 @@ var require_codegen2 = __commonJS({
         return this._for(new ForLoop(iteration), forBody);
       }
       // `for` statement for a range of values
-      forRange(nameOrPrefix, from, to, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
+      forRange(nameOrPrefix, from, to2, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
         const name = this._scope.toName(nameOrPrefix);
-        return this._for(new ForRange(varKind, name, from, to), () => forBody(name));
+        return this._for(new ForRange(varKind, name, from, to2), () => forBody(name));
       }
       // `for-of` statement (in es5 mode replace with a normal for loop)
       forOf(nameOrPrefix, iterable, forBody, varKind = scope_1.varKinds.const) {
         const name = this._scope.toName(nameOrPrefix);
         if (this.opts.es5) {
           const arr = iterable instanceof code_1.Name ? iterable : this.var("_arr", iterable);
-          return this.forRange("_i", 0, (0, code_1._)`${arr}.length`, (i2) => {
-            this.var(name, (0, code_1._)`${arr}[${i2}]`);
+          return this.forRange("_i", 0, (0, code_1._)`${arr}.length`, (i) => {
+            this.var(name, (0, code_1._)`${arr}[${i}]`);
             forBody(name);
           });
         }
@@ -8006,13 +8006,13 @@ var require_codegen2 = __commonJS({
         this._currNode.nodes.push(node);
         this._nodes.push(node);
       }
-      _endBlockNode(N1, N2) {
+      _endBlockNode(N1, N22) {
         const n = this._currNode;
-        if (n instanceof N1 || N2 && n instanceof N2) {
+        if (n instanceof N1 || N22 && n instanceof N22) {
           this._nodes.pop();
           return this;
         }
-        throw new Error(`CodeGen: not in block "${N2 ? `${N1.kind}/${N2.kind}` : N1.kind}"`);
+        throw new Error(`CodeGen: not in block "${N22 ? `${N1.kind}/${N22.kind}` : N1.kind}"`);
       }
       _elseNode(node) {
         const n = this._currNode;
@@ -8026,12 +8026,12 @@ var require_codegen2 = __commonJS({
         return this._nodes[0];
       }
       get _currNode() {
-        const ns = this._nodes;
-        return ns[ns.length - 1];
+        const ns2 = this._nodes;
+        return ns2[ns2.length - 1];
       }
       set _currNode(node) {
-        const ns = this._nodes;
-        ns[ns.length - 1] = node;
+        const ns2 = this._nodes;
+        ns2[ns2.length - 1] = node;
       }
     };
     exports2.CodeGen = CodeGen;
@@ -8072,8 +8072,8 @@ var require_codegen2 = __commonJS({
       for (const n in from)
         names[n] = (names[n] || 0) - (from[n] || 0);
     }
-    function not(x2) {
-      return typeof x2 == "boolean" || typeof x2 == "number" || x2 === null ? !x2 : (0, code_1._)`!${par(x2)}`;
+    function not(x3) {
+      return typeof x3 == "boolean" || typeof x3 == "number" || x3 === null ? !x3 : (0, code_1._)`!${par(x3)}`;
     }
     exports2.not = not;
     var andCode = mappend(exports2.operators.AND);
@@ -8082,15 +8082,15 @@ var require_codegen2 = __commonJS({
     }
     exports2.and = and;
     var orCode = mappend(exports2.operators.OR);
-    function or(...args) {
+    function or2(...args) {
       return args.reduce(orCode);
     }
-    exports2.or = or;
+    exports2.or = or2;
     function mappend(op) {
-      return (x2, y2) => x2 === code_1.nil ? y2 : y2 === code_1.nil ? x2 : (0, code_1._)`${par(x2)} ${op} ${par(y2)}`;
+      return (x3, y2) => x3 === code_1.nil ? y2 : y2 === code_1.nil ? x3 : (0, code_1._)`${par(x3)} ${op} ${par(y2)}`;
     }
-    function par(x2) {
-      return x2 instanceof code_1.Name ? x2 : (0, code_1._)`(${x2})`;
+    function par(x3) {
+      return x3 instanceof code_1.Name ? x3 : (0, code_1._)`(${x3})`;
     }
   }
 });
@@ -8110,17 +8110,17 @@ var require_util2 = __commonJS({
       return hash;
     }
     exports2.toHash = toHash;
-    function alwaysValidSchema(it, schema) {
+    function alwaysValidSchema(it2, schema) {
       if (typeof schema == "boolean")
         return schema;
       if (Object.keys(schema).length === 0)
         return true;
-      checkUnknownRules(it, schema);
-      return !schemaHasRules(schema, it.self.RULES.all);
+      checkUnknownRules(it2, schema);
+      return !schemaHasRules(schema, it2.self.RULES.all);
     }
     exports2.alwaysValidSchema = alwaysValidSchema;
-    function checkUnknownRules(it, schema = it.schema) {
-      const { opts, self } = it;
+    function checkUnknownRules(it2, schema = it2.schema) {
+      const { opts, self } = it2;
       if (!opts.strictSchema)
         return;
       if (typeof schema === "boolean")
@@ -8128,7 +8128,7 @@ var require_util2 = __commonJS({
       const rules = self.RULES.keywords;
       for (const key in schema) {
         if (!rules[key])
-          checkStrictMode(it, `unknown keyword: "${key}"`);
+          checkStrictMode(it2, `unknown keyword: "${key}"`);
       }
     }
     exports2.checkUnknownRules = checkUnknownRules;
@@ -8178,62 +8178,62 @@ var require_util2 = __commonJS({
       return str.replace(/~1/g, "/").replace(/~0/g, "~");
     }
     exports2.unescapeJsonPointer = unescapeJsonPointer;
-    function eachItem(xs, f) {
-      if (Array.isArray(xs)) {
-        for (const x2 of xs)
-          f(x2);
+    function eachItem(xs2, f3) {
+      if (Array.isArray(xs2)) {
+        for (const x3 of xs2)
+          f3(x3);
       } else {
-        f(xs);
+        f3(xs2);
       }
     }
     exports2.eachItem = eachItem;
     function makeMergeEvaluated({ mergeNames, mergeToName, mergeValues: mergeValues2, resultToName }) {
-      return (gen, from, to, toName) => {
-        const res = to === void 0 ? from : to instanceof codegen_1.Name ? (from instanceof codegen_1.Name ? mergeNames(gen, from, to) : mergeToName(gen, from, to), to) : from instanceof codegen_1.Name ? (mergeToName(gen, to, from), from) : mergeValues2(from, to);
+      return (gen, from, to2, toName) => {
+        const res = to2 === void 0 ? from : to2 instanceof codegen_1.Name ? (from instanceof codegen_1.Name ? mergeNames(gen, from, to2) : mergeToName(gen, from, to2), to2) : from instanceof codegen_1.Name ? (mergeToName(gen, to2, from), from) : mergeValues2(from, to2);
         return toName === codegen_1.Name && !(res instanceof codegen_1.Name) ? resultToName(gen, res) : res;
       };
     }
     exports2.mergeEvaluated = {
       props: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => {
-          gen.if((0, codegen_1._)`${from} === true`, () => gen.assign(to, true), () => gen.assign(to, (0, codegen_1._)`${to} || {}`).code((0, codegen_1._)`Object.assign(${to}, ${from})`));
+        mergeNames: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true && ${from} !== undefined`, () => {
+          gen.if((0, codegen_1._)`${from} === true`, () => gen.assign(to2, true), () => gen.assign(to2, (0, codegen_1._)`${to2} || {}`).code((0, codegen_1._)`Object.assign(${to2}, ${from})`));
         }),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => {
+        mergeToName: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true`, () => {
           if (from === true) {
-            gen.assign(to, true);
+            gen.assign(to2, true);
           } else {
-            gen.assign(to, (0, codegen_1._)`${to} || {}`);
-            setEvaluated(gen, to, from);
+            gen.assign(to2, (0, codegen_1._)`${to2} || {}`);
+            setEvaluated(gen, to2, from);
           }
         }),
-        mergeValues: (from, to) => from === true ? true : { ...from, ...to },
+        mergeValues: (from, to2) => from === true ? true : { ...from, ...to2 },
         resultToName: evaluatedPropsToName
       }),
       items: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => gen.assign(to, (0, codegen_1._)`${from} === true ? true : ${to} > ${from} ? ${to} : ${from}`)),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => gen.assign(to, from === true ? true : (0, codegen_1._)`${to} > ${from} ? ${to} : ${from}`)),
-        mergeValues: (from, to) => from === true ? true : Math.max(from, to),
+        mergeNames: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true && ${from} !== undefined`, () => gen.assign(to2, (0, codegen_1._)`${from} === true ? true : ${to2} > ${from} ? ${to2} : ${from}`)),
+        mergeToName: (gen, from, to2) => gen.if((0, codegen_1._)`${to2} !== true`, () => gen.assign(to2, from === true ? true : (0, codegen_1._)`${to2} > ${from} ? ${to2} : ${from}`)),
+        mergeValues: (from, to2) => from === true ? true : Math.max(from, to2),
         resultToName: (gen, items) => gen.var("items", items)
       })
     };
-    function evaluatedPropsToName(gen, ps) {
-      if (ps === true)
+    function evaluatedPropsToName(gen, ps2) {
+      if (ps2 === true)
         return gen.var("props", true);
       const props = gen.var("props", (0, codegen_1._)`{}`);
-      if (ps !== void 0)
-        setEvaluated(gen, props, ps);
+      if (ps2 !== void 0)
+        setEvaluated(gen, props, ps2);
       return props;
     }
     exports2.evaluatedPropsToName = evaluatedPropsToName;
-    function setEvaluated(gen, props, ps) {
-      Object.keys(ps).forEach((p2) => gen.assign((0, codegen_1._)`${props}${(0, codegen_1.getProperty)(p2)}`, true));
+    function setEvaluated(gen, props, ps2) {
+      Object.keys(ps2).forEach((p2) => gen.assign((0, codegen_1._)`${props}${(0, codegen_1.getProperty)(p2)}`, true));
     }
     exports2.setEvaluated = setEvaluated;
     var snippets = {};
-    function useFunc(gen, f) {
+    function useFunc(gen, f3) {
       return gen.scopeValue("func", {
-        ref: f,
-        code: snippets[f.code] || (snippets[f.code] = new code_1._Code(f.code))
+        ref: f3,
+        code: snippets[f3.code] || (snippets[f3.code] = new code_1._Code(f3.code))
       });
     }
     exports2.useFunc = useFunc;
@@ -8250,13 +8250,13 @@ var require_util2 = __commonJS({
       return jsPropertySyntax ? (0, codegen_1.getProperty)(dataProp).toString() : "/" + escapeJsonPointer(dataProp);
     }
     exports2.getErrorPath = getErrorPath;
-    function checkStrictMode(it, msg, mode = it.opts.strictSchema) {
+    function checkStrictMode(it2, msg, mode = it2.opts.strictSchema) {
       if (!mode)
         return;
       msg = `strict mode: ${msg}`;
       if (mode === true)
         throw new Error(msg);
-      it.self.logger.warn(msg);
+      it2.self.logger.warn(msg);
     }
     exports2.checkStrictMode = checkStrictMode;
   }
@@ -8311,23 +8311,23 @@ var require_errors2 = __commonJS({
       message: ({ keyword, schemaType }) => schemaType ? (0, codegen_1.str)`"${keyword}" keyword must be ${schemaType} ($data)` : (0, codegen_1.str)`"${keyword}" keyword is invalid ($data)`
     };
     function reportError(cxt, error2 = exports2.keywordError, errorPaths, overrideAllErrors) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
+      const { it: it2 } = cxt;
+      const { gen, compositeRule, allErrors } = it2;
       const errObj = errorObjectCode(cxt, error2, errorPaths);
       if (overrideAllErrors !== null && overrideAllErrors !== void 0 ? overrideAllErrors : compositeRule || allErrors) {
         addError(gen, errObj);
       } else {
-        returnErrors(it, (0, codegen_1._)`[${errObj}]`);
+        returnErrors(it2, (0, codegen_1._)`[${errObj}]`);
       }
     }
     exports2.reportError = reportError;
     function reportExtraError(cxt, error2 = exports2.keywordError, errorPaths) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
+      const { it: it2 } = cxt;
+      const { gen, compositeRule, allErrors } = it2;
       const errObj = errorObjectCode(cxt, error2, errorPaths);
       addError(gen, errObj);
       if (!(compositeRule || allErrors)) {
-        returnErrors(it, names_1.default.vErrors);
+        returnErrors(it2, names_1.default.vErrors);
       }
     }
     exports2.reportExtraError = reportExtraError;
@@ -8336,15 +8336,15 @@ var require_errors2 = __commonJS({
       gen.if((0, codegen_1._)`${names_1.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_1._)`${names_1.default.vErrors}.length`, errsCount), () => gen.assign(names_1.default.vErrors, null)));
     }
     exports2.resetErrorsCount = resetErrorsCount;
-    function extendErrors({ gen, keyword, schemaValue, data, errsCount, it }) {
+    function extendErrors({ gen, keyword, schemaValue, data, errsCount, it: it2 }) {
       if (errsCount === void 0)
         throw new Error("ajv implementation error");
       const err = gen.name("err");
-      gen.forRange("i", errsCount, names_1.default.errors, (i2) => {
-        gen.const(err, (0, codegen_1._)`${names_1.default.vErrors}[${i2}]`);
-        gen.if((0, codegen_1._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_1._)`${err}.instancePath`, (0, codegen_1.strConcat)(names_1.default.instancePath, it.errorPath)));
-        gen.assign((0, codegen_1._)`${err}.schemaPath`, (0, codegen_1.str)`${it.errSchemaPath}/${keyword}`);
-        if (it.opts.verbose) {
+      gen.forRange("i", errsCount, names_1.default.errors, (i) => {
+        gen.const(err, (0, codegen_1._)`${names_1.default.vErrors}[${i}]`);
+        gen.if((0, codegen_1._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_1._)`${err}.instancePath`, (0, codegen_1.strConcat)(names_1.default.instancePath, it2.errorPath)));
+        gen.assign((0, codegen_1._)`${err}.schemaPath`, (0, codegen_1.str)`${it2.errSchemaPath}/${keyword}`);
+        if (it2.opts.verbose) {
           gen.assign((0, codegen_1._)`${err}.schema`, schemaValue);
           gen.assign((0, codegen_1._)`${err}.data`, data);
         }
@@ -8356,16 +8356,16 @@ var require_errors2 = __commonJS({
       gen.if((0, codegen_1._)`${names_1.default.vErrors} === null`, () => gen.assign(names_1.default.vErrors, (0, codegen_1._)`[${err}]`), (0, codegen_1._)`${names_1.default.vErrors}.push(${err})`);
       gen.code((0, codegen_1._)`${names_1.default.errors}++`);
     }
-    function returnErrors(it, errs) {
-      const { gen, validateName, schemaEnv } = it;
+    function returnErrors(it2, errs) {
+      const { gen, validateName, schemaEnv } = it2;
       if (schemaEnv.$async) {
-        gen.throw((0, codegen_1._)`new ${it.ValidationError}(${errs})`);
+        gen.throw((0, codegen_1._)`new ${it2.ValidationError}(${errs})`);
       } else {
         gen.assign((0, codegen_1._)`${validateName}.errors`, errs);
         gen.return(false);
       }
     }
-    var E2 = {
+    var E3 = {
       keyword: new codegen_1.Name("keyword"),
       schemaPath: new codegen_1.Name("schemaPath"),
       params: new codegen_1.Name("params"),
@@ -8381,9 +8381,9 @@ var require_errors2 = __commonJS({
       return errorObject(cxt, error2, errorPaths);
     }
     function errorObject(cxt, error2, errorPaths = {}) {
-      const { gen, it } = cxt;
+      const { gen, it: it2 } = cxt;
       const keyValues = [
-        errorInstancePath(it, errorPaths),
+        errorInstancePath(it2, errorPaths),
         errorSchemaPath(cxt, errorPaths)
       ];
       extraErrorProps(cxt, error2, keyValues);
@@ -8398,20 +8398,20 @@ var require_errors2 = __commonJS({
       if (schemaPath) {
         schPath = (0, codegen_1.str)`${schPath}${(0, util_1.getErrorPath)(schemaPath, util_1.Type.Str)}`;
       }
-      return [E2.schemaPath, schPath];
+      return [E3.schemaPath, schPath];
     }
     function extraErrorProps(cxt, { params, message }, keyValues) {
-      const { keyword, data, schemaValue, it } = cxt;
-      const { opts, propertyName, topSchemaRef, schemaPath } = it;
-      keyValues.push([E2.keyword, keyword], [E2.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
+      const { keyword, data, schemaValue, it: it2 } = cxt;
+      const { opts, propertyName, topSchemaRef, schemaPath } = it2;
+      keyValues.push([E3.keyword, keyword], [E3.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
       if (opts.messages) {
-        keyValues.push([E2.message, typeof message == "function" ? message(cxt) : message]);
+        keyValues.push([E3.message, typeof message == "function" ? message(cxt) : message]);
       }
       if (opts.verbose) {
-        keyValues.push([E2.schema, schemaValue], [E2.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
+        keyValues.push([E3.schema, schemaValue], [E3.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
       }
       if (propertyName)
-        keyValues.push([E2.propertyName, propertyName]);
+        keyValues.push([E3.propertyName, propertyName]);
     }
   }
 });
@@ -8428,10 +8428,10 @@ var require_boolSchema2 = __commonJS({
     var boolError = {
       message: "boolean schema is false"
     };
-    function topBoolOrEmptySchema(it) {
-      const { gen, schema, validateName } = it;
+    function topBoolOrEmptySchema(it2) {
+      const { gen, schema, validateName } = it2;
       if (schema === false) {
-        falseSchemaError(it, false);
+        falseSchemaError(it2, false);
       } else if (typeof schema == "object" && schema.$async === true) {
         gen.return(names_1.default.data);
       } else {
@@ -8440,18 +8440,18 @@ var require_boolSchema2 = __commonJS({
       }
     }
     exports2.topBoolOrEmptySchema = topBoolOrEmptySchema;
-    function boolOrEmptySchema(it, valid) {
-      const { gen, schema } = it;
+    function boolOrEmptySchema(it2, valid) {
+      const { gen, schema } = it2;
       if (schema === false) {
         gen.var(valid, false);
-        falseSchemaError(it);
+        falseSchemaError(it2);
       } else {
         gen.var(valid, true);
       }
     }
     exports2.boolOrEmptySchema = boolOrEmptySchema;
-    function falseSchemaError(it, overrideAllErrors) {
-      const { gen, data } = it;
+    function falseSchemaError(it2, overrideAllErrors) {
+      const { gen, data } = it2;
       const cxt = {
         gen,
         keyword: "false schema",
@@ -8460,7 +8460,7 @@ var require_boolSchema2 = __commonJS({
         schemaCode: false,
         schemaValue: false,
         params: {},
-        it
+        it: it2
       };
       (0, errors_1.reportError)(cxt, boolError, void 0, overrideAllErrors);
     }
@@ -8475,8 +8475,8 @@ var require_rules2 = __commonJS({
     exports2.getRules = exports2.isJSONType = void 0;
     var _jsonTypes = ["string", "number", "integer", "boolean", "null", "object", "array"];
     var jsonTypes = new Set(_jsonTypes);
-    function isJSONType(x2) {
-      return typeof x2 == "string" && jsonTypes.has(x2);
+    function isJSONType(x3) {
+      return typeof x3 == "string" && jsonTypes.has(x3);
     }
     exports2.isJSONType = isJSONType;
     function getRules() {
@@ -8514,8 +8514,8 @@ var require_applicability2 = __commonJS({
     }
     exports2.shouldUseGroup = shouldUseGroup;
     function shouldUseRule(schema, rule) {
-      var _a2;
-      return schema[rule.keyword] !== void 0 || ((_a2 = rule.definition.implements) === null || _a2 === void 0 ? void 0 : _a2.some((kwd) => schema[kwd] !== void 0));
+      var _a;
+      return schema[rule.keyword] !== void 0 || ((_a = rule.definition.implements) === null || _a === void 0 ? void 0 : _a.some((kwd) => schema[kwd] !== void 0));
     }
     exports2.shouldUseRule = shouldUseRule;
   }
@@ -8553,24 +8553,24 @@ var require_dataType2 = __commonJS({
       return types;
     }
     exports2.getSchemaTypes = getSchemaTypes;
-    function getJSONTypes(ts) {
-      const types = Array.isArray(ts) ? ts : ts ? [ts] : [];
+    function getJSONTypes(ts2) {
+      const types = Array.isArray(ts2) ? ts2 : ts2 ? [ts2] : [];
       if (types.every(rules_1.isJSONType))
         return types;
       throw new Error("type must be JSONType or JSONType[]: " + types.join(","));
     }
     exports2.getJSONTypes = getJSONTypes;
-    function coerceAndCheckDataType(it, types) {
-      const { gen, data, opts } = it;
+    function coerceAndCheckDataType(it2, types) {
+      const { gen, data, opts } = it2;
       const coerceTo = coerceToTypes(types, opts.coerceTypes);
-      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it, types[0]));
+      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it2, types[0]));
       if (checkTypes) {
         const wrongType = checkDataTypes(types, data, opts.strictNumbers, DataType.Wrong);
         gen.if(wrongType, () => {
           if (coerceTo.length)
-            coerceData(it, types, coerceTo);
+            coerceData(it2, types, coerceTo);
           else
-            reportTypeError(it);
+            reportTypeError(it2);
         });
       }
       return checkTypes;
@@ -8580,8 +8580,8 @@ var require_dataType2 = __commonJS({
     function coerceToTypes(types, coerceTypes) {
       return coerceTypes ? types.filter((t2) => COERCIBLE.has(t2) || coerceTypes === "array" && t2 === "array") : [];
     }
-    function coerceData(it, types, coerceTo) {
-      const { gen, data, opts } = it;
+    function coerceData(it2, types, coerceTo) {
+      const { gen, data, opts } = it2;
       const dataType = gen.let("dataType", (0, codegen_1._)`typeof ${data}`);
       const coerced = gen.let("coerced", (0, codegen_1._)`undefined`);
       if (opts.coerceTypes === "array") {
@@ -8594,11 +8594,11 @@ var require_dataType2 = __commonJS({
         }
       }
       gen.else();
-      reportTypeError(it);
+      reportTypeError(it2);
       gen.endIf();
       gen.if((0, codegen_1._)`${coerced} !== undefined`, () => {
         gen.assign(data, coerced);
-        assignParentData(it, coerced);
+        assignParentData(it2, coerced);
       });
       function coerceSpecificType(t2) {
         switch (t2) {
@@ -8682,14 +8682,14 @@ var require_dataType2 = __commonJS({
       message: ({ schema }) => `must be ${schema}`,
       params: ({ schema, schemaValue }) => typeof schema == "string" ? (0, codegen_1._)`{type: ${schema}}` : (0, codegen_1._)`{type: ${schemaValue}}`
     };
-    function reportTypeError(it) {
-      const cxt = getTypeErrorContext(it);
+    function reportTypeError(it2) {
+      const cxt = getTypeErrorContext(it2);
       (0, errors_1.reportError)(cxt, typeError);
     }
     exports2.reportTypeError = reportTypeError;
-    function getTypeErrorContext(it) {
-      const { gen, data, schema } = it;
-      const schemaCode = (0, util_1.schemaRefOrVal)(it, schema, "type");
+    function getTypeErrorContext(it2) {
+      const { gen, data, schema } = it2;
+      const schemaCode = (0, util_1.schemaRefOrVal)(it2, schema, "type");
       return {
         gen,
         keyword: "type",
@@ -8699,7 +8699,7 @@ var require_dataType2 = __commonJS({
         schemaValue: schemaCode,
         parentSchema: schema,
         params: {},
-        it
+        it: it2
       };
     }
   }
@@ -8713,24 +8713,24 @@ var require_defaults2 = __commonJS({
     exports2.assignDefaults = void 0;
     var codegen_1 = require_codegen2();
     var util_1 = require_util2();
-    function assignDefaults(it, ty) {
-      const { properties, items } = it.schema;
+    function assignDefaults(it2, ty) {
+      const { properties, items } = it2.schema;
       if (ty === "object" && properties) {
         for (const key in properties) {
-          assignDefault(it, key, properties[key].default);
+          assignDefault(it2, key, properties[key].default);
         }
       } else if (ty === "array" && Array.isArray(items)) {
-        items.forEach((sch, i2) => assignDefault(it, i2, sch.default));
+        items.forEach((sch, i) => assignDefault(it2, i, sch.default));
       }
     }
     exports2.assignDefaults = assignDefaults;
-    function assignDefault(it, prop, defaultValue) {
-      const { gen, compositeRule, data, opts } = it;
+    function assignDefault(it2, prop, defaultValue) {
+      const { gen, compositeRule, data, opts } = it2;
       if (defaultValue === void 0)
         return;
       const childData = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(prop)}`;
       if (compositeRule) {
-        (0, util_1.checkStrictMode)(it, `default is ignored for: ${childData}`);
+        (0, util_1.checkStrictMode)(it2, `default is ignored for: ${childData}`);
         return;
       }
       let condition = (0, codegen_1._)`${childData} === undefined`;
@@ -8752,8 +8752,8 @@ var require_code4 = __commonJS({
     var util_1 = require_util2();
     var names_1 = require_names2();
     function checkReportMissingProp(cxt, prop) {
-      const { gen, data, it } = cxt;
-      gen.if(noPropertyInData(gen, data, prop, it.opts.ownProperties), () => {
+      const { gen, data, it: it2 } = cxt;
+      gen.if(noPropertyInData(gen, data, prop, it2.opts.ownProperties), () => {
         cxt.setParams({ missingProperty: (0, codegen_1._)`${prop}` }, true);
         cxt.error();
       });
@@ -8794,37 +8794,37 @@ var require_code4 = __commonJS({
       return schemaMap ? Object.keys(schemaMap).filter((p2) => p2 !== "__proto__") : [];
     }
     exports2.allSchemaProperties = allSchemaProperties;
-    function schemaProperties(it, schemaMap) {
-      return allSchemaProperties(schemaMap).filter((p2) => !(0, util_1.alwaysValidSchema)(it, schemaMap[p2]));
+    function schemaProperties(it2, schemaMap) {
+      return allSchemaProperties(schemaMap).filter((p2) => !(0, util_1.alwaysValidSchema)(it2, schemaMap[p2]));
     }
     exports2.schemaProperties = schemaProperties;
-    function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }, func, context, passSchema) {
+    function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it: it2 }, func, context, passSchema) {
       const dataAndSchema = passSchema ? (0, codegen_1._)`${schemaCode}, ${data}, ${topSchemaRef}${schemaPath}` : data;
       const valCxt = [
         [names_1.default.instancePath, (0, codegen_1.strConcat)(names_1.default.instancePath, errorPath)],
-        [names_1.default.parentData, it.parentData],
-        [names_1.default.parentDataProperty, it.parentDataProperty],
+        [names_1.default.parentData, it2.parentData],
+        [names_1.default.parentDataProperty, it2.parentDataProperty],
         [names_1.default.rootData, names_1.default.rootData]
       ];
-      if (it.opts.dynamicRef)
+      if (it2.opts.dynamicRef)
         valCxt.push([names_1.default.dynamicAnchors, names_1.default.dynamicAnchors]);
       const args = (0, codegen_1._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
       return context !== codegen_1.nil ? (0, codegen_1._)`${func}.call(${context}, ${args})` : (0, codegen_1._)`${func}(${args})`;
     }
     exports2.callValidateCode = callValidateCode;
     function usePattern({ gen, it: { opts } }, pattern) {
-      const u = opts.unicodeRegExp ? "u" : "";
+      const u2 = opts.unicodeRegExp ? "u" : "";
       return gen.scopeValue("pattern", {
         key: pattern,
-        ref: new RegExp(pattern, u),
-        code: (0, codegen_1._)`new RegExp(${pattern}, ${u})`
+        ref: new RegExp(pattern, u2),
+        code: (0, codegen_1._)`new RegExp(${pattern}, ${u2})`
       });
     }
     exports2.usePattern = usePattern;
     function validateArray(cxt) {
-      const { gen, data, keyword, it } = cxt;
+      const { gen, data, keyword, it: it2 } = cxt;
       const valid = gen.name("valid");
-      if (it.allErrors) {
+      if (it2.allErrors) {
         const validArr = gen.let("valid", true);
         validateItems(() => gen.assign(validArr, false));
         return validArr;
@@ -8834,10 +8834,10 @@ var require_code4 = __commonJS({
       return valid;
       function validateItems(notValid) {
         const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-        gen.forRange("i", 0, len, (i2) => {
+        gen.forRange("i", 0, len, (i) => {
           cxt.subschema({
             keyword,
-            dataProp: i2,
+            dataProp: i,
             dataPropType: util_1.Type.Num
           }, valid);
           gen.if((0, codegen_1.not)(valid), notValid);
@@ -8846,18 +8846,18 @@ var require_code4 = __commonJS({
     }
     exports2.validateArray = validateArray;
     function validateUnion(cxt) {
-      const { gen, schema, keyword, it } = cxt;
+      const { gen, schema, keyword, it: it2 } = cxt;
       if (!Array.isArray(schema))
         throw new Error("ajv implementation error");
-      const alwaysValid = schema.some((sch) => (0, util_1.alwaysValidSchema)(it, sch));
-      if (alwaysValid && !it.opts.unevaluated)
+      const alwaysValid = schema.some((sch) => (0, util_1.alwaysValidSchema)(it2, sch));
+      if (alwaysValid && !it2.opts.unevaluated)
         return;
       const valid = gen.let("valid", false);
       const schValid = gen.name("_valid");
-      gen.block(() => schema.forEach((_sch, i2) => {
+      gen.block(() => schema.forEach((_sch, i) => {
         const schCxt = cxt.subschema({
           keyword,
-          schemaProp: i2,
+          schemaProp: i,
           compositeRule: true
         }, schValid);
         gen.assign(valid, (0, codegen_1._)`${valid} || ${schValid}`);
@@ -8882,16 +8882,16 @@ var require_keyword2 = __commonJS({
     var code_1 = require_code4();
     var errors_1 = require_errors2();
     function macroKeywordCode(cxt, def) {
-      const { gen, keyword, schema, parentSchema, it } = cxt;
-      const macroSchema = def.macro.call(it.self, schema, parentSchema, it);
+      const { gen, keyword, schema, parentSchema, it: it2 } = cxt;
+      const macroSchema = def.macro.call(it2.self, schema, parentSchema, it2);
       const schemaRef = useKeyword(gen, keyword, macroSchema);
-      if (it.opts.validateSchema !== false)
-        it.self.validateSchema(macroSchema, true);
+      if (it2.opts.validateSchema !== false)
+        it2.self.validateSchema(macroSchema, true);
       const valid = gen.name("valid");
       cxt.subschema({
         schema: macroSchema,
         schemaPath: codegen_1.nil,
-        errSchemaPath: `${it.errSchemaPath}/${keyword}`,
+        errSchemaPath: `${it2.errSchemaPath}/${keyword}`,
         topSchemaRef: schemaRef,
         compositeRule: true
       }, valid);
@@ -8899,14 +8899,14 @@ var require_keyword2 = __commonJS({
     }
     exports2.macroKeywordCode = macroKeywordCode;
     function funcKeywordCode(cxt, def) {
-      var _a2;
-      const { gen, keyword, schema, parentSchema, $data, it } = cxt;
-      checkAsyncKeyword(it, def);
-      const validate = !$data && def.compile ? def.compile.call(it.self, schema, parentSchema, it) : def.validate;
+      var _a;
+      const { gen, keyword, schema, parentSchema, $data, it: it2 } = cxt;
+      checkAsyncKeyword(it2, def);
+      const validate = !$data && def.compile ? def.compile.call(it2.self, schema, parentSchema, it2) : def.validate;
       const validateRef = useKeyword(gen, keyword, validate);
       const valid = gen.let("valid");
       cxt.block$data(valid, validateKeyword);
-      cxt.ok((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid);
+      cxt.ok((_a = def.valid) !== null && _a !== void 0 ? _a : valid);
       function validateKeyword() {
         if (def.errors === false) {
           assignValid();
@@ -8922,7 +8922,7 @@ var require_keyword2 = __commonJS({
       }
       function validateAsync() {
         const ruleErrs = gen.let("ruleErrs", null);
-        gen.try(() => assignValid((0, codegen_1._)`await `), (e) => gen.assign(valid, false).if((0, codegen_1._)`${e} instanceof ${it.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1._)`${e}.errors`), () => gen.throw(e)));
+        gen.try(() => assignValid((0, codegen_1._)`await `), (e) => gen.assign(valid, false).if((0, codegen_1._)`${e} instanceof ${it2.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1._)`${e}.errors`), () => gen.throw(e)));
         return ruleErrs;
       }
       function validateSync() {
@@ -8932,19 +8932,19 @@ var require_keyword2 = __commonJS({
         return validateErrs;
       }
       function assignValid(_await = def.async ? (0, codegen_1._)`await ` : codegen_1.nil) {
-        const passCxt = it.opts.passContext ? names_1.default.this : names_1.default.self;
+        const passCxt = it2.opts.passContext ? names_1.default.this : names_1.default.self;
         const passSchema = !("compile" in def && !$data || def.schema === false);
         gen.assign(valid, (0, codegen_1._)`${_await}${(0, code_1.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def.modifying);
       }
       function reportErrs(errors) {
-        var _a3;
-        gen.if((0, codegen_1.not)((_a3 = def.valid) !== null && _a3 !== void 0 ? _a3 : valid), errors);
+        var _a2;
+        gen.if((0, codegen_1.not)((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid), errors);
       }
     }
     exports2.funcKeywordCode = funcKeywordCode;
     function modifyData(cxt) {
-      const { gen, data, it } = cxt;
-      gen.if(it.parentData, () => gen.assign(data, (0, codegen_1._)`${it.parentData}[${it.parentDataProperty}]`));
+      const { gen, data, it: it2 } = cxt;
+      gen.if(it2.parentData, () => gen.assign(data, (0, codegen_1._)`${it2.parentData}[${it2.parentDataProperty}]`));
     }
     function addErrs(cxt, errs) {
       const { gen } = cxt;
@@ -8963,7 +8963,7 @@ var require_keyword2 = __commonJS({
       return gen.scopeValue("keyword", typeof result == "function" ? { ref: result } : { ref: result, code: (0, codegen_1.stringify)(result) });
     }
     function validSchemaType(schema, schemaType, allowUndefined = false) {
-      return !schemaType.length || schemaType.some((st) => st === "array" ? Array.isArray(schema) : st === "object" ? schema && typeof schema == "object" && !Array.isArray(schema) : typeof schema == st || allowUndefined && typeof schema == "undefined");
+      return !schemaType.length || schemaType.some((st2) => st2 === "array" ? Array.isArray(schema) : st2 === "object" ? schema && typeof schema == "object" && !Array.isArray(schema) : typeof schema == st2 || allowUndefined && typeof schema == "undefined");
     }
     exports2.validSchemaType = validSchemaType;
     function validateKeywordUsage({ schema, opts, self, errSchemaPath }, def, keyword) {
@@ -8997,20 +8997,20 @@ var require_subschema2 = __commonJS({
     exports2.extendSubschemaMode = exports2.extendSubschemaData = exports2.getSubschema = void 0;
     var codegen_1 = require_codegen2();
     var util_1 = require_util2();
-    function getSubschema(it, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
+    function getSubschema(it2, { keyword, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
       if (keyword !== void 0 && schema !== void 0) {
         throw new Error('both "keyword" and "schema" passed, only one allowed');
       }
       if (keyword !== void 0) {
-        const sch = it.schema[keyword];
+        const sch = it2.schema[keyword];
         return schemaProp === void 0 ? {
           schema: sch,
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}`
+          schemaPath: (0, codegen_1._)`${it2.schemaPath}${(0, codegen_1.getProperty)(keyword)}`,
+          errSchemaPath: `${it2.errSchemaPath}/${keyword}`
         } : {
           schema: sch[schemaProp],
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}${(0, codegen_1.getProperty)(schemaProp)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}/${(0, util_1.escapeFragment)(schemaProp)}`
+          schemaPath: (0, codegen_1._)`${it2.schemaPath}${(0, codegen_1.getProperty)(keyword)}${(0, codegen_1.getProperty)(schemaProp)}`,
+          errSchemaPath: `${it2.errSchemaPath}/${keyword}/${(0, util_1.escapeFragment)(schemaProp)}`
         };
       }
       if (schema !== void 0) {
@@ -9027,14 +9027,14 @@ var require_subschema2 = __commonJS({
       throw new Error('either "keyword" or "schema" must be passed');
     }
     exports2.getSubschema = getSubschema;
-    function extendSubschemaData(subschema, it, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
+    function extendSubschemaData(subschema, it2, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
       if (data !== void 0 && dataProp !== void 0) {
         throw new Error('both "data" and "dataProp" passed, only one allowed');
       }
-      const { gen } = it;
+      const { gen } = it2;
       if (dataProp !== void 0) {
-        const { errorPath, dataPathArr, opts } = it;
-        const nextData = gen.let("data", (0, codegen_1._)`${it.data}${(0, codegen_1.getProperty)(dataProp)}`, true);
+        const { errorPath, dataPathArr, opts } = it2;
+        const nextData = gen.let("data", (0, codegen_1._)`${it2.data}${(0, codegen_1.getProperty)(dataProp)}`, true);
         dataContextProps(nextData);
         subschema.errorPath = (0, codegen_1.str)`${errorPath}${(0, util_1.getErrorPath)(dataProp, dpType, opts.jsPropertySyntax)}`;
         subschema.parentDataProperty = (0, codegen_1._)`${dataProp}`;
@@ -9050,11 +9050,11 @@ var require_subschema2 = __commonJS({
         subschema.dataTypes = dataTypes;
       function dataContextProps(_nextData) {
         subschema.data = _nextData;
-        subschema.dataLevel = it.dataLevel + 1;
+        subschema.dataLevel = it2.dataLevel + 1;
         subschema.dataTypes = [];
-        it.definedProperties = /* @__PURE__ */ new Set();
-        subschema.parentData = it.data;
-        subschema.dataNames = [...it.dataNames, _nextData];
+        it2.definedProperties = /* @__PURE__ */ new Set();
+        subschema.parentData = it2.data;
+        subschema.dataNames = [...it2.dataNames, _nextData];
       }
     }
     exports2.extendSubschemaData = extendSubschemaData;
@@ -9086,8 +9086,8 @@ var require_uri_all = __commonJS({
         if (sets.length > 1) {
           sets[0] = sets[0].slice(0, -1);
           var xl = sets.length - 1;
-          for (var x2 = 1; x2 < xl; ++x2) {
-            sets[x2] = sets[x2].slice(1, -1);
+          for (var x3 = 1; x3 < xl; ++x3) {
+            sets[x3] = sets[x3].slice(1, -1);
           }
           sets[xl] = sets[xl].slice(1);
           return sets.join("");
@@ -9138,33 +9138,33 @@ var require_uri_all = __commonJS({
       var URI_PROTOCOL = buildExps(false);
       var IRI_PROTOCOL = buildExps(true);
       var slicedToArray = /* @__PURE__ */ (function() {
-        function sliceIterator(arr, i2) {
+        function sliceIterator(arr, i) {
           var _arr = [];
-          var _n = true;
+          var _n2 = true;
           var _d = false;
-          var _e = void 0;
+          var _e2 = void 0;
           try {
-            for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
-              _arr.push(_s.value);
-              if (i2 && _arr.length === i2) break;
+            for (var _i = arr[Symbol.iterator](), _s2; !(_n2 = (_s2 = _i.next()).done); _n2 = true) {
+              _arr.push(_s2.value);
+              if (i && _arr.length === i) break;
             }
           } catch (err) {
             _d = true;
-            _e = err;
+            _e2 = err;
           } finally {
             try {
-              if (!_n && _i["return"]) _i["return"]();
+              if (!_n2 && _i["return"]) _i["return"]();
             } finally {
-              if (_d) throw _e;
+              if (_d) throw _e2;
             }
           }
           return _arr;
         }
-        return function(arr, i2) {
+        return function(arr, i) {
           if (Array.isArray(arr)) {
             return arr;
           } else if (Symbol.iterator in Object(arr)) {
-            return sliceIterator(arr, i2);
+            return sliceIterator(arr, i);
           } else {
             throw new TypeError("Invalid attempt to destructure non-iterable instance");
           }
@@ -9172,7 +9172,7 @@ var require_uri_all = __commonJS({
       })();
       var toConsumableArray = function(arr) {
         if (Array.isArray(arr)) {
-          for (var i2 = 0, arr2 = Array(arr.length); i2 < arr.length; i2++) arr2[i2] = arr[i2];
+          for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
           return arr2;
         } else {
           return Array.from(arr);
@@ -9201,15 +9201,15 @@ var require_uri_all = __commonJS({
       function error$1(type) {
         throw new RangeError(errors[type]);
       }
-      function map(array2, fn) {
+      function map(array2, fn2) {
         var result = [];
         var length = array2.length;
         while (length--) {
-          result[length] = fn(array2[length]);
+          result[length] = fn2(array2[length]);
         }
         return result;
       }
-      function mapDomain(string3, fn) {
+      function mapDomain(string3, fn2) {
         var parts = string3.split("@");
         var result = "";
         if (parts.length > 1) {
@@ -9218,7 +9218,7 @@ var require_uri_all = __commonJS({
         }
         string3 = string3.replace(regexSeparators, ".");
         var labels = string3.split(".");
-        var encoded = map(labels, fn).join(".");
+        var encoded = map(labels, fn2).join(".");
         return result + encoded;
       }
       function ucs2decode(string3) {
@@ -9276,23 +9276,23 @@ var require_uri_all = __commonJS({
       var decode = function decode2(input) {
         var output = [];
         var inputLength = input.length;
-        var i2 = 0;
+        var i = 0;
         var n = initialN;
         var bias = initialBias;
         var basic = input.lastIndexOf(delimiter);
         if (basic < 0) {
           basic = 0;
         }
-        for (var j2 = 0; j2 < basic; ++j2) {
-          if (input.charCodeAt(j2) >= 128) {
+        for (var j3 = 0; j3 < basic; ++j3) {
+          if (input.charCodeAt(j3) >= 128) {
             error$1("not-basic");
           }
-          output.push(input.charCodeAt(j2));
+          output.push(input.charCodeAt(j3));
         }
         for (var index = basic > 0 ? basic + 1 : 0; index < inputLength; ) {
-          var oldi = i2;
+          var oldi = i;
           for (
-            var w = 1, k2 = base;
+            var w2 = 1, k2 = base;
             ;
             /* no condition */
             k2 += base
@@ -9301,28 +9301,28 @@ var require_uri_all = __commonJS({
               error$1("invalid-input");
             }
             var digit = basicToDigit(input.charCodeAt(index++));
-            if (digit >= base || digit > floor((maxInt - i2) / w)) {
+            if (digit >= base || digit > floor((maxInt - i) / w2)) {
               error$1("overflow");
             }
-            i2 += digit * w;
+            i += digit * w2;
             var t2 = k2 <= bias ? tMin : k2 >= bias + tMax ? tMax : k2 - bias;
             if (digit < t2) {
               break;
             }
             var baseMinusT = base - t2;
-            if (w > floor(maxInt / baseMinusT)) {
+            if (w2 > floor(maxInt / baseMinusT)) {
               error$1("overflow");
             }
-            w *= baseMinusT;
+            w2 *= baseMinusT;
           }
           var out = output.length + 1;
-          bias = adapt(i2 - oldi, out, oldi == 0);
-          if (floor(i2 / out) > maxInt - n) {
+          bias = adapt(i - oldi, out, oldi == 0);
+          if (floor(i / out) > maxInt - n) {
             error$1("overflow");
           }
-          n += floor(i2 / out);
-          i2 %= out;
-          output.splice(i2++, 0, n);
+          n += floor(i / out);
+          i %= out;
+          output.splice(i++, 0, n);
         }
         return String.fromCodePoint.apply(String, output);
       };
@@ -9363,15 +9363,15 @@ var require_uri_all = __commonJS({
           output.push(delimiter);
         }
         while (handledCPCount < inputLength) {
-          var m = maxInt;
+          var m2 = maxInt;
           var _iteratorNormalCompletion2 = true;
           var _didIteratorError2 = false;
           var _iteratorError2 = void 0;
           try {
             for (var _iterator2 = input[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
               var currentValue = _step2.value;
-              if (currentValue >= n && currentValue < m) {
-                m = currentValue;
+              if (currentValue >= n && currentValue < m2) {
+                m2 = currentValue;
               }
             }
           } catch (err) {
@@ -9389,11 +9389,11 @@ var require_uri_all = __commonJS({
             }
           }
           var handledCPCountPlusOne = handledCPCount + 1;
-          if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+          if (m2 - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
             error$1("overflow");
           }
-          delta += (m - n) * handledCPCountPlusOne;
-          n = m;
+          delta += (m2 - n) * handledCPCountPlusOne;
+          n = m2;
           var _iteratorNormalCompletion3 = true;
           var _didIteratorError3 = false;
           var _iteratorError3 = void 0;
@@ -9404,7 +9404,7 @@ var require_uri_all = __commonJS({
                 error$1("overflow");
               }
               if (_currentValue == n) {
-                var q2 = delta;
+                var q3 = delta;
                 for (
                   var k2 = base;
                   ;
@@ -9412,15 +9412,15 @@ var require_uri_all = __commonJS({
                   k2 += base
                 ) {
                   var t2 = k2 <= bias ? tMin : k2 >= bias + tMax ? tMax : k2 - bias;
-                  if (q2 < t2) {
+                  if (q3 < t2) {
                     break;
                   }
-                  var qMinusT = q2 - t2;
+                  var qMinusT = q3 - t2;
                   var baseMinusT = base - t2;
                   output.push(stringFromCharCode(digitToBasic(t2 + qMinusT % baseMinusT, 0)));
-                  q2 = floor(qMinusT / baseMinusT);
+                  q3 = floor(qMinusT / baseMinusT);
                 }
-                output.push(stringFromCharCode(digitToBasic(q2, 0)));
+                output.push(stringFromCharCode(digitToBasic(q3, 0)));
                 bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
                 delta = 0;
                 ++handledCPCount;
@@ -9490,33 +9490,33 @@ var require_uri_all = __commonJS({
       }
       function pctDecChars(str) {
         var newStr = "";
-        var i2 = 0;
+        var i = 0;
         var il = str.length;
-        while (i2 < il) {
-          var c3 = parseInt(str.substr(i2 + 1, 2), 16);
+        while (i < il) {
+          var c3 = parseInt(str.substr(i + 1, 2), 16);
           if (c3 < 128) {
             newStr += String.fromCharCode(c3);
-            i2 += 3;
+            i += 3;
           } else if (c3 >= 194 && c3 < 224) {
-            if (il - i2 >= 6) {
-              var c22 = parseInt(str.substr(i2 + 4, 2), 16);
+            if (il - i >= 6) {
+              var c22 = parseInt(str.substr(i + 4, 2), 16);
               newStr += String.fromCharCode((c3 & 31) << 6 | c22 & 63);
             } else {
-              newStr += str.substr(i2, 6);
+              newStr += str.substr(i, 6);
             }
-            i2 += 6;
+            i += 6;
           } else if (c3 >= 224) {
-            if (il - i2 >= 9) {
-              var _c = parseInt(str.substr(i2 + 4, 2), 16);
-              var c32 = parseInt(str.substr(i2 + 7, 2), 16);
+            if (il - i >= 9) {
+              var _c = parseInt(str.substr(i + 4, 2), 16);
+              var c32 = parseInt(str.substr(i + 7, 2), 16);
               newStr += String.fromCharCode((c3 & 15) << 12 | (_c & 63) << 6 | c32 & 63);
             } else {
-              newStr += str.substr(i2, 9);
+              newStr += str.substr(i, 9);
             }
-            i2 += 9;
+            i += 9;
           } else {
-            newStr += str.substr(i2, 3);
-            i2 += 3;
+            newStr += str.substr(i, 3);
+            i += 3;
           }
         }
         return newStr;
@@ -9550,15 +9550,15 @@ var require_uri_all = __commonJS({
         var matches = host.match(protocol.IPV6ADDRESS) || [];
         var _matches2 = slicedToArray(matches, 3), address = _matches2[1], zone = _matches2[2];
         if (address) {
-          var _address$toLowerCase$ = address.toLowerCase().split("::").reverse(), _address$toLowerCase$2 = slicedToArray(_address$toLowerCase$, 2), last2 = _address$toLowerCase$2[0], first2 = _address$toLowerCase$2[1];
-          var firstFields = first2 ? first2.split(":").map(_stripLeadingZeros) : [];
-          var lastFields = last2.split(":").map(_stripLeadingZeros);
+          var _address$toLowerCase$ = address.toLowerCase().split("::").reverse(), _address$toLowerCase$2 = slicedToArray(_address$toLowerCase$, 2), last = _address$toLowerCase$2[0], first = _address$toLowerCase$2[1];
+          var firstFields = first ? first.split(":").map(_stripLeadingZeros) : [];
+          var lastFields = last.split(":").map(_stripLeadingZeros);
           var isLastFieldIPv4Address = protocol.IPV4ADDRESS.test(lastFields[lastFields.length - 1]);
           var fieldCount = isLastFieldIPv4Address ? 7 : 8;
           var lastFieldsStart = lastFields.length - fieldCount;
           var fields = Array(fieldCount);
-          for (var x2 = 0; x2 < fieldCount; ++x2) {
-            fields[x2] = firstFields[x2] || lastFields[lastFieldsStart + x2] || "";
+          for (var x3 = 0; x3 < fieldCount; ++x3) {
+            fields[x3] = firstFields[x3] || lastFields[lastFieldsStart + x3] || "";
           }
           if (isLastFieldIPv4Address) {
             fields[fieldCount - 1] = _normalizeIPv4(fields[fieldCount - 1], protocol);
@@ -9574,8 +9574,8 @@ var require_uri_all = __commonJS({
             }
             return acc;
           }, []);
-          var longestZeroFields = allZeroFields.sort(function(a, b2) {
-            return b2.length - a.length;
+          var longestZeroFields = allZeroFields.sort(function(a, b3) {
+            return b3.length - a.length;
           })[0];
           var newHost = void 0;
           if (longestZeroFields && longestZeroFields.length > 1) {
@@ -9669,8 +9669,8 @@ var require_uri_all = __commonJS({
           uriTokens.push("@");
         }
         if (components.host !== void 0) {
-          uriTokens.push(_normalizeIPv6(_normalizeIPv4(String(components.host), protocol), protocol).replace(protocol.IPV6ADDRESS, function(_2, $1, $2) {
-            return "[" + $1 + ($2 ? "%25" + $2 : "") + "]";
+          uriTokens.push(_normalizeIPv6(_normalizeIPv4(String(components.host), protocol), protocol).replace(protocol.IPV6ADDRESS, function(_3, $1, $22) {
+            return "[" + $1 + ($22 ? "%25" + $22 : "") + "]";
           }));
         }
         if (typeof components.port === "number" || typeof components.port === "string") {
@@ -9818,7 +9818,7 @@ var require_uri_all = __commonJS({
         var schemelessOptions = assign({ scheme: "null" }, options);
         return serialize(resolveComponents(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true), schemelessOptions);
       }
-      function normalize2(uri, options) {
+      function normalize(uri, options) {
         if (typeof uri === "string") {
           uri = serialize(parse3(uri, options), options);
         } else if (typeOf(uri) === "object") {
@@ -9894,8 +9894,8 @@ var require_uri_all = __commonJS({
             wsComponents.secure = void 0;
           }
           if (wsComponents.resourceName) {
-            var _wsComponents$resourc = wsComponents.resourceName.split("?"), _wsComponents$resourc2 = slicedToArray(_wsComponents$resourc, 2), path3 = _wsComponents$resourc2[0], query = _wsComponents$resourc2[1];
-            wsComponents.path = path3 && path3 !== "/" ? path3 : void 0;
+            var _wsComponents$resourc = wsComponents.resourceName.split("?"), _wsComponents$resourc2 = slicedToArray(_wsComponents$resourc, 2), path4 = _wsComponents$resourc2[0], query = _wsComponents$resourc2[1];
+            wsComponents.path = path4 && path4 !== "/" ? path4 : void 0;
             wsComponents.query = query;
             wsComponents.resourceName = void 0;
           }
@@ -9909,7 +9909,7 @@ var require_uri_all = __commonJS({
         parse: handler$2.parse,
         serialize: handler$2.serialize
       };
-      var O2 = {};
+      var O3 = {};
       var isIRI = true;
       var UNRESERVED$$ = "[A-Za-z0-9\\-\\.\\_\\~" + (isIRI ? "\\xA0-\\u200D\\u2010-\\u2029\\u202F-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFEF" : "") + "]";
       var HEXDIG$$ = "[0-9A-Fa-f]";
@@ -9931,19 +9931,19 @@ var require_uri_all = __commonJS({
         scheme: "mailto",
         parse: function parse$$1(components, options) {
           var mailtoComponents = components;
-          var to = mailtoComponents.to = mailtoComponents.path ? mailtoComponents.path.split(",") : [];
+          var to2 = mailtoComponents.to = mailtoComponents.path ? mailtoComponents.path.split(",") : [];
           mailtoComponents.path = void 0;
           if (mailtoComponents.query) {
             var unknownHeaders = false;
             var headers = {};
             var hfields = mailtoComponents.query.split("&");
-            for (var x2 = 0, xl = hfields.length; x2 < xl; ++x2) {
-              var hfield = hfields[x2].split("=");
+            for (var x3 = 0, xl = hfields.length; x3 < xl; ++x3) {
+              var hfield = hfields[x3].split("=");
               switch (hfield[0]) {
                 case "to":
                   var toAddrs = hfield[1].split(",");
                   for (var _x = 0, _xl = toAddrs.length; _x < _xl; ++_x) {
-                    to.push(toAddrs[_x]);
+                    to2.push(toAddrs[_x]);
                   }
                   break;
                 case "subject":
@@ -9961,8 +9961,8 @@ var require_uri_all = __commonJS({
             if (unknownHeaders) mailtoComponents.headers = headers;
           }
           mailtoComponents.query = void 0;
-          for (var _x2 = 0, _xl2 = to.length; _x2 < _xl2; ++_x2) {
-            var addr = to[_x2].split("@");
+          for (var _x2 = 0, _xl2 = to2.length; _x2 < _xl2; ++_x2) {
+            var addr = to2[_x2].split("@");
             addr[0] = unescapeComponent(addr[0]);
             if (!options.unicodeSupport) {
               try {
@@ -9973,16 +9973,16 @@ var require_uri_all = __commonJS({
             } else {
               addr[1] = unescapeComponent(addr[1], options).toLowerCase();
             }
-            to[_x2] = addr.join("@");
+            to2[_x2] = addr.join("@");
           }
           return mailtoComponents;
         },
         serialize: function serialize$$1(mailtoComponents, options) {
           var components = mailtoComponents;
-          var to = toArray(mailtoComponents.to);
-          if (to) {
-            for (var x2 = 0, xl = to.length; x2 < xl; ++x2) {
-              var toAddr = String(to[x2]);
+          var to2 = toArray(mailtoComponents.to);
+          if (to2) {
+            for (var x3 = 0, xl = to2.length; x3 < xl; ++x3) {
+              var toAddr = String(to2[x3]);
               var atIdx = toAddr.lastIndexOf("@");
               var localPart = toAddr.slice(0, atIdx).replace(PCT_ENCODED, decodeUnreserved).replace(PCT_ENCODED, toUpperCase).replace(NOT_LOCAL_PART, pctEncChar);
               var domain = toAddr.slice(atIdx + 1);
@@ -9991,16 +9991,16 @@ var require_uri_all = __commonJS({
               } catch (e) {
                 components.error = components.error || "Email address's domain name can not be converted to " + (!options.iri ? "ASCII" : "Unicode") + " via punycode: " + e;
               }
-              to[x2] = localPart + "@" + domain;
+              to2[x3] = localPart + "@" + domain;
             }
-            components.path = to.join(",");
+            components.path = to2.join(",");
           }
           var headers = mailtoComponents.headers = mailtoComponents.headers || {};
           if (mailtoComponents.subject) headers["subject"] = mailtoComponents.subject;
           if (mailtoComponents.body) headers["body"] = mailtoComponents.body;
           var fields = [];
           for (var name in headers) {
-            if (headers[name] !== O2[name]) {
+            if (headers[name] !== O3[name]) {
               fields.push(name.replace(PCT_ENCODED, decodeUnreserved).replace(PCT_ENCODED, toUpperCase).replace(NOT_HFNAME, pctEncChar) + "=" + headers[name].replace(PCT_ENCODED, decodeUnreserved).replace(PCT_ENCODED, toUpperCase).replace(NOT_HFVALUE, pctEncChar));
             }
           }
@@ -10080,7 +10080,7 @@ var require_uri_all = __commonJS({
       exports3.serialize = serialize;
       exports3.resolveComponents = resolveComponents;
       exports3.resolve = resolve;
-      exports3.normalize = normalize2;
+      exports3.normalize = normalize;
       exports3.equal = equal;
       exports3.escapeComponent = escapeComponent;
       exports3.unescapeComponent = unescapeComponent;
@@ -10162,8 +10162,8 @@ var require_resolve2 = __commonJS({
       }
       return count;
     }
-    function getFullPath(id = "", normalize2) {
-      if (normalize2 !== false)
+    function getFullPath(id = "", normalize) {
+      if (normalize !== false)
         id = normalizeId(id);
       const p2 = URI.parse(id);
       return _getFullPath(p2);
@@ -10193,7 +10193,7 @@ var require_resolve2 = __commonJS({
       const pathPrefix = getFullPath(schId, false);
       const localRefs = {};
       const schemaRefs = /* @__PURE__ */ new Set();
-      traverse(schema, { allKeys: true }, (sch, jsonPtr, _2, parentJsonPtr) => {
+      traverse(schema, { allKeys: true }, (sch, jsonPtr, _3, parentJsonPtr) => {
         if (parentJsonPtr === void 0)
           return;
         const fullPath = pathPrefix + jsonPtr;
@@ -10262,15 +10262,15 @@ var require_validate2 = __commonJS({
     var resolve_1 = require_resolve2();
     var util_1 = require_util2();
     var errors_1 = require_errors2();
-    function validateFunctionCode(it) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          topSchemaObjCode(it);
+    function validateFunctionCode(it2) {
+      if (isSchemaObj(it2)) {
+        checkKeywords(it2);
+        if (schemaCxtHasRules(it2)) {
+          topSchemaObjCode(it2);
           return;
         }
       }
-      validateFunction(it, () => (0, boolSchema_1.topBoolOrEmptySchema)(it));
+      validateFunction(it2, () => (0, boolSchema_1.topBoolOrEmptySchema)(it2));
     }
     exports2.validateFunctionCode = validateFunctionCode;
     function validateFunction({ gen, validateName, schema, schemaEnv, opts }, body) {
@@ -10304,40 +10304,40 @@ var require_validate2 = __commonJS({
           gen.var(names_1.default.dynamicAnchors, (0, codegen_1._)`{}`);
       });
     }
-    function topSchemaObjCode(it) {
-      const { schema, opts, gen } = it;
-      validateFunction(it, () => {
+    function topSchemaObjCode(it2) {
+      const { schema, opts, gen } = it2;
+      validateFunction(it2, () => {
         if (opts.$comment && schema.$comment)
-          commentKeyword(it);
-        checkNoDefault(it);
+          commentKeyword(it2);
+        checkNoDefault(it2);
         gen.let(names_1.default.vErrors, null);
         gen.let(names_1.default.errors, 0);
         if (opts.unevaluated)
-          resetEvaluated(it);
-        typeAndKeywords(it);
-        returnResults(it);
+          resetEvaluated(it2);
+        typeAndKeywords(it2);
+        returnResults(it2);
       });
       return;
     }
-    function resetEvaluated(it) {
-      const { gen, validateName } = it;
-      it.evaluated = gen.const("evaluated", (0, codegen_1._)`${validateName}.evaluated`);
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1._)`${it.evaluated}.props`, (0, codegen_1._)`undefined`));
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1._)`${it.evaluated}.items`, (0, codegen_1._)`undefined`));
+    function resetEvaluated(it2) {
+      const { gen, validateName } = it2;
+      it2.evaluated = gen.const("evaluated", (0, codegen_1._)`${validateName}.evaluated`);
+      gen.if((0, codegen_1._)`${it2.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1._)`${it2.evaluated}.props`, (0, codegen_1._)`undefined`));
+      gen.if((0, codegen_1._)`${it2.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1._)`${it2.evaluated}.items`, (0, codegen_1._)`undefined`));
     }
     function funcSourceUrl(schema, opts) {
       const schId = typeof schema == "object" && schema[opts.schemaId];
       return schId && (opts.code.source || opts.code.process) ? (0, codegen_1._)`/*# sourceURL=${schId} */` : codegen_1.nil;
     }
-    function subschemaCode(it, valid) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          subSchemaObjCode(it, valid);
+    function subschemaCode(it2, valid) {
+      if (isSchemaObj(it2)) {
+        checkKeywords(it2);
+        if (schemaCxtHasRules(it2)) {
+          subSchemaObjCode(it2, valid);
           return;
         }
       }
-      (0, boolSchema_1.boolOrEmptySchema)(it, valid);
+      (0, boolSchema_1.boolOrEmptySchema)(it2, valid);
     }
     function schemaCxtHasRules({ schema, self }) {
       if (typeof schema == "boolean")
@@ -10347,49 +10347,49 @@ var require_validate2 = __commonJS({
           return true;
       return false;
     }
-    function isSchemaObj(it) {
-      return typeof it.schema != "boolean";
+    function isSchemaObj(it2) {
+      return typeof it2.schema != "boolean";
     }
-    function subSchemaObjCode(it, valid) {
-      const { schema, gen, opts } = it;
+    function subSchemaObjCode(it2, valid) {
+      const { schema, gen, opts } = it2;
       if (opts.$comment && schema.$comment)
-        commentKeyword(it);
-      updateContext(it);
-      checkAsyncSchema(it);
+        commentKeyword(it2);
+      updateContext(it2);
+      checkAsyncSchema(it2);
       const errsCount = gen.const("_errs", names_1.default.errors);
-      typeAndKeywords(it, errsCount);
+      typeAndKeywords(it2, errsCount);
       gen.var(valid, (0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
     }
-    function checkKeywords(it) {
-      (0, util_1.checkUnknownRules)(it);
-      checkRefsAndKeywords(it);
+    function checkKeywords(it2) {
+      (0, util_1.checkUnknownRules)(it2);
+      checkRefsAndKeywords(it2);
     }
-    function typeAndKeywords(it, errsCount) {
-      if (it.opts.jtd)
-        return schemaKeywords(it, [], false, errsCount);
-      const types = (0, dataType_1.getSchemaTypes)(it.schema);
-      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it, types);
-      schemaKeywords(it, types, !checkedTypes, errsCount);
+    function typeAndKeywords(it2, errsCount) {
+      if (it2.opts.jtd)
+        return schemaKeywords(it2, [], false, errsCount);
+      const types = (0, dataType_1.getSchemaTypes)(it2.schema);
+      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it2, types);
+      schemaKeywords(it2, types, !checkedTypes, errsCount);
     }
-    function checkRefsAndKeywords(it) {
-      const { schema, errSchemaPath, opts, self } = it;
+    function checkRefsAndKeywords(it2) {
+      const { schema, errSchemaPath, opts, self } = it2;
       if (schema.$ref && opts.ignoreKeywordsWithRef && (0, util_1.schemaHasRulesButRef)(schema, self.RULES)) {
         self.logger.warn(`$ref: keywords ignored in schema at path "${errSchemaPath}"`);
       }
     }
-    function checkNoDefault(it) {
-      const { schema, opts } = it;
+    function checkNoDefault(it2) {
+      const { schema, opts } = it2;
       if (schema.default !== void 0 && opts.useDefaults && opts.strictSchema) {
-        (0, util_1.checkStrictMode)(it, "default is ignored in the schema root");
+        (0, util_1.checkStrictMode)(it2, "default is ignored in the schema root");
       }
     }
-    function updateContext(it) {
-      const schId = it.schema[it.opts.schemaId];
+    function updateContext(it2) {
+      const schId = it2.schema[it2.opts.schemaId];
       if (schId)
-        it.baseId = (0, resolve_1.resolveUrl)(it.baseId, schId);
+        it2.baseId = (0, resolve_1.resolveUrl)(it2.baseId, schId);
     }
-    function checkAsyncSchema(it) {
-      if (it.schema.$async && !it.schemaEnv.$async)
+    function checkAsyncSchema(it2) {
+      if (it2.schema.$async && !it2.schemaEnv.$async)
         throw new Error("async schema in sync schema");
     }
     function commentKeyword({ gen, schemaEnv, schema, errSchemaPath, opts }) {
@@ -10402,14 +10402,14 @@ var require_validate2 = __commonJS({
         gen.code((0, codegen_1._)`${names_1.default.self}.opts.$comment(${msg}, ${schemaPath}, ${rootName}.schema)`);
       }
     }
-    function returnResults(it) {
-      const { gen, schemaEnv, validateName, ValidationError, opts } = it;
+    function returnResults(it2) {
+      const { gen, schemaEnv, validateName, ValidationError, opts } = it2;
       if (schemaEnv.$async) {
         gen.if((0, codegen_1._)`${names_1.default.errors} === 0`, () => gen.return(names_1.default.data), () => gen.throw((0, codegen_1._)`new ${ValidationError}(${names_1.default.vErrors})`));
       } else {
         gen.assign((0, codegen_1._)`${validateName}.errors`, names_1.default.vErrors);
         if (opts.unevaluated)
-          assignEvaluated(it);
+          assignEvaluated(it2);
         gen.return((0, codegen_1._)`${names_1.default.errors} === 0`);
       }
     }
@@ -10419,15 +10419,15 @@ var require_validate2 = __commonJS({
       if (items instanceof codegen_1.Name)
         gen.assign((0, codegen_1._)`${evaluated}.items`, items);
     }
-    function schemaKeywords(it, types, typeErrors, errsCount) {
-      const { gen, schema, data, allErrors, opts, self } = it;
+    function schemaKeywords(it2, types, typeErrors, errsCount) {
+      const { gen, schema, data, allErrors, opts, self } = it2;
       const { RULES } = self;
       if (schema.$ref && (opts.ignoreKeywordsWithRef || !(0, util_1.schemaHasRulesButRef)(schema, RULES))) {
-        gen.block(() => keywordCode(it, "$ref", RULES.all.$ref.definition));
+        gen.block(() => keywordCode(it2, "$ref", RULES.all.$ref.definition));
         return;
       }
       if (!opts.jtd)
-        checkStrictTypes(it, types);
+        checkStrictTypes(it2, types);
       gen.block(() => {
         for (const group of RULES.rules)
           groupKeywords(group);
@@ -10438,66 +10438,66 @@ var require_validate2 = __commonJS({
           return;
         if (group.type) {
           gen.if((0, dataType_2.checkDataType)(group.type, data, opts.strictNumbers));
-          iterateKeywords(it, group);
+          iterateKeywords(it2, group);
           if (types.length === 1 && types[0] === group.type && typeErrors) {
             gen.else();
-            (0, dataType_2.reportTypeError)(it);
+            (0, dataType_2.reportTypeError)(it2);
           }
           gen.endIf();
         } else {
-          iterateKeywords(it, group);
+          iterateKeywords(it2, group);
         }
         if (!allErrors)
           gen.if((0, codegen_1._)`${names_1.default.errors} === ${errsCount || 0}`);
       }
     }
-    function iterateKeywords(it, group) {
-      const { gen, schema, opts: { useDefaults } } = it;
+    function iterateKeywords(it2, group) {
+      const { gen, schema, opts: { useDefaults } } = it2;
       if (useDefaults)
-        (0, defaults_1.assignDefaults)(it, group.type);
+        (0, defaults_1.assignDefaults)(it2, group.type);
       gen.block(() => {
         for (const rule of group.rules) {
           if ((0, applicability_1.shouldUseRule)(schema, rule)) {
-            keywordCode(it, rule.keyword, rule.definition, group.type);
+            keywordCode(it2, rule.keyword, rule.definition, group.type);
           }
         }
       });
     }
-    function checkStrictTypes(it, types) {
-      if (it.schemaEnv.meta || !it.opts.strictTypes)
+    function checkStrictTypes(it2, types) {
+      if (it2.schemaEnv.meta || !it2.opts.strictTypes)
         return;
-      checkContextTypes(it, types);
-      if (!it.opts.allowUnionTypes)
-        checkMultipleTypes(it, types);
-      checkKeywordTypes(it, it.dataTypes);
+      checkContextTypes(it2, types);
+      if (!it2.opts.allowUnionTypes)
+        checkMultipleTypes(it2, types);
+      checkKeywordTypes(it2, it2.dataTypes);
     }
-    function checkContextTypes(it, types) {
+    function checkContextTypes(it2, types) {
       if (!types.length)
         return;
-      if (!it.dataTypes.length) {
-        it.dataTypes = types;
+      if (!it2.dataTypes.length) {
+        it2.dataTypes = types;
         return;
       }
       types.forEach((t2) => {
-        if (!includesType(it.dataTypes, t2)) {
-          strictTypesError(it, `type "${t2}" not allowed by context "${it.dataTypes.join(",")}"`);
+        if (!includesType(it2.dataTypes, t2)) {
+          strictTypesError(it2, `type "${t2}" not allowed by context "${it2.dataTypes.join(",")}"`);
         }
       });
-      it.dataTypes = it.dataTypes.filter((t2) => includesType(types, t2));
+      it2.dataTypes = it2.dataTypes.filter((t2) => includesType(types, t2));
     }
-    function checkMultipleTypes(it, ts) {
-      if (ts.length > 1 && !(ts.length === 2 && ts.includes("null"))) {
-        strictTypesError(it, "use allowUnionTypes to allow union type keyword");
+    function checkMultipleTypes(it2, ts2) {
+      if (ts2.length > 1 && !(ts2.length === 2 && ts2.includes("null"))) {
+        strictTypesError(it2, "use allowUnionTypes to allow union type keyword");
       }
     }
-    function checkKeywordTypes(it, ts) {
-      const rules = it.self.RULES.all;
+    function checkKeywordTypes(it2, ts2) {
+      const rules = it2.self.RULES.all;
       for (const keyword in rules) {
         const rule = rules[keyword];
-        if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it.schema, rule)) {
+        if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it2.schema, rule)) {
           const { type } = rule.definition;
-          if (type.length && !type.some((t2) => hasApplicableType(ts, t2))) {
-            strictTypesError(it, `missing type "${type.join(",")}" for keyword "${keyword}"`);
+          if (type.length && !type.some((t2) => hasApplicableType(ts2, t2))) {
+            strictTypesError(it2, `missing type "${type.join(",")}" for keyword "${keyword}"`);
           }
         }
       }
@@ -10505,31 +10505,31 @@ var require_validate2 = __commonJS({
     function hasApplicableType(schTs, kwdT) {
       return schTs.includes(kwdT) || kwdT === "number" && schTs.includes("integer");
     }
-    function includesType(ts, t2) {
-      return ts.includes(t2) || t2 === "integer" && ts.includes("number");
+    function includesType(ts2, t2) {
+      return ts2.includes(t2) || t2 === "integer" && ts2.includes("number");
     }
-    function strictTypesError(it, msg) {
-      const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+    function strictTypesError(it2, msg) {
+      const schemaPath = it2.schemaEnv.baseId + it2.errSchemaPath;
       msg += ` at "${schemaPath}" (strictTypes)`;
-      (0, util_1.checkStrictMode)(it, msg, it.opts.strictTypes);
+      (0, util_1.checkStrictMode)(it2, msg, it2.opts.strictTypes);
     }
     var KeywordCxt = class {
-      constructor(it, def, keyword) {
-        (0, keyword_1.validateKeywordUsage)(it, def, keyword);
-        this.gen = it.gen;
-        this.allErrors = it.allErrors;
+      constructor(it2, def, keyword) {
+        (0, keyword_1.validateKeywordUsage)(it2, def, keyword);
+        this.gen = it2.gen;
+        this.allErrors = it2.allErrors;
         this.keyword = keyword;
-        this.data = it.data;
-        this.schema = it.schema[keyword];
-        this.$data = def.$data && it.opts.$data && this.schema && this.schema.$data;
-        this.schemaValue = (0, util_1.schemaRefOrVal)(it, this.schema, keyword, this.$data);
+        this.data = it2.data;
+        this.schema = it2.schema[keyword];
+        this.$data = def.$data && it2.opts.$data && this.schema && this.schema.$data;
+        this.schemaValue = (0, util_1.schemaRefOrVal)(it2, this.schema, keyword, this.$data);
         this.schemaType = def.schemaType;
-        this.parentSchema = it.schema;
+        this.parentSchema = it2.schema;
         this.params = {};
-        this.it = it;
+        this.it = it2;
         this.def = def;
         if (this.$data) {
-          this.schemaCode = it.gen.const("vSchema", getData(this.$data, it));
+          this.schemaCode = it2.gen.const("vSchema", getData(this.$data, it2));
         } else {
           this.schemaCode = this.schemaValue;
           if (!(0, keyword_1.validSchemaType)(this.schema, def.schemaType, def.allowUndefined)) {
@@ -10537,7 +10537,7 @@ var require_validate2 = __commonJS({
           }
         }
         if ("code" in def ? def.trackErrors : def.errors !== false) {
-          this.errsCount = it.gen.const("_errs", names_1.default.errors);
+          this.errsCount = it2.gen.const("_errs", names_1.default.errors);
         }
       }
       result(condition, successAction, failAction) {
@@ -10584,18 +10584,18 @@ var require_validate2 = __commonJS({
         const { schemaCode } = this;
         this.fail((0, codegen_1._)`${schemaCode} !== undefined && (${(0, codegen_1.or)(this.invalid$data(), condition)})`);
       }
-      error(append2, errorParams, errorPaths) {
+      error(append, errorParams, errorPaths) {
         if (errorParams) {
           this.setParams(errorParams);
-          this._error(append2, errorPaths);
+          this._error(append, errorPaths);
           this.setParams({});
           return;
         }
-        this._error(append2, errorPaths);
+        this._error(append, errorPaths);
       }
-      _error(append2, errorPaths) {
+      _error(append, errorPaths) {
         ;
-        (append2 ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
+        (append ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
       }
       $dataError() {
         (0, errors_1.reportError)(this, this.def.$dataError || errors_1.keyword$DataError);
@@ -10637,14 +10637,14 @@ var require_validate2 = __commonJS({
         gen.else();
       }
       invalid$data() {
-        const { gen, schemaCode, schemaType, def, it } = this;
+        const { gen, schemaCode, schemaType, def, it: it2 } = this;
         return (0, codegen_1.or)(wrong$DataType(), invalid$DataSchema());
         function wrong$DataType() {
           if (schemaType.length) {
             if (!(schemaCode instanceof codegen_1.Name))
               throw new Error("ajv implementation error");
-            const st = Array.isArray(schemaType) ? schemaType : [schemaType];
-            return (0, codegen_1._)`${(0, dataType_2.checkDataTypes)(st, schemaCode, it.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
+            const st2 = Array.isArray(schemaType) ? schemaType : [schemaType];
+            return (0, codegen_1._)`${(0, dataType_2.checkDataTypes)(st2, schemaCode, it2.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
           }
           return codegen_1.nil;
         }
@@ -10665,27 +10665,27 @@ var require_validate2 = __commonJS({
         return nextContext;
       }
       mergeEvaluated(schemaCxt, toName) {
-        const { it, gen } = this;
-        if (!it.opts.unevaluated)
+        const { it: it2, gen } = this;
+        if (!it2.opts.unevaluated)
           return;
-        if (it.props !== true && schemaCxt.props !== void 0) {
-          it.props = util_1.mergeEvaluated.props(gen, schemaCxt.props, it.props, toName);
+        if (it2.props !== true && schemaCxt.props !== void 0) {
+          it2.props = util_1.mergeEvaluated.props(gen, schemaCxt.props, it2.props, toName);
         }
-        if (it.items !== true && schemaCxt.items !== void 0) {
-          it.items = util_1.mergeEvaluated.items(gen, schemaCxt.items, it.items, toName);
+        if (it2.items !== true && schemaCxt.items !== void 0) {
+          it2.items = util_1.mergeEvaluated.items(gen, schemaCxt.items, it2.items, toName);
         }
       }
       mergeValidEvaluated(schemaCxt, valid) {
-        const { it, gen } = this;
-        if (it.opts.unevaluated && (it.props !== true || it.items !== true)) {
+        const { it: it2, gen } = this;
+        if (it2.opts.unevaluated && (it2.props !== true || it2.items !== true)) {
           gen.if(valid, () => this.mergeEvaluated(schemaCxt, codegen_1.Name));
           return true;
         }
       }
     };
     exports2.KeywordCxt = KeywordCxt;
-    function keywordCode(it, keyword, def, ruleType) {
-      const cxt = new KeywordCxt(it, def, keyword);
+    function keywordCode(it2, keyword, def, ruleType) {
+      const cxt = new KeywordCxt(it2, def, keyword);
       if ("code" in def) {
         def.code(cxt, ruleType);
       } else if (cxt.$data && def.validate) {
@@ -10790,7 +10790,7 @@ var require_compile2 = __commonJS({
     var URI = require_uri_all();
     var SchemaEnv = class {
       constructor(env) {
-        var _a2;
+        var _a;
         this.refs = {};
         this.dynamicAnchors = {};
         let schema;
@@ -10799,7 +10799,7 @@ var require_compile2 = __commonJS({
         this.schema = env.schema;
         this.schemaId = env.schemaId;
         this.root = env.root || this;
-        this.baseId = (_a2 = env.baseId) !== null && _a2 !== void 0 ? _a2 : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
+        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
         this.schemaPath = env.schemaPath;
         this.localRefs = env.localRefs;
         this.meta = env.meta;
@@ -10894,14 +10894,14 @@ var require_compile2 = __commonJS({
     }
     exports2.compileSchema = compileSchema;
     function resolveRef(root, baseId, ref) {
-      var _a2;
+      var _a;
       ref = (0, resolve_1.resolveUrl)(baseId, ref);
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
       let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
-        const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
+        const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
         if (schema)
           _sch = new SchemaEnv({ schema, schemaId, root, baseId });
@@ -10970,8 +10970,8 @@ var require_compile2 = __commonJS({
       "definitions"
     ]);
     function getJsonPointer(parsedRef, { baseId, schema, root }) {
-      var _a2;
-      if (((_a2 = parsedRef.fragment) === null || _a2 === void 0 ? void 0 : _a2[0]) !== "/")
+      var _a;
+      if (((_a = parsedRef.fragment) === null || _a === void 0 ? void 0 : _a[0]) !== "/")
         return;
       for (const part of parsedRef.fragment.slice(1).split("/")) {
         if (typeof schema === "boolean")
@@ -11096,13 +11096,13 @@ var require_core3 = __commonJS({
     };
     var MAX_EXPRESSION = 200;
     function requiredOptions(o2) {
-      var _a2, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
+      var _a, _b, _c, _d, _e2, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r2, _s2, _t2, _u, _v, _w, _x;
       const s = o2.strict;
-      const _optz = (_a2 = o2.code) === null || _a2 === void 0 ? void 0 : _a2.optimize;
+      const _optz = (_a = o2.code) === null || _a === void 0 ? void 0 : _a.optimize;
       const optimize = _optz === true || _optz === void 0 ? 1 : _optz || 0;
       return {
         strictSchema: (_c = (_b = o2.strictSchema) !== null && _b !== void 0 ? _b : s) !== null && _c !== void 0 ? _c : true,
-        strictNumbers: (_e = (_d = o2.strictNumbers) !== null && _d !== void 0 ? _d : s) !== null && _e !== void 0 ? _e : true,
+        strictNumbers: (_e2 = (_d = o2.strictNumbers) !== null && _d !== void 0 ? _d : s) !== null && _e2 !== void 0 ? _e2 : true,
         strictTypes: (_g = (_f = o2.strictTypes) !== null && _f !== void 0 ? _f : s) !== null && _g !== void 0 ? _g : "log",
         strictTuples: (_j = (_h = o2.strictTuples) !== null && _h !== void 0 ? _h : s) !== null && _j !== void 0 ? _j : "log",
         strictRequired: (_l = (_k = o2.strictRequired) !== null && _k !== void 0 ? _k : s) !== null && _l !== void 0 ? _l : false,
@@ -11111,9 +11111,9 @@ var require_core3 = __commonJS({
         loopEnum: (_o = o2.loopEnum) !== null && _o !== void 0 ? _o : MAX_EXPRESSION,
         meta: (_p = o2.meta) !== null && _p !== void 0 ? _p : true,
         messages: (_q = o2.messages) !== null && _q !== void 0 ? _q : true,
-        inlineRefs: (_r = o2.inlineRefs) !== null && _r !== void 0 ? _r : true,
-        schemaId: (_s = o2.schemaId) !== null && _s !== void 0 ? _s : "$id",
-        addUsedSchema: (_t = o2.addUsedSchema) !== null && _t !== void 0 ? _t : true,
+        inlineRefs: (_r2 = o2.inlineRefs) !== null && _r2 !== void 0 ? _r2 : true,
+        schemaId: (_s2 = o2.schemaId) !== null && _s2 !== void 0 ? _s2 : "$id",
+        addUsedSchema: (_t2 = o2.addUsedSchema) !== null && _t2 !== void 0 ? _t2 : true,
         validateSchema: (_u = o2.validateSchema) !== null && _u !== void 0 ? _u : true,
         validateFormats: (_v = o2.validateFormats) !== null && _v !== void 0 ? _v : true,
         unicodeRegExp: (_w = o2.unicodeRegExp) !== null && _w !== void 0 ? _w : true,
@@ -11168,17 +11168,17 @@ var require_core3 = __commonJS({
         return this.opts.defaultMeta = typeof meta == "object" ? meta[schemaId] || meta : void 0;
       }
       validate(schemaKeyRef, data) {
-        let v;
+        let v2;
         if (typeof schemaKeyRef == "string") {
-          v = this.getSchema(schemaKeyRef);
-          if (!v)
+          v2 = this.getSchema(schemaKeyRef);
+          if (!v2)
             throw new Error(`no schema with key or ref "${schemaKeyRef}"`);
         } else {
-          v = this.compile(schemaKeyRef);
+          v2 = this.compile(schemaKeyRef);
         }
-        const valid = v(data);
-        if (!("$async" in v))
-          this.errors = v.errors;
+        const valid = v2(data);
+        if (!("$async" in v2))
+          this.errors = v2.errors;
         return valid;
       }
       compile(schema, _meta) {
@@ -11388,9 +11388,9 @@ var require_core3 = __commonJS({
         delete RULES.keywords[keyword];
         delete RULES.all[keyword];
         for (const group of RULES.rules) {
-          const i2 = group.rules.findIndex((rule) => rule.keyword === keyword);
-          if (i2 >= 0)
-            group.rules.splice(i2, 1);
+          const i = group.rules.findIndex((rule) => rule.keyword === keyword);
+          if (i >= 0)
+            group.rules.splice(i, 1);
         }
         return this;
       }
@@ -11569,7 +11569,7 @@ var require_core3 = __commonJS({
       }
     }
     function addRule(keyword, definition, dataType) {
-      var _a2;
+      var _a;
       const post = definition === null || definition === void 0 ? void 0 : definition.post;
       if (dataType && post)
         throw new Error('keyword with "post" flag cannot have "type"');
@@ -11595,12 +11595,12 @@ var require_core3 = __commonJS({
       else
         ruleGroup.rules.push(rule);
       RULES.all[keyword] = rule;
-      (_a2 = definition.implements) === null || _a2 === void 0 ? void 0 : _a2.forEach((kwd) => this.addKeyword(kwd));
+      (_a = definition.implements) === null || _a === void 0 ? void 0 : _a.forEach((kwd) => this.addKeyword(kwd));
     }
     function addBeforeRule(ruleGroup, rule, before) {
-      const i2 = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
-      if (i2 >= 0) {
-        ruleGroup.rules.splice(i2, 0, rule);
+      const i = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
+      if (i >= 0) {
+        ruleGroup.rules.splice(i, 0, rule);
       } else {
         ruleGroup.rules.push(rule);
         this.logger.warn(`rule ${before} is not defined`);
@@ -11654,8 +11654,8 @@ var require_ref2 = __commonJS({
       keyword: "$ref",
       schemaType: "string",
       code(cxt) {
-        const { gen, schema: $ref, it } = cxt;
-        const { baseId, schemaEnv: env, validateName, opts, self } = it;
+        const { gen, schema: $ref, it: it2 } = cxt;
+        const { baseId, schemaEnv: env, validateName, opts, self } = it2;
         const { root } = env;
         if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
           return callRootRef();
@@ -11672,8 +11672,8 @@ var require_ref2 = __commonJS({
           return callRef(cxt, (0, codegen_1._)`${rootName}.validate`, root, root.$async);
         }
         function callValidate(sch) {
-          const v = getValidate(cxt, sch);
-          callRef(cxt, v, sch, sch.$async);
+          const v2 = getValidate(cxt, sch);
+          callRef(cxt, v2, sch, sch.$async);
         }
         function inlineRefSchema(sch) {
           const schName = gen.scopeValue("schema", opts.code.source === true ? { ref: sch, code: (0, codegen_1.stringify)(sch) } : { ref: sch });
@@ -11695,9 +11695,9 @@ var require_ref2 = __commonJS({
       return sch.validate ? gen.scopeValue("validate", { ref: sch.validate }) : (0, codegen_1._)`${gen.scopeValue("wrapper", { ref: sch })}.validate`;
     }
     exports2.getValidate = getValidate;
-    function callRef(cxt, v, sch, $async) {
-      const { gen, it } = cxt;
-      const { allErrors, schemaEnv: env, opts } = it;
+    function callRef(cxt, v2, sch, $async) {
+      const { gen, it: it2 } = cxt;
+      const { allErrors, schemaEnv: env, opts } = it2;
       const passCxt = opts.passContext ? names_1.default.this : codegen_1.nil;
       if ($async)
         callAsyncRef();
@@ -11708,12 +11708,12 @@ var require_ref2 = __commonJS({
           throw new Error("async schema referenced by sync schema");
         const valid = gen.let("valid");
         gen.try(() => {
-          gen.code((0, codegen_1._)`await ${(0, code_1.callValidateCode)(cxt, v, passCxt)}`);
-          addEvaluatedFrom(v);
+          gen.code((0, codegen_1._)`await ${(0, code_1.callValidateCode)(cxt, v2, passCxt)}`);
+          addEvaluatedFrom(v2);
           if (!allErrors)
             gen.assign(valid, true);
         }, (e) => {
-          gen.if((0, codegen_1._)`!(${e} instanceof ${it.ValidationError})`, () => gen.throw(e));
+          gen.if((0, codegen_1._)`!(${e} instanceof ${it2.ValidationError})`, () => gen.throw(e));
           addErrorsFrom(e);
           if (!allErrors)
             gen.assign(valid, false);
@@ -11721,7 +11721,7 @@ var require_ref2 = __commonJS({
         cxt.ok(valid);
       }
       function callSyncRef() {
-        cxt.result((0, code_1.callValidateCode)(cxt, v, passCxt), () => addEvaluatedFrom(v), () => addErrorsFrom(v));
+        cxt.result((0, code_1.callValidateCode)(cxt, v2, passCxt), () => addEvaluatedFrom(v2), () => addErrorsFrom(v2));
       }
       function addErrorsFrom(source) {
         const errs = (0, codegen_1._)`${source}.errors`;
@@ -11729,28 +11729,28 @@ var require_ref2 = __commonJS({
         gen.assign(names_1.default.errors, (0, codegen_1._)`${names_1.default.vErrors}.length`);
       }
       function addEvaluatedFrom(source) {
-        var _a2;
-        if (!it.opts.unevaluated)
+        var _a;
+        if (!it2.opts.unevaluated)
           return;
-        const schEvaluated = (_a2 = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a2 === void 0 ? void 0 : _a2.evaluated;
-        if (it.props !== true) {
+        const schEvaluated = (_a = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a === void 0 ? void 0 : _a.evaluated;
+        if (it2.props !== true) {
           if (schEvaluated && !schEvaluated.dynamicProps) {
             if (schEvaluated.props !== void 0) {
-              it.props = util_1.mergeEvaluated.props(gen, schEvaluated.props, it.props);
+              it2.props = util_1.mergeEvaluated.props(gen, schEvaluated.props, it2.props);
             }
           } else {
             const props = gen.var("props", (0, codegen_1._)`${source}.evaluated.props`);
-            it.props = util_1.mergeEvaluated.props(gen, props, it.props, codegen_1.Name);
+            it2.props = util_1.mergeEvaluated.props(gen, props, it2.props, codegen_1.Name);
           }
         }
-        if (it.items !== true) {
+        if (it2.items !== true) {
           if (schEvaluated && !schEvaluated.dynamicItems) {
             if (schEvaluated.items !== void 0) {
-              it.items = util_1.mergeEvaluated.items(gen, schEvaluated.items, it.items);
+              it2.items = util_1.mergeEvaluated.items(gen, schEvaluated.items, it2.items);
             }
           } else {
             const items = gen.var("items", (0, codegen_1._)`${source}.evaluated.items`);
-            it.items = util_1.mergeEvaluated.items(gen, items, it.items, codegen_1.Name);
+            it2.items = util_1.mergeEvaluated.items(gen, items, it2.items, codegen_1.Name);
           }
         }
       }
@@ -11830,8 +11830,8 @@ var require_multipleOf2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, schemaCode, it } = cxt;
-        const prec = it.opts.multipleOfPrecision;
+        const { gen, data, schemaCode, it: it2 } = cxt;
+        const prec = it2.opts.multipleOfPrecision;
         const res = gen.let("res");
         const invalid = prec ? (0, codegen_1._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1._)`${res} !== parseInt(${res})`;
         cxt.fail$data((0, codegen_1._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid}))`);
@@ -11889,9 +11889,9 @@ var require_limitLength2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { keyword, data, schemaCode, it } = cxt;
+        const { keyword, data, schemaCode, it: it2 } = cxt;
         const op = keyword === "maxLength" ? codegen_1.operators.GT : codegen_1.operators.LT;
-        const len = it.opts.unicode === false ? (0, codegen_1._)`${data}.length` : (0, codegen_1._)`${(0, util_1.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
+        const len = it2.opts.unicode === false ? (0, codegen_1._)`${data}.length` : (0, codegen_1._)`${(0, util_1.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
         cxt.fail$data((0, codegen_1._)`${len} ${op} ${schemaCode}`);
       }
     };
@@ -11917,9 +11917,9 @@ var require_pattern2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { data, $data, schema, schemaCode, it } = cxt;
-        const u = it.opts.unicodeRegExp ? "u" : "";
-        const regExp = $data ? (0, codegen_1._)`(new RegExp(${schemaCode}, ${u}))` : (0, code_1.usePattern)(cxt, schema);
+        const { data, $data, schema, schemaCode, it: it2 } = cxt;
+        const u2 = it2.opts.unicodeRegExp ? "u" : "";
+        const regExp = $data ? (0, codegen_1._)`(new RegExp(${schemaCode}, ${u2}))` : (0, code_1.usePattern)(cxt, schema);
         cxt.fail$data((0, codegen_1._)`!${regExp}.test(${data})`);
       }
     };
@@ -11975,12 +11975,12 @@ var require_required2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, schemaCode, data, $data, it } = cxt;
-        const { opts } = it;
+        const { gen, schema, schemaCode, data, $data, it: it2 } = cxt;
+        const { opts } = it2;
         if (!$data && schema.length === 0)
           return;
         const useLoop = schema.length >= opts.loopRequired;
-        if (it.allErrors)
+        if (it2.allErrors)
           allErrorsMode();
         else
           exitOnErrorMode();
@@ -11989,9 +11989,9 @@ var require_required2 = __commonJS({
           const { definedProperties } = cxt.it;
           for (const requiredKey of schema) {
             if ((props === null || props === void 0 ? void 0 : props[requiredKey]) === void 0 && !definedProperties.has(requiredKey)) {
-              const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+              const schemaPath = it2.schemaEnv.baseId + it2.errSchemaPath;
               const msg = `required property "${requiredKey}" is not defined at "${schemaPath}" (strictRequired)`;
-              (0, util_1.checkStrictMode)(it, msg, it.opts.strictRequired);
+              (0, util_1.checkStrictMode)(it2, msg, it2.opts.strictRequired);
             }
           }
         }
@@ -12088,8 +12088,8 @@ var require_uniqueItems2 = __commonJS({
     var util_1 = require_util2();
     var equal_1 = require_equal2();
     var error2 = {
-      message: ({ params: { i: i2, j: j2 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j2} and ${i2} are identical)`,
-      params: ({ params: { i: i2, j: j2 } }) => (0, codegen_1._)`{i: ${i2}, j: ${j2}}`
+      message: ({ params: { i, j: j3 } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j3} and ${i} are identical)`,
+      params: ({ params: { i, j: j3 } }) => (0, codegen_1._)`{i: ${i}, j: ${j3}}`
     };
     var def = {
       keyword: "uniqueItems",
@@ -12098,7 +12098,7 @@ var require_uniqueItems2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, $data, schema, parentSchema, schemaCode, it } = cxt;
+        const { gen, data, $data, schema, parentSchema, schemaCode, it: it2 } = cxt;
         if (!$data && !schema)
           return;
         const valid = gen.let("valid");
@@ -12106,35 +12106,35 @@ var require_uniqueItems2 = __commonJS({
         cxt.block$data(valid, validateUniqueItems, (0, codegen_1._)`${schemaCode} === false`);
         cxt.ok(valid);
         function validateUniqueItems() {
-          const i2 = gen.let("i", (0, codegen_1._)`${data}.length`);
-          const j2 = gen.let("j");
-          cxt.setParams({ i: i2, j: j2 });
+          const i = gen.let("i", (0, codegen_1._)`${data}.length`);
+          const j3 = gen.let("j");
+          cxt.setParams({ i, j: j3 });
           gen.assign(valid, true);
-          gen.if((0, codegen_1._)`${i2} > 1`, () => (canOptimize() ? loopN : loopN2)(i2, j2));
+          gen.if((0, codegen_1._)`${i} > 1`, () => (canOptimize() ? loopN : loopN2)(i, j3));
         }
         function canOptimize() {
           return itemTypes.length > 0 && !itemTypes.some((t2) => t2 === "object" || t2 === "array");
         }
-        function loopN(i2, j2) {
+        function loopN(i, j3) {
           const item = gen.name("item");
-          const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it.opts.strictNumbers, dataType_1.DataType.Wrong);
+          const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it2.opts.strictNumbers, dataType_1.DataType.Wrong);
           const indices = gen.const("indices", (0, codegen_1._)`{}`);
-          gen.for((0, codegen_1._)`;${i2}--;`, () => {
-            gen.let(item, (0, codegen_1._)`${data}[${i2}]`);
+          gen.for((0, codegen_1._)`;${i}--;`, () => {
+            gen.let(item, (0, codegen_1._)`${data}[${i}]`);
             gen.if(wrongType, (0, codegen_1._)`continue`);
             if (itemTypes.length > 1)
               gen.if((0, codegen_1._)`typeof ${item} == "string"`, (0, codegen_1._)`${item} += "_"`);
             gen.if((0, codegen_1._)`typeof ${indices}[${item}] == "number"`, () => {
-              gen.assign(j2, (0, codegen_1._)`${indices}[${item}]`);
+              gen.assign(j3, (0, codegen_1._)`${indices}[${item}]`);
               cxt.error();
               gen.assign(valid, false).break();
-            }).code((0, codegen_1._)`${indices}[${item}] = ${i2}`);
+            }).code((0, codegen_1._)`${indices}[${item}] = ${i}`);
           });
         }
-        function loopN2(i2, j2) {
+        function loopN2(i, j3) {
           const eql = (0, util_1.useFunc)(gen, equal_1.default);
           const outer = gen.name("outer");
-          gen.label(outer).for((0, codegen_1._)`;${i2}--;`, () => gen.for((0, codegen_1._)`${j2} = ${i2}; ${j2}--;`, () => gen.if((0, codegen_1._)`${eql}(${data}[${i2}], ${data}[${j2}])`, () => {
+          gen.label(outer).for((0, codegen_1._)`;${i}--;`, () => gen.for((0, codegen_1._)`${j3} = ${i}; ${j3}--;`, () => gen.if((0, codegen_1._)`${eql}(${data}[${i}], ${data}[${j3}])`, () => {
             cxt.error();
             gen.assign(valid, false).break(outer);
           })));
@@ -12192,10 +12192,10 @@ var require_enum2 = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, $data, schema, schemaCode, it } = cxt;
+        const { gen, data, $data, schema, schemaCode, it: it2 } = cxt;
         if (!$data && schema.length === 0)
           throw new Error("enum must have non-empty array");
-        const useLoop = schema.length >= it.opts.loopEnum;
+        const useLoop = schema.length >= it2.opts.loopEnum;
         const eql = (0, util_1.useFunc)(gen, equal_1.default);
         let valid;
         if (useLoop || $data) {
@@ -12205,16 +12205,16 @@ var require_enum2 = __commonJS({
           if (!Array.isArray(schema))
             throw new Error("ajv implementation error");
           const vSchema = gen.const("vSchema", schemaCode);
-          valid = (0, codegen_1.or)(...schema.map((_x, i2) => equalCode(vSchema, i2)));
+          valid = (0, codegen_1.or)(...schema.map((_x, i) => equalCode(vSchema, i)));
         }
         cxt.pass(valid);
         function loopEnum() {
           gen.assign(valid, false);
-          gen.forOf("v", schemaCode, (v) => gen.if((0, codegen_1._)`${eql}(${data}, ${v})`, () => gen.assign(valid, true).break()));
+          gen.forOf("v", schemaCode, (v2) => gen.if((0, codegen_1._)`${eql}(${data}, ${v2})`, () => gen.assign(valid, true).break()));
         }
-        function equalCode(vSchema, i2) {
-          const sch = schema[i2];
-          return typeof sch === "object" && sch !== null ? (0, codegen_1._)`${eql}(${data}, ${vSchema}[${i2}])` : (0, codegen_1._)`${data} === ${sch}`;
+        function equalCode(vSchema, i) {
+          const sch = schema[i];
+          return typeof sch === "object" && sch !== null ? (0, codegen_1._)`${eql}(${data}, ${vSchema}[${i}])` : (0, codegen_1._)`${data} === ${sch}`;
         }
       }
     };
@@ -12279,31 +12279,31 @@ var require_additionalItems2 = __commonJS({
       before: "uniqueItems",
       error: error2,
       code(cxt) {
-        const { parentSchema, it } = cxt;
+        const { parentSchema, it: it2 } = cxt;
         const { items } = parentSchema;
         if (!Array.isArray(items)) {
-          (0, util_1.checkStrictMode)(it, '"additionalItems" is ignored when "items" is not an array of schemas');
+          (0, util_1.checkStrictMode)(it2, '"additionalItems" is ignored when "items" is not an array of schemas');
           return;
         }
         validateAdditionalItems(cxt, items);
       }
     };
     function validateAdditionalItems(cxt, items) {
-      const { gen, schema, data, keyword, it } = cxt;
-      it.items = true;
+      const { gen, schema, data, keyword, it: it2 } = cxt;
+      it2.items = true;
       const len = gen.const("len", (0, codegen_1._)`${data}.length`);
       if (schema === false) {
         cxt.setParams({ len: items.length });
         cxt.pass((0, codegen_1._)`${len} <= ${items.length}`);
-      } else if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it, schema)) {
+      } else if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it2, schema)) {
         const valid = gen.var("valid", (0, codegen_1._)`${len} <= ${items.length}`);
         gen.if((0, codegen_1.not)(valid), () => validateItems(valid));
         cxt.ok(valid);
       }
       function validateItems(valid) {
-        gen.forRange("i", items.length, len, (i2) => {
-          cxt.subschema({ keyword, dataProp: i2, dataPropType: util_1.Type.Num }, valid);
-          if (!it.allErrors)
+        gen.forRange("i", items.length, len, (i) => {
+          cxt.subschema({ keyword, dataProp: i, dataPropType: util_1.Type.Num }, valid);
+          if (!it2.allErrors)
             gen.if((0, codegen_1.not)(valid), () => gen.break());
         });
       }
@@ -12328,40 +12328,40 @@ var require_items2 = __commonJS({
       schemaType: ["object", "array", "boolean"],
       before: "uniqueItems",
       code(cxt) {
-        const { schema, it } = cxt;
+        const { schema, it: it2 } = cxt;
         if (Array.isArray(schema))
           return validateTuple(cxt, "additionalItems", schema);
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        it2.items = true;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         cxt.ok((0, code_1.validateArray)(cxt));
       }
     };
     function validateTuple(cxt, extraItems, schArr = cxt.schema) {
-      const { gen, parentSchema, data, keyword, it } = cxt;
+      const { gen, parentSchema, data, keyword, it: it2 } = cxt;
       checkStrictTuple(parentSchema);
-      if (it.opts.unevaluated && schArr.length && it.items !== true) {
-        it.items = util_1.mergeEvaluated.items(gen, schArr.length, it.items);
+      if (it2.opts.unevaluated && schArr.length && it2.items !== true) {
+        it2.items = util_1.mergeEvaluated.items(gen, schArr.length, it2.items);
       }
       const valid = gen.name("valid");
       const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-      schArr.forEach((sch, i2) => {
-        if ((0, util_1.alwaysValidSchema)(it, sch))
+      schArr.forEach((sch, i) => {
+        if ((0, util_1.alwaysValidSchema)(it2, sch))
           return;
-        gen.if((0, codegen_1._)`${len} > ${i2}`, () => cxt.subschema({
+        gen.if((0, codegen_1._)`${len} > ${i}`, () => cxt.subschema({
           keyword,
-          schemaProp: i2,
-          dataProp: i2
+          schemaProp: i,
+          dataProp: i
         }, valid));
         cxt.ok(valid);
       });
       function checkStrictTuple(sch) {
-        const { opts, errSchemaPath } = it;
-        const l = schArr.length;
-        const fullTuple = l === sch.minItems && (l === sch.maxItems || sch[extraItems] === false);
+        const { opts, errSchemaPath } = it2;
+        const l3 = schArr.length;
+        const fullTuple = l3 === sch.minItems && (l3 === sch.maxItems || sch[extraItems] === false);
         if (opts.strictTuples && !fullTuple) {
-          const msg = `"${keyword}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
-          (0, util_1.checkStrictMode)(it, msg, opts.strictTuples);
+          const msg = `"${keyword}" is ${l3}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
+          (0, util_1.checkStrictMode)(it2, msg, opts.strictTuples);
         }
       }
     }
@@ -12407,10 +12407,10 @@ var require_items20202 = __commonJS({
       before: "uniqueItems",
       error: error2,
       code(cxt) {
-        const { schema, parentSchema, it } = cxt;
+        const { schema, parentSchema, it: it2 } = cxt;
         const { prefixItems } = parentSchema;
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        it2.items = true;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         if (prefixItems)
           (0, additionalItems_1.validateAdditionalItems)(cxt, prefixItems);
@@ -12441,11 +12441,11 @@ var require_contains2 = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, data, it } = cxt;
+        const { gen, schema, parentSchema, data, it: it2 } = cxt;
         let min;
         let max;
         const { minContains, maxContains } = parentSchema;
-        if (it.opts.next) {
+        if (it2.opts.next) {
           min = minContains === void 0 ? 1 : minContains;
           max = maxContains;
         } else {
@@ -12454,22 +12454,22 @@ var require_contains2 = __commonJS({
         const len = gen.const("len", (0, codegen_1._)`${data}.length`);
         cxt.setParams({ min, max });
         if (max === void 0 && min === 0) {
-          (0, util_1.checkStrictMode)(it, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
+          (0, util_1.checkStrictMode)(it2, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
           return;
         }
         if (max !== void 0 && min > max) {
-          (0, util_1.checkStrictMode)(it, `"minContains" > "maxContains" is always invalid`);
+          (0, util_1.checkStrictMode)(it2, `"minContains" > "maxContains" is always invalid`);
           cxt.fail();
           return;
         }
-        if ((0, util_1.alwaysValidSchema)(it, schema)) {
+        if ((0, util_1.alwaysValidSchema)(it2, schema)) {
           let cond = (0, codegen_1._)`${len} >= ${min}`;
           if (max !== void 0)
             cond = (0, codegen_1._)`${cond} && ${len} <= ${max}`;
           cxt.pass(cond);
           return;
         }
-        it.items = true;
+        it2.items = true;
         const valid = gen.name("valid");
         if (max === void 0 && min === 1) {
           validateItems(valid, () => gen.if(valid, () => gen.break()));
@@ -12481,10 +12481,10 @@ var require_contains2 = __commonJS({
         }
         cxt.result(valid, () => cxt.reset());
         function validateItems(_valid, block) {
-          gen.forRange("i", 0, len, (i2) => {
+          gen.forRange("i", 0, len, (i) => {
             cxt.subschema({
               keyword: "contains",
-              dataProp: i2,
+              dataProp: i,
               dataPropType: util_1.Type.Num,
               compositeRule: true
             }, _valid);
@@ -12552,7 +12552,7 @@ var require_dependencies2 = __commonJS({
       return [propertyDeps, schemaDeps];
     }
     function validatePropertyDeps(cxt, propertyDeps = cxt.schema) {
-      const { gen, data, it } = cxt;
+      const { gen, data, it: it2 } = cxt;
       if (Object.keys(propertyDeps).length === 0)
         return;
       const missing = gen.let("missing");
@@ -12560,13 +12560,13 @@ var require_dependencies2 = __commonJS({
         const deps = propertyDeps[prop];
         if (deps.length === 0)
           continue;
-        const hasProperty = (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties);
+        const hasProperty = (0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties);
         cxt.setParams({
           property: prop,
           depsCount: deps.length,
           deps: deps.join(", ")
         });
-        if (it.allErrors) {
+        if (it2.allErrors) {
           gen.if(hasProperty, () => {
             for (const depProp of deps) {
               (0, code_1.checkReportMissingProp)(cxt, depProp);
@@ -12581,13 +12581,13 @@ var require_dependencies2 = __commonJS({
     }
     exports2.validatePropertyDeps = validatePropertyDeps;
     function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
-      const { gen, data, keyword, it } = cxt;
+      const { gen, data, keyword, it: it2 } = cxt;
       const valid = gen.name("valid");
       for (const prop in schemaDeps) {
-        if ((0, util_1.alwaysValidSchema)(it, schemaDeps[prop]))
+        if ((0, util_1.alwaysValidSchema)(it2, schemaDeps[prop]))
           continue;
         gen.if(
-          (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties),
+          (0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties),
           () => {
             const schCxt = cxt.subschema({ keyword, schemaProp: prop }, valid);
             cxt.mergeValidEvaluated(schCxt, valid);
@@ -12620,8 +12620,8 @@ var require_propertyNames2 = __commonJS({
       schemaType: ["object", "boolean"],
       error: error2,
       code(cxt) {
-        const { gen, schema, data, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema))
+        const { gen, schema, data, it: it2 } = cxt;
+        if ((0, util_1.alwaysValidSchema)(it2, schema))
           return;
         const valid = gen.name("valid");
         gen.forIn("key", data, (key) => {
@@ -12635,7 +12635,7 @@ var require_propertyNames2 = __commonJS({
           }, valid);
           gen.if((0, codegen_1.not)(valid), () => {
             cxt.error(true);
-            if (!it.allErrors)
+            if (!it2.allErrors)
               gen.break();
           });
         });
@@ -12667,12 +12667,12 @@ var require_additionalProperties2 = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, data, errsCount, it } = cxt;
+        const { gen, schema, parentSchema, data, errsCount, it: it2 } = cxt;
         if (!errsCount)
           throw new Error("ajv implementation error");
-        const { allErrors, opts } = it;
-        it.props = true;
-        if (opts.removeAdditional !== "all" && (0, util_1.alwaysValidSchema)(it, schema))
+        const { allErrors, opts } = it2;
+        it2.props = true;
+        if (opts.removeAdditional !== "all" && (0, util_1.alwaysValidSchema)(it2, schema))
           return;
         const props = (0, code_1.allSchemaProperties)(parentSchema.properties);
         const patProps = (0, code_1.allSchemaProperties)(parentSchema.patternProperties);
@@ -12689,7 +12689,7 @@ var require_additionalProperties2 = __commonJS({
         function isAdditional(key) {
           let definedProp;
           if (props.length > 8) {
-            const propsSchema = (0, util_1.schemaRefOrVal)(it, parentSchema.properties, "properties");
+            const propsSchema = (0, util_1.schemaRefOrVal)(it2, parentSchema.properties, "properties");
             definedProp = (0, code_1.isOwnProperty)(gen, propsSchema, key);
           } else if (props.length) {
             definedProp = (0, codegen_1.or)(...props.map((p2) => (0, codegen_1._)`${key} === ${p2}`));
@@ -12716,7 +12716,7 @@ var require_additionalProperties2 = __commonJS({
               gen.break();
             return;
           }
-          if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it, schema)) {
+          if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it2, schema)) {
             const valid = gen.name("valid");
             if (opts.removeAdditional === "failing") {
               applyAdditionalSchema(key, valid, false);
@@ -12766,18 +12766,18 @@ var require_properties2 = __commonJS({
       type: "object",
       schemaType: "object",
       code(cxt) {
-        const { gen, schema, parentSchema, data, it } = cxt;
-        if (it.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
-          additionalProperties_1.default.code(new validate_1.KeywordCxt(it, additionalProperties_1.default, "additionalProperties"));
+        const { gen, schema, parentSchema, data, it: it2 } = cxt;
+        if (it2.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
+          additionalProperties_1.default.code(new validate_1.KeywordCxt(it2, additionalProperties_1.default, "additionalProperties"));
         }
         const allProps = (0, code_1.allSchemaProperties)(schema);
         for (const prop of allProps) {
-          it.definedProperties.add(prop);
+          it2.definedProperties.add(prop);
         }
-        if (it.opts.unevaluated && allProps.length && it.props !== true) {
-          it.props = util_1.mergeEvaluated.props(gen, (0, util_1.toHash)(allProps), it.props);
+        if (it2.opts.unevaluated && allProps.length && it2.props !== true) {
+          it2.props = util_1.mergeEvaluated.props(gen, (0, util_1.toHash)(allProps), it2.props);
         }
-        const properties = allProps.filter((p2) => !(0, util_1.alwaysValidSchema)(it, schema[p2]));
+        const properties = allProps.filter((p2) => !(0, util_1.alwaysValidSchema)(it2, schema[p2]));
         if (properties.length === 0)
           return;
         const valid = gen.name("valid");
@@ -12785,9 +12785,9 @@ var require_properties2 = __commonJS({
           if (hasDefault(prop)) {
             applyPropertySchema(prop);
           } else {
-            gen.if((0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties));
+            gen.if((0, code_1.propertyInData)(gen, data, prop, it2.opts.ownProperties));
             applyPropertySchema(prop);
-            if (!it.allErrors)
+            if (!it2.allErrors)
               gen.else().var(valid, true);
             gen.endIf();
           }
@@ -12795,7 +12795,7 @@ var require_properties2 = __commonJS({
           cxt.ok(valid);
         }
         function hasDefault(prop) {
-          return it.opts.useDefaults && !it.compositeRule && schema[prop].default !== void 0;
+          return it2.opts.useDefaults && !it2.compositeRule && schema[prop].default !== void 0;
         }
         function applyPropertySchema(prop) {
           cxt.subschema({
@@ -12824,25 +12824,25 @@ var require_patternProperties2 = __commonJS({
       type: "object",
       schemaType: "object",
       code(cxt) {
-        const { gen, schema, data, parentSchema, it } = cxt;
-        const { opts } = it;
+        const { gen, schema, data, parentSchema, it: it2 } = cxt;
+        const { opts } = it2;
         const patterns = (0, code_1.allSchemaProperties)(schema);
-        const alwaysValidPatterns = patterns.filter((p2) => (0, util_1.alwaysValidSchema)(it, schema[p2]));
-        if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it.opts.unevaluated || it.props === true)) {
+        const alwaysValidPatterns = patterns.filter((p2) => (0, util_1.alwaysValidSchema)(it2, schema[p2]));
+        if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it2.opts.unevaluated || it2.props === true)) {
           return;
         }
         const checkProperties = opts.strictSchema && !opts.allowMatchingProperties && parentSchema.properties;
         const valid = gen.name("valid");
-        if (it.props !== true && !(it.props instanceof codegen_1.Name)) {
-          it.props = (0, util_2.evaluatedPropsToName)(gen, it.props);
+        if (it2.props !== true && !(it2.props instanceof codegen_1.Name)) {
+          it2.props = (0, util_2.evaluatedPropsToName)(gen, it2.props);
         }
-        const { props } = it;
+        const { props } = it2;
         validatePatternProperties();
         function validatePatternProperties() {
           for (const pat of patterns) {
             if (checkProperties)
               checkMatchingProperties(pat);
-            if (it.allErrors) {
+            if (it2.allErrors) {
               validateProperties(pat);
             } else {
               gen.var(valid, true);
@@ -12854,7 +12854,7 @@ var require_patternProperties2 = __commonJS({
         function checkMatchingProperties(pat) {
           for (const prop in checkProperties) {
             if (new RegExp(pat).test(prop)) {
-              (0, util_1.checkStrictMode)(it, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
+              (0, util_1.checkStrictMode)(it2, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
             }
           }
         }
@@ -12870,9 +12870,9 @@ var require_patternProperties2 = __commonJS({
                   dataPropType: util_2.Type.Str
                 }, valid);
               }
-              if (it.opts.unevaluated && props !== true) {
+              if (it2.opts.unevaluated && props !== true) {
                 gen.assign((0, codegen_1._)`${props}[${key}]`, true);
-              } else if (!alwaysValid && !it.allErrors) {
+              } else if (!alwaysValid && !it2.allErrors) {
                 gen.if((0, codegen_1.not)(valid), () => gen.break());
               }
             });
@@ -12895,8 +12895,8 @@ var require_not2 = __commonJS({
       schemaType: ["object", "boolean"],
       trackErrors: true,
       code(cxt) {
-        const { gen, schema, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema)) {
+        const { gen, schema, it: it2 } = cxt;
+        if ((0, util_1.alwaysValidSchema)(it2, schema)) {
           cxt.fail();
           return;
         }
@@ -12949,10 +12949,10 @@ var require_oneOf2 = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, schema, parentSchema, it } = cxt;
+        const { gen, schema, parentSchema, it: it2 } = cxt;
         if (!Array.isArray(schema))
           throw new Error("ajv implementation error");
-        if (it.opts.discriminator && parentSchema.discriminator)
+        if (it2.opts.discriminator && parentSchema.discriminator)
           return;
         const schArr = schema;
         const valid = gen.let("valid", false);
@@ -12962,23 +12962,23 @@ var require_oneOf2 = __commonJS({
         gen.block(validateOneOf);
         cxt.result(valid, () => cxt.reset(), () => cxt.error(true));
         function validateOneOf() {
-          schArr.forEach((sch, i2) => {
+          schArr.forEach((sch, i) => {
             let schCxt;
-            if ((0, util_1.alwaysValidSchema)(it, sch)) {
+            if ((0, util_1.alwaysValidSchema)(it2, sch)) {
               gen.var(schValid, true);
             } else {
               schCxt = cxt.subschema({
                 keyword: "oneOf",
-                schemaProp: i2,
+                schemaProp: i,
                 compositeRule: true
               }, schValid);
             }
-            if (i2 > 0) {
-              gen.if((0, codegen_1._)`${schValid} && ${valid}`).assign(valid, false).assign(passing, (0, codegen_1._)`[${passing}, ${i2}]`).else();
+            if (i > 0) {
+              gen.if((0, codegen_1._)`${schValid} && ${valid}`).assign(valid, false).assign(passing, (0, codegen_1._)`[${passing}, ${i}]`).else();
             }
             gen.if(schValid, () => {
               gen.assign(valid, true);
-              gen.assign(passing, i2);
+              gen.assign(passing, i);
               if (schCxt)
                 cxt.mergeEvaluated(schCxt, codegen_1.Name);
             });
@@ -13000,14 +13000,14 @@ var require_allOf2 = __commonJS({
       keyword: "allOf",
       schemaType: "array",
       code(cxt) {
-        const { gen, schema, it } = cxt;
+        const { gen, schema, it: it2 } = cxt;
         if (!Array.isArray(schema))
           throw new Error("ajv implementation error");
         const valid = gen.name("valid");
-        schema.forEach((sch, i2) => {
-          if ((0, util_1.alwaysValidSchema)(it, sch))
+        schema.forEach((sch, i) => {
+          if ((0, util_1.alwaysValidSchema)(it2, sch))
             return;
-          const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i2 }, valid);
+          const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i }, valid);
           cxt.ok(valid);
           cxt.mergeEvaluated(schCxt);
         });
@@ -13034,12 +13034,12 @@ var require_if2 = __commonJS({
       trackErrors: true,
       error: error2,
       code(cxt) {
-        const { gen, parentSchema, it } = cxt;
+        const { gen, parentSchema, it: it2 } = cxt;
         if (parentSchema.then === void 0 && parentSchema.else === void 0) {
-          (0, util_1.checkStrictMode)(it, '"if" without "then" and "else" is ignored');
+          (0, util_1.checkStrictMode)(it2, '"if" without "then" and "else" is ignored');
         }
-        const hasThen = hasSchema(it, "then");
-        const hasElse = hasSchema(it, "else");
+        const hasThen = hasSchema(it2, "then");
+        const hasElse = hasSchema(it2, "else");
         if (!hasThen && !hasElse)
           return;
         const valid = gen.let("valid", true);
@@ -13078,9 +13078,9 @@ var require_if2 = __commonJS({
         }
       }
     };
-    function hasSchema(it, keyword) {
-      const schema = it.schema[keyword];
-      return schema !== void 0 && !(0, util_1.alwaysValidSchema)(it, schema);
+    function hasSchema(it2, keyword) {
+      const schema = it2.schema[keyword];
+      return schema !== void 0 && !(0, util_1.alwaysValidSchema)(it2, schema);
     }
     exports2.default = def;
   }
@@ -13095,9 +13095,9 @@ var require_thenElse2 = __commonJS({
     var def = {
       keyword: ["then", "else"],
       schemaType: ["object", "boolean"],
-      code({ keyword, parentSchema, it }) {
+      code({ keyword, parentSchema, it: it2 }) {
         if (parentSchema.if === void 0)
-          (0, util_1.checkStrictMode)(it, `"${keyword}" without "if" is ignored`);
+          (0, util_1.checkStrictMode)(it2, `"${keyword}" without "if" is ignored`);
       }
     };
     exports2.default = def;
@@ -13169,8 +13169,8 @@ var require_format3 = __commonJS({
       $data: true,
       error: error2,
       code(cxt, ruleType) {
-        const { gen, data, $data, schema, schemaCode, it } = cxt;
-        const { opts, errSchemaPath, schemaEnv, self } = it;
+        const { gen, data, $data, schema, schemaCode, it: it2 } = cxt;
+        const { opts, errSchemaPath, schemaEnv, self } = it2;
         if (!opts.validateFormats)
           return;
         if ($data)
@@ -13329,9 +13329,9 @@ var require_discriminator2 = __commonJS({
       schemaType: "object",
       error: error2,
       code(cxt) {
-        const { gen, data, schema, parentSchema, it } = cxt;
+        const { gen, data, schema, parentSchema, it: it2 } = cxt;
         const { oneOf } = parentSchema;
-        if (!it.opts.discriminator) {
+        if (!it2.opts.discriminator) {
           throw new Error("discriminator: requires discriminator option");
         }
         const tagName = schema.propertyName;
@@ -13363,18 +13363,18 @@ var require_discriminator2 = __commonJS({
           return _valid;
         }
         function getMapping() {
-          var _a2;
+          var _a;
           const oneOfMapping = {};
           const topRequired = hasRequired(parentSchema);
           let tagRequired = true;
-          for (let i2 = 0; i2 < oneOf.length; i2++) {
-            const sch = oneOf[i2];
-            const propSch = (_a2 = sch.properties) === null || _a2 === void 0 ? void 0 : _a2[tagName];
+          for (let i = 0; i < oneOf.length; i++) {
+            const sch = oneOf[i];
+            const propSch = (_a = sch.properties) === null || _a === void 0 ? void 0 : _a[tagName];
             if (typeof propSch != "object") {
               throw new Error(`discriminator: oneOf schemas must have "properties/${tagName}"`);
             }
             tagRequired = tagRequired && (topRequired || hasRequired(sch));
-            addMappings(propSch, i2);
+            addMappings(propSch, i);
           }
           if (!tagRequired)
             throw new Error(`discriminator: "${tagName}" must be required`);
@@ -13382,22 +13382,22 @@ var require_discriminator2 = __commonJS({
           function hasRequired({ required: required2 }) {
             return Array.isArray(required2) && required2.includes(tagName);
           }
-          function addMappings(sch, i2) {
+          function addMappings(sch, i) {
             if (sch.const) {
-              addMapping(sch.const, i2);
+              addMapping(sch.const, i);
             } else if (sch.enum) {
               for (const tagValue of sch.enum) {
-                addMapping(tagValue, i2);
+                addMapping(tagValue, i);
               }
             } else {
               throw new Error(`discriminator: "properties/${tagName}" must have "const" or "enum"`);
             }
           }
-          function addMapping(tagValue, i2) {
+          function addMapping(tagValue, i) {
             if (typeof tagValue != "string" || tagValue in oneOfMapping) {
               throw new Error(`discriminator: "${tagName}" values must be unique strings`);
             }
-            oneOfMapping[tagValue] = i2;
+            oneOfMapping[tagValue] = i;
           }
         }
       }
@@ -13578,7 +13578,7 @@ var require_ajv2 = __commonJS({
     var Ajv2 = class extends core_1.default {
       _addVocabularies() {
         super._addVocabularies();
-        draft7_1.default.forEach((v) => this.addVocabulary(v));
+        draft7_1.default.forEach((v2) => this.addVocabulary(v2));
         if (this.opts.discriminator)
           this.addKeyword(discriminator_1.default);
       }
@@ -13649,11 +13649,11 @@ var require_limit = __commonJS({
       $data: true,
       error: error2,
       code(cxt) {
-        const { gen, data, schemaCode, keyword, it } = cxt;
-        const { opts, self } = it;
+        const { gen, data, schemaCode, keyword, it: it2 } = cxt;
+        const { opts, self } = it2;
         if (!opts.validateFormats)
           return;
-        const fCxt = new ajv_1.KeywordCxt(it, self.RULES.all.format.definition, "format");
+        const fCxt = new ajv_1.KeywordCxt(it2, self.RULES.all.format.definition, "format");
         if (fCxt.$data)
           validate$DataFormat();
         else
@@ -13719,17 +13719,17 @@ var require_dist = __commonJS({
     };
     formatsPlugin.get = (name, mode = "full") => {
       const formats = mode === "fast" ? formats_1.fastFormats : formats_1.fullFormats;
-      const f = formats[name];
-      if (!f)
+      const f3 = formats[name];
+      if (!f3)
         throw new Error(`Unknown format "${name}"`);
-      return f;
+      return f3;
     };
-    function addFormats(ajv, list, fs2, exportName) {
-      var _a2;
+    function addFormats(ajv, list, fs4, exportName) {
+      var _a;
       var _b;
-      (_a2 = (_b = ajv.opts.code).formats) !== null && _a2 !== void 0 ? _a2 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
-      for (const f of list)
-        ajv.addFormat(f, fs2[f]);
+      (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
+      for (const f3 of list)
+        ajv.addFormat(f3, fs4[f3]);
     }
     module2.exports = exports2 = formatsPlugin;
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -13762,8 +13762,8 @@ var require_QR8bitByte = __commonJS({
         return this.data.length;
       },
       write: function(buffer) {
-        for (var i2 = 0; i2 < this.data.length; i2++) {
-          buffer.put(this.data.charCodeAt(i2), 8);
+        for (var i = 0; i < this.data.length; i++) {
+          buffer.put(this.data.charCodeAt(i), 8);
         }
       }
     };
@@ -13793,18 +13793,18 @@ var require_QRMath = __commonJS({
       EXP_TABLE: new Array(256),
       LOG_TABLE: new Array(256)
     };
-    for (i2 = 0; i2 < 8; i2++) {
-      QRMath.EXP_TABLE[i2] = 1 << i2;
+    for (i = 0; i < 8; i++) {
+      QRMath.EXP_TABLE[i] = 1 << i;
     }
-    var i2;
-    for (i2 = 8; i2 < 256; i2++) {
-      QRMath.EXP_TABLE[i2] = QRMath.EXP_TABLE[i2 - 4] ^ QRMath.EXP_TABLE[i2 - 5] ^ QRMath.EXP_TABLE[i2 - 6] ^ QRMath.EXP_TABLE[i2 - 8];
+    var i;
+    for (i = 8; i < 256; i++) {
+      QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4] ^ QRMath.EXP_TABLE[i - 5] ^ QRMath.EXP_TABLE[i - 6] ^ QRMath.EXP_TABLE[i - 8];
     }
-    var i2;
-    for (i2 = 0; i2 < 255; i2++) {
-      QRMath.LOG_TABLE[QRMath.EXP_TABLE[i2]] = i2;
+    var i;
+    for (i = 0; i < 255; i++) {
+      QRMath.LOG_TABLE[QRMath.EXP_TABLE[i]] = i;
     }
-    var i2;
+    var i;
     module2.exports = QRMath;
   }
 });
@@ -13822,8 +13822,8 @@ var require_QRPolynomial = __commonJS({
         offset++;
       }
       this.num = new Array(num.length - offset + shift);
-      for (var i2 = 0; i2 < num.length - offset; i2++) {
-        this.num[i2] = num[i2 + offset];
+      for (var i = 0; i < num.length - offset; i++) {
+        this.num[i] = num[i + offset];
       }
     }
     QRPolynomial.prototype = {
@@ -13835,9 +13835,9 @@ var require_QRPolynomial = __commonJS({
       },
       multiply: function(e) {
         var num = new Array(this.getLength() + e.getLength() - 1);
-        for (var i2 = 0; i2 < this.getLength(); i2++) {
-          for (var j2 = 0; j2 < e.getLength(); j2++) {
-            num[i2 + j2] ^= QRMath.gexp(QRMath.glog(this.get(i2)) + QRMath.glog(e.get(j2)));
+        for (var i = 0; i < this.getLength(); i++) {
+          for (var j3 = 0; j3 < e.getLength(); j3++) {
+            num[i + j3] ^= QRMath.gexp(QRMath.glog(this.get(i)) + QRMath.glog(e.get(j3)));
           }
         }
         return new QRPolynomial(num, 0);
@@ -13848,11 +13848,11 @@ var require_QRPolynomial = __commonJS({
         }
         var ratio = QRMath.glog(this.get(0)) - QRMath.glog(e.get(0));
         var num = new Array(this.getLength());
-        for (var i2 = 0; i2 < this.getLength(); i2++) {
-          num[i2] = this.get(i2);
+        for (var i = 0; i < this.getLength(); i++) {
+          num[i] = this.get(i);
         }
-        for (var x2 = 0; x2 < e.getLength(); x2++) {
-          num[x2] ^= QRMath.gexp(QRMath.glog(e.get(x2)) + ratio);
+        for (var x3 = 0; x3 < e.getLength(); x3++) {
+          num[x3] ^= QRMath.gexp(QRMath.glog(e.get(x3)) + ratio);
         }
         return new QRPolynomial(num, 0).mod(e);
       }
@@ -13931,18 +13931,18 @@ var require_QRUtil = __commonJS({
       G18: 1 << 12 | 1 << 11 | 1 << 10 | 1 << 9 | 1 << 8 | 1 << 5 | 1 << 2 | 1 << 0,
       G15_MASK: 1 << 14 | 1 << 12 | 1 << 10 | 1 << 4 | 1 << 1,
       getBCHTypeInfo: function(data) {
-        var d = data << 10;
-        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
-          d ^= QRUtil.G15 << QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15);
+        var d2 = data << 10;
+        while (QRUtil.getBCHDigit(d2) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+          d2 ^= QRUtil.G15 << QRUtil.getBCHDigit(d2) - QRUtil.getBCHDigit(QRUtil.G15);
         }
-        return (data << 10 | d) ^ QRUtil.G15_MASK;
+        return (data << 10 | d2) ^ QRUtil.G15_MASK;
       },
       getBCHTypeNumber: function(data) {
-        var d = data << 12;
-        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
-          d ^= QRUtil.G18 << QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18);
+        var d2 = data << 12;
+        while (QRUtil.getBCHDigit(d2) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+          d2 ^= QRUtil.G18 << QRUtil.getBCHDigit(d2) - QRUtil.getBCHDigit(QRUtil.G18);
         }
-        return data << 12 | d;
+        return data << 12 | d2;
       },
       getBCHDigit: function(data) {
         var digit = 0;
@@ -13955,32 +13955,32 @@ var require_QRUtil = __commonJS({
       getPatternPosition: function(typeNumber) {
         return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
       },
-      getMask: function(maskPattern, i2, j2) {
+      getMask: function(maskPattern, i, j3) {
         switch (maskPattern) {
           case QRMaskPattern.PATTERN000:
-            return (i2 + j2) % 2 === 0;
+            return (i + j3) % 2 === 0;
           case QRMaskPattern.PATTERN001:
-            return i2 % 2 === 0;
+            return i % 2 === 0;
           case QRMaskPattern.PATTERN010:
-            return j2 % 3 === 0;
+            return j3 % 3 === 0;
           case QRMaskPattern.PATTERN011:
-            return (i2 + j2) % 3 === 0;
+            return (i + j3) % 3 === 0;
           case QRMaskPattern.PATTERN100:
-            return (Math.floor(i2 / 2) + Math.floor(j2 / 3)) % 2 === 0;
+            return (Math.floor(i / 2) + Math.floor(j3 / 3)) % 2 === 0;
           case QRMaskPattern.PATTERN101:
-            return i2 * j2 % 2 + i2 * j2 % 3 === 0;
+            return i * j3 % 2 + i * j3 % 3 === 0;
           case QRMaskPattern.PATTERN110:
-            return (i2 * j2 % 2 + i2 * j2 % 3) % 2 === 0;
+            return (i * j3 % 2 + i * j3 % 3) % 2 === 0;
           case QRMaskPattern.PATTERN111:
-            return (i2 * j2 % 3 + (i2 + j2) % 2) % 2 === 0;
+            return (i * j3 % 3 + (i + j3) % 2) % 2 === 0;
           default:
             throw new Error("bad maskPattern:" + maskPattern);
         }
       },
       getErrorCorrectPolynomial: function(errorCorrectLength) {
         var a = new QRPolynomial([1], 0);
-        for (var i2 = 0; i2 < errorCorrectLength; i2++) {
-          a = a.multiply(new QRPolynomial([1, QRMath.gexp(i2)], 0));
+        for (var i = 0; i < errorCorrectLength; i++) {
+          a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0));
         }
         return a;
       },
@@ -14334,11 +14334,11 @@ var require_QRRSBlock = __commonJS({
       }
       var length = rsBlock.length / 3;
       var list = [];
-      for (var i2 = 0; i2 < length; i2++) {
-        var count = rsBlock[i2 * 3 + 0];
-        var totalCount = rsBlock[i2 * 3 + 1];
-        var dataCount = rsBlock[i2 * 3 + 2];
-        for (var j2 = 0; j2 < count; j2++) {
+      for (var i = 0; i < length; i++) {
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+        for (var j3 = 0; j3 < count; j3++) {
           list.push(new QRRSBlock(totalCount, dataCount));
         }
       }
@@ -14375,8 +14375,8 @@ var require_QRBitBuffer = __commonJS({
         return (this.buffer[bufIndex] >>> 7 - index % 8 & 1) == 1;
       },
       put: function(num, length) {
-        for (var i2 = 0; i2 < length; i2++) {
-          this.putBit((num >>> length - i2 - 1 & 1) == 1);
+        for (var i = 0; i < length; i++) {
+          this.putBit((num >>> length - i - 1 & 1) == 1);
         }
       },
       getLengthInBits: function() {
@@ -14435,11 +14435,11 @@ var require_QRCode = __commonJS({
             var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
             var buffer = new QRBitBuffer();
             var totalDataCount = 0;
-            for (var i2 = 0; i2 < rsBlocks.length; i2++) {
-              totalDataCount += rsBlocks[i2].dataCount;
+            for (var i = 0; i < rsBlocks.length; i++) {
+              totalDataCount += rsBlocks[i].dataCount;
             }
-            for (var x2 = 0; x2 < this.dataList.length; x2++) {
-              var data = this.dataList[x2];
+            for (var x3 = 0; x3 < this.dataList.length; x3++) {
+              var data = this.dataList[x3];
               buffer.put(data.mode, 4);
               buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber));
               data.write(buffer);
@@ -14490,31 +14490,31 @@ var require_QRCode = __commonJS({
       getBestMaskPattern: function() {
         var minLostPoint = 0;
         var pattern = 0;
-        for (var i2 = 0; i2 < 8; i2++) {
-          this.makeImpl(true, i2);
+        for (var i = 0; i < 8; i++) {
+          this.makeImpl(true, i);
           var lostPoint = QRUtil.getLostPoint(this);
-          if (i2 === 0 || minLostPoint > lostPoint) {
+          if (i === 0 || minLostPoint > lostPoint) {
             minLostPoint = lostPoint;
-            pattern = i2;
+            pattern = i;
           }
         }
         return pattern;
       },
       createMovieClip: function(target_mc, instance_name, depth) {
         var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
-        var cs = 1;
+        var cs2 = 1;
         this.make();
         for (var row = 0; row < this.modules.length; row++) {
-          var y2 = row * cs;
+          var y2 = row * cs2;
           for (var col = 0; col < this.modules[row].length; col++) {
-            var x2 = col * cs;
+            var x3 = col * cs2;
             var dark = this.modules[row][col];
             if (dark) {
               qr_mc.beginFill(0, 100);
-              qr_mc.moveTo(x2, y2);
-              qr_mc.lineTo(x2 + cs, y2);
-              qr_mc.lineTo(x2 + cs, y2 + cs);
-              qr_mc.lineTo(x2, y2 + cs);
+              qr_mc.moveTo(x3, y2);
+              qr_mc.lineTo(x3 + cs2, y2);
+              qr_mc.lineTo(x3 + cs2, y2 + cs2);
+              qr_mc.lineTo(x3, y2 + cs2);
               qr_mc.endFill();
             }
           }
@@ -14537,10 +14537,10 @@ var require_QRCode = __commonJS({
       },
       setupPositionAdjustPattern: function() {
         var pos = QRUtil.getPatternPosition(this.typeNumber);
-        for (var i2 = 0; i2 < pos.length; i2++) {
-          for (var j2 = 0; j2 < pos.length; j2++) {
-            var row = pos[i2];
-            var col = pos[j2];
+        for (var i = 0; i < pos.length; i++) {
+          for (var j3 = 0; j3 < pos.length; j3++) {
+            var row = pos[i];
+            var col = pos[j3];
             if (this.modules[row][col] !== null) {
               continue;
             }
@@ -14559,37 +14559,37 @@ var require_QRCode = __commonJS({
       setupTypeNumber: function(test) {
         var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
         var mod;
-        for (var i2 = 0; i2 < 18; i2++) {
-          mod = !test && (bits >> i2 & 1) === 1;
-          this.modules[Math.floor(i2 / 3)][i2 % 3 + this.moduleCount - 8 - 3] = mod;
+        for (var i = 0; i < 18; i++) {
+          mod = !test && (bits >> i & 1) === 1;
+          this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
         }
-        for (var x2 = 0; x2 < 18; x2++) {
-          mod = !test && (bits >> x2 & 1) === 1;
-          this.modules[x2 % 3 + this.moduleCount - 8 - 3][Math.floor(x2 / 3)] = mod;
+        for (var x3 = 0; x3 < 18; x3++) {
+          mod = !test && (bits >> x3 & 1) === 1;
+          this.modules[x3 % 3 + this.moduleCount - 8 - 3][Math.floor(x3 / 3)] = mod;
         }
       },
       setupTypeInfo: function(test, maskPattern) {
         var data = this.errorCorrectLevel << 3 | maskPattern;
         var bits = QRUtil.getBCHTypeInfo(data);
         var mod;
-        for (var v = 0; v < 15; v++) {
-          mod = !test && (bits >> v & 1) === 1;
-          if (v < 6) {
-            this.modules[v][8] = mod;
-          } else if (v < 8) {
-            this.modules[v + 1][8] = mod;
+        for (var v2 = 0; v2 < 15; v2++) {
+          mod = !test && (bits >> v2 & 1) === 1;
+          if (v2 < 6) {
+            this.modules[v2][8] = mod;
+          } else if (v2 < 8) {
+            this.modules[v2 + 1][8] = mod;
           } else {
-            this.modules[this.moduleCount - 15 + v][8] = mod;
+            this.modules[this.moduleCount - 15 + v2][8] = mod;
           }
         }
-        for (var h2 = 0; h2 < 15; h2++) {
-          mod = !test && (bits >> h2 & 1) === 1;
-          if (h2 < 8) {
-            this.modules[8][this.moduleCount - h2 - 1] = mod;
-          } else if (h2 < 9) {
-            this.modules[8][15 - h2 - 1 + 1] = mod;
+        for (var h3 = 0; h3 < 15; h3++) {
+          mod = !test && (bits >> h3 & 1) === 1;
+          if (h3 < 8) {
+            this.modules[8][this.moduleCount - h3 - 1] = mod;
+          } else if (h3 < 9) {
+            this.modules[8][15 - h3 - 1 + 1] = mod;
           } else {
-            this.modules[8][15 - h2 - 1] = mod;
+            this.modules[8][15 - h3 - 1] = mod;
           }
         }
         this.modules[this.moduleCount - 8][8] = !test;
@@ -14635,15 +14635,15 @@ var require_QRCode = __commonJS({
     QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
       var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
       var buffer = new QRBitBuffer();
-      for (var i2 = 0; i2 < dataList.length; i2++) {
-        var data = dataList[i2];
+      for (var i = 0; i < dataList.length; i++) {
+        var data = dataList[i];
         buffer.put(data.mode, 4);
         buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber));
         data.write(buffer);
       }
       var totalDataCount = 0;
-      for (var x2 = 0; x2 < rsBlocks.length; x2++) {
-        totalDataCount += rsBlocks[x2].dataCount;
+      for (var x3 = 0; x3 < rsBlocks.length; x3++) {
+        totalDataCount += rsBlocks[x3].dataCount;
       }
       if (buffer.getLengthInBits() > totalDataCount * 8) {
         throw new Error("code length overflow. (" + buffer.getLengthInBits() + ">" + totalDataCount * 8 + ")");
@@ -14678,17 +14678,17 @@ var require_QRCode = __commonJS({
         maxDcCount = Math.max(maxDcCount, dcCount);
         maxEcCount = Math.max(maxEcCount, ecCount);
         dcdata[r2] = new Array(dcCount);
-        for (var i2 = 0; i2 < dcdata[r2].length; i2++) {
-          dcdata[r2][i2] = 255 & buffer.buffer[i2 + offset];
+        for (var i = 0; i < dcdata[r2].length; i++) {
+          dcdata[r2][i] = 255 & buffer.buffer[i + offset];
         }
         offset += dcCount;
         var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
         var rawPoly = new QRPolynomial(dcdata[r2], rsPoly.getLength() - 1);
         var modPoly = rawPoly.mod(rsPoly);
         ecdata[r2] = new Array(rsPoly.getLength() - 1);
-        for (var x2 = 0; x2 < ecdata[r2].length; x2++) {
-          var modIndex = x2 + modPoly.getLength() - ecdata[r2].length;
-          ecdata[r2][x2] = modIndex >= 0 ? modPoly.get(modIndex) : 0;
+        for (var x3 = 0; x3 < ecdata[r2].length; x3++) {
+          var modIndex = x3 + modPoly.getLength() - ecdata[r2].length;
+          ecdata[r2][x3] = modIndex >= 0 ? modPoly.get(modIndex) : 0;
         }
       }
       var totalCodeCount = 0;
@@ -14697,10 +14697,10 @@ var require_QRCode = __commonJS({
       }
       var data = new Array(totalCodeCount);
       var index = 0;
-      for (var z2 = 0; z2 < maxDcCount; z2++) {
+      for (var z3 = 0; z3 < maxDcCount; z3++) {
         for (var s = 0; s < rsBlocks.length; s++) {
-          if (z2 < dcdata[s].length) {
-            data[index++] = dcdata[s][z2];
+          if (z3 < dcdata[s].length) {
+            data[index++] = dcdata[s][z3];
           }
         }
       }
@@ -14736,8 +14736,8 @@ var require_main = __commonJS({
     };
     var fill = function(length, value) {
       var arr = new Array(length);
-      for (var i2 = 0; i2 < length; i2++) {
-        arr[i2] = value;
+      for (var i = 0; i < length; i++) {
+        arr[i] = value;
       }
       return arr;
     };
@@ -14811,11 +14811,11 @@ var require_main = __commonJS({
 var require_ms = __commonJS({
   "node_modules/ms/index.js"(exports2, module2) {
     var s = 1e3;
-    var m = s * 60;
-    var h2 = m * 60;
-    var d = h2 * 24;
-    var w = d * 7;
-    var y2 = d * 365.25;
+    var m2 = s * 60;
+    var h3 = m2 * 60;
+    var d2 = h3 * 24;
+    var w2 = d2 * 7;
+    var y2 = d2 * 365.25;
     module2.exports = function(val, options) {
       options = options || {};
       var type = typeof val;
@@ -14851,23 +14851,23 @@ var require_ms = __commonJS({
         case "weeks":
         case "week":
         case "w":
-          return n * w;
+          return n * w2;
         case "days":
         case "day":
         case "d":
-          return n * d;
+          return n * d2;
         case "hours":
         case "hour":
         case "hrs":
         case "hr":
         case "h":
-          return n * h2;
+          return n * h3;
         case "minutes":
         case "minute":
         case "mins":
         case "min":
         case "m":
-          return n * m;
+          return n * m2;
         case "seconds":
         case "second":
         case "secs":
@@ -14884,41 +14884,41 @@ var require_ms = __commonJS({
           return void 0;
       }
     }
-    function fmtShort(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return Math.round(ms / d) + "d";
+    function fmtShort(ms2) {
+      var msAbs = Math.abs(ms2);
+      if (msAbs >= d2) {
+        return Math.round(ms2 / d2) + "d";
       }
-      if (msAbs >= h2) {
-        return Math.round(ms / h2) + "h";
+      if (msAbs >= h3) {
+        return Math.round(ms2 / h3) + "h";
       }
-      if (msAbs >= m) {
-        return Math.round(ms / m) + "m";
-      }
-      if (msAbs >= s) {
-        return Math.round(ms / s) + "s";
-      }
-      return ms + "ms";
-    }
-    function fmtLong(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return plural(ms, msAbs, d, "day");
-      }
-      if (msAbs >= h2) {
-        return plural(ms, msAbs, h2, "hour");
-      }
-      if (msAbs >= m) {
-        return plural(ms, msAbs, m, "minute");
+      if (msAbs >= m2) {
+        return Math.round(ms2 / m2) + "m";
       }
       if (msAbs >= s) {
-        return plural(ms, msAbs, s, "second");
+        return Math.round(ms2 / s) + "s";
       }
-      return ms + " ms";
+      return ms2 + "ms";
     }
-    function plural(ms, msAbs, n, name) {
+    function fmtLong(ms2) {
+      var msAbs = Math.abs(ms2);
+      if (msAbs >= d2) {
+        return plural(ms2, msAbs, d2, "day");
+      }
+      if (msAbs >= h3) {
+        return plural(ms2, msAbs, h3, "hour");
+      }
+      if (msAbs >= m2) {
+        return plural(ms2, msAbs, m2, "minute");
+      }
+      if (msAbs >= s) {
+        return plural(ms2, msAbs, s, "second");
+      }
+      return ms2 + " ms";
+    }
+    function plural(ms2, msAbs, n, name) {
       var isPlural = msAbs >= n * 1.5;
-      return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
+      return Math.round(ms2 / n) + " " + name + (isPlural ? "s" : "");
     }
   }
 });
@@ -14943,8 +14943,8 @@ var require_common = __commonJS({
       createDebug.formatters = {};
       function selectColor(namespace) {
         let hash = 0;
-        for (let i2 = 0; i2 < namespace.length; i2++) {
-          hash = (hash << 5) - hash + namespace.charCodeAt(i2);
+        for (let i = 0; i < namespace.length; i++) {
+          hash = (hash << 5) - hash + namespace.charCodeAt(i);
           hash |= 0;
         }
         return createDebug.colors[Math.abs(hash) % createDebug.colors.length];
@@ -14955,14 +14955,14 @@ var require_common = __commonJS({
         let enableOverride = null;
         let namespacesCache;
         let enabledCache;
-        function debug2(...args) {
-          if (!debug2.enabled) {
+        function debug(...args) {
+          if (!debug.enabled) {
             return;
           }
-          const self = debug2;
+          const self = debug;
           const curr = Number(/* @__PURE__ */ new Date());
-          const ms = curr - (prevTime || curr);
-          self.diff = ms;
+          const ms2 = curr - (prevTime || curr);
+          self.diff = ms2;
           self.prev = prevTime;
           self.curr = curr;
           prevTime = curr;
@@ -14989,12 +14989,12 @@ var require_common = __commonJS({
           const logFn = self.log || createDebug.log;
           logFn.apply(self, args);
         }
-        debug2.namespace = namespace;
-        debug2.useColors = createDebug.useColors();
-        debug2.color = createDebug.selectColor(namespace);
-        debug2.extend = extend2;
-        debug2.destroy = createDebug.destroy;
-        Object.defineProperty(debug2, "enabled", {
+        debug.namespace = namespace;
+        debug.useColors = createDebug.useColors();
+        debug.color = createDebug.selectColor(namespace);
+        debug.extend = extend2;
+        debug.destroy = createDebug.destroy;
+        Object.defineProperty(debug, "enabled", {
           enumerable: true,
           configurable: false,
           get: () => {
@@ -15007,14 +15007,14 @@ var require_common = __commonJS({
             }
             return enabledCache;
           },
-          set: (v) => {
-            enableOverride = v;
+          set: (v2) => {
+            enableOverride = v2;
           }
         });
         if (typeof createDebug.init === "function") {
-          createDebug.init(debug2);
+          createDebug.init(debug);
         }
-        return debug2;
+        return debug;
       }
       function extend2(namespace, delimiter) {
         const newDebug = createDebug(this.namespace + (typeof delimiter === "undefined" ? ":" : delimiter) + namespace);
@@ -15027,11 +15027,11 @@ var require_common = __commonJS({
         createDebug.names = [];
         createDebug.skips = [];
         const split = (typeof namespaces === "string" ? namespaces : "").trim().replace(/\s+/g, ",").split(",").filter(Boolean);
-        for (const ns of split) {
-          if (ns[0] === "-") {
-            createDebug.skips.push(ns.slice(1));
+        for (const ns2 of split) {
+          if (ns2[0] === "-") {
+            createDebug.skips.push(ns2.slice(1));
           } else {
-            createDebug.names.push(ns);
+            createDebug.names.push(ns2);
           }
         }
       }
@@ -15077,8 +15077,8 @@ var require_common = __commonJS({
             return false;
           }
         }
-        for (const ns of createDebug.names) {
-          if (matchesTemplate(name, ns)) {
+        for (const ns2 of createDebug.names) {
+          if (matchesTemplate(name, ns2)) {
             return true;
           }
         }
@@ -15202,11 +15202,11 @@ var require_browser = __commonJS({
       if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
         return false;
       }
-      let m;
+      let m2;
       return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // Is firebug? http://stackoverflow.com/a/398120/376773
       typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || // Is firefox >= v31?
       // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-      typeof navigator !== "undefined" && navigator.userAgent && (m = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m[1], 10) >= 31 || // Double check webkit in userAgent just in case we are in a worker
+      typeof navigator !== "undefined" && navigator.userAgent && (m2 = navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/)) && parseInt(m2[1], 10) >= 31 || // Double check webkit in userAgent just in case we are in a worker
       typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
     }
     function formatArgs(args) {
@@ -15260,9 +15260,9 @@ var require_browser = __commonJS({
     }
     module2.exports = require_common()(exports2);
     var { formatters } = module2.exports;
-    formatters.j = function(v) {
+    formatters.j = function(v2) {
       try {
-        return JSON.stringify(v);
+        return JSON.stringify(v2);
       } catch (error2) {
         return "[UnexpectedJSONParseError]: " + error2.message;
       }
@@ -15374,7 +15374,7 @@ var require_node = __commonJS({
     exports2.inspectOpts = Object.keys(process.env).filter((key) => {
       return /^debug_/i.test(key);
     }).reduce((obj, key) => {
-      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_2, k2) => {
+      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_3, k2) => {
         return k2.toUpperCase();
       });
       let val = process.env[key];
@@ -15424,22 +15424,22 @@ var require_node = __commonJS({
     function load() {
       return process.env.DEBUG;
     }
-    function init(debug2) {
-      debug2.inspectOpts = {};
+    function init(debug) {
+      debug.inspectOpts = {};
       const keys = Object.keys(exports2.inspectOpts);
-      for (let i2 = 0; i2 < keys.length; i2++) {
-        debug2.inspectOpts[keys[i2]] = exports2.inspectOpts[keys[i2]];
+      for (let i = 0; i < keys.length; i++) {
+        debug.inspectOpts[keys[i]] = exports2.inspectOpts[keys[i]];
       }
     }
     module2.exports = require_common()(exports2);
     var { formatters } = module2.exports;
-    formatters.o = function(v) {
+    formatters.o = function(v2) {
       this.inspectOpts.colors = this.useColors;
-      return util.inspect(v, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
+      return util.inspect(v2, this.inspectOpts).split("\n").map((str) => str.trim()).join(" ");
     };
-    formatters.O = function(v) {
+    formatters.O = function(v2) {
       this.inspectOpts.colors = this.useColors;
-      return util.inspect(v, this.inspectOpts);
+      return util.inspect(v2, this.inspectOpts);
     };
   }
 });
@@ -15466,10 +15466,10 @@ var require_src2 = __commonJS({
     var fs_1 = require("fs");
     var debug_1 = __importDefault(require_src());
     var log = debug_1.default("@kwsites/file-exists");
-    function check2(path3, isFile, isDirectory) {
-      log(`checking %s`, path3);
+    function check2(path4, isFile, isDirectory) {
+      log(`checking %s`, path4);
       try {
-        const stat = fs_1.statSync(path3);
+        const stat = fs_1.statSync(path4);
         if (stat.isFile() && isFile) {
           log(`[OK] path represents a file`);
           return true;
@@ -15489,10 +15489,10 @@ var require_src2 = __commonJS({
         throw e;
       }
     }
-    function exists2(path3, type = exports2.READABLE) {
-      return check2(path3, (type & exports2.FILE) > 0, (type & exports2.FOLDER) > 0);
+    function exists(path4, type = exports2.READABLE) {
+      return check2(path4, (type & exports2.FILE) > 0, (type & exports2.FOLDER) > 0);
     }
-    exports2.exists = exists2;
+    exports2.exists = exists;
     exports2.FILE = 1;
     exports2.FOLDER = 2;
     exports2.READABLE = exports2.FILE + exports2.FOLDER;
@@ -15503,11 +15503,11 @@ var require_src2 = __commonJS({
 var require_dist2 = __commonJS({
   "node_modules/@kwsites/file-exists/dist/index.js"(exports2) {
     "use strict";
-    function __export3(m) {
-      for (var p2 in m) if (!exports2.hasOwnProperty(p2)) exports2[p2] = m[p2];
+    function __export2(m2) {
+      for (var p2 in m2) if (!exports2.hasOwnProperty(p2)) exports2[p2] = m2[p2];
     }
     Object.defineProperty(exports2, "__esModule", { value: true });
-    __export3(require_src2());
+    __export2(require_src2());
   }
 });
 
@@ -15517,7 +15517,7 @@ var require_dist3 = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.createDeferred = exports2.deferred = void 0;
-    function deferred2() {
+    function deferred() {
       let done;
       let fail;
       let status = "pending";
@@ -15547,9 +15547,9 @@ var require_dist3 = __commonJS({
         }
       };
     }
-    exports2.deferred = deferred2;
-    exports2.createDeferred = deferred2;
-    exports2.default = deferred2;
+    exports2.deferred = deferred;
+    exports2.createDeferred = deferred;
+    exports2.default = deferred;
   }
 });
 
@@ -15561,6 +15561,26 @@ __export(index_exports, {
 });
 module.exports = __toCommonJS(index_exports);
 
+// packages/cowork-mcp/src/identity.ts
+var import_node_fs = __toESM(require("node:fs"), 1);
+var import_node_path = __toESM(require("node:path"), 1);
+var import_node_os = __toESM(require("node:os"), 1);
+var import_node_crypto = require("node:crypto");
+function getParticipantToken() {
+  if (process.env.COWORK_PARTICIPANT_TOKEN) return process.env.COWORK_PARTICIPANT_TOKEN;
+  const dir = import_node_path.default.join(import_node_os.default.homedir(), ".config", "sednium-cowork");
+  import_node_fs.default.mkdirSync(dir, { recursive: true, mode: 448 });
+  const file = import_node_path.default.join(dir, "participant-token");
+  try {
+    import_node_fs.default.writeFileSync(file, (0, import_node_crypto.randomBytes)(32).toString("hex"), { flag: "wx", mode: 384 });
+  } catch (e) {
+    if (e.code !== "EEXIST") throw e;
+  }
+  const token = import_node_fs.default.readFileSync(file, "utf8").trim();
+  if (!/^[a-zA-Z0-9_-]{32,128}$/.test(token)) throw new Error("Invalid saved participant token");
+  return token;
+}
+
 // node_modules/zod/v4/core/core.js
 var NEVER = Object.freeze({
   status: "aborted"
@@ -15568,45 +15588,45 @@ var NEVER = Object.freeze({
 // @__NO_SIDE_EFFECTS__
 function $constructor(name, initializer3, params) {
   function init(inst, def) {
-    var _a2;
+    var _a;
     Object.defineProperty(inst, "_zod", {
       value: inst._zod ?? {},
       enumerable: false
     });
-    (_a2 = inst._zod).traits ?? (_a2.traits = /* @__PURE__ */ new Set());
+    (_a = inst._zod).traits ?? (_a.traits = /* @__PURE__ */ new Set());
     inst._zod.traits.add(name);
     initializer3(inst, def);
-    for (const k2 in _2.prototype) {
+    for (const k2 in _3.prototype) {
       if (!(k2 in inst))
-        Object.defineProperty(inst, k2, { value: _2.prototype[k2].bind(inst) });
+        Object.defineProperty(inst, k2, { value: _3.prototype[k2].bind(inst) });
     }
-    inst._zod.constr = _2;
+    inst._zod.constr = _3;
     inst._zod.def = def;
   }
   const Parent = params?.Parent ?? Object;
   class Definition extends Parent {
   }
   Object.defineProperty(Definition, "name", { value: name });
-  function _2(def) {
-    var _a2;
+  function _3(def) {
+    var _a;
     const inst = params?.Parent ? new Definition() : this;
     init(inst, def);
-    (_a2 = inst._zod).deferred ?? (_a2.deferred = []);
-    for (const fn of inst._zod.deferred) {
-      fn();
+    (_a = inst._zod).deferred ?? (_a.deferred = []);
+    for (const fn2 of inst._zod.deferred) {
+      fn2();
     }
     return inst;
   }
-  Object.defineProperty(_2, "init", { value: init });
-  Object.defineProperty(_2, Symbol.hasInstance, {
+  Object.defineProperty(_3, "init", { value: init });
+  Object.defineProperty(_3, Symbol.hasInstance, {
     value: (inst) => {
       if (params?.Parent && inst instanceof params.Parent)
         return true;
       return inst?._zod?.traits?.has(name);
     }
   });
-  Object.defineProperty(_2, "name", { value: name });
-  return _2;
+  Object.defineProperty(_3, "name", { value: name });
+  return _3;
 }
 var $brand = Symbol("zod_brand");
 var $ZodAsyncError = class extends Error {
@@ -15685,17 +15705,17 @@ function assertIs(_arg) {
 function assertNever(_x) {
   throw new Error();
 }
-function assert(_2) {
+function assert(_3) {
 }
 function getEnumValues(entries) {
-  const numericValues = Object.values(entries).filter((v) => typeof v === "number");
-  const values = Object.entries(entries).filter(([k2, _2]) => numericValues.indexOf(+k2) === -1).map(([_2, v]) => v);
+  const numericValues = Object.values(entries).filter((v2) => typeof v2 === "number");
+  const values = Object.entries(entries).filter(([k2, _3]) => numericValues.indexOf(+k2) === -1).map(([_3, v2]) => v2);
   return values;
 }
 function joinValues(array2, separator = "|") {
   return array2.map((val) => stringifyPrimitive(val)).join(separator);
 }
-function jsonStringifyReplacer(_2, value) {
+function jsonStringifyReplacer(_3, value) {
   if (typeof value === "bigint")
     return value.toString();
   return value;
@@ -15740,9 +15760,9 @@ function defineLazy(object3, key, getter) {
       }
       throw new Error("cached value already set");
     },
-    set(v) {
+    set(v2) {
       Object.defineProperty(object3, key, {
-        value: v
+        value: v2
         // configurable: true,
       });
     },
@@ -15757,18 +15777,18 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path3) {
-  if (!path3)
+function getElementAtPath(obj, path4) {
+  if (!path4)
     return obj;
-  return path3.reduce((acc, key) => acc?.[key], obj);
+  return path4.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
   const promises = keys.map((key) => promisesObj[key]);
   return Promise.all(promises).then((results) => {
     const resolvedObj = {};
-    for (let i2 = 0; i2 < keys.length; i2++) {
-      resolvedObj[keys[i2]] = results[i2];
+    for (let i = 0; i < keys.length; i++) {
+      resolvedObj[keys[i]] = results[i];
     }
     return resolvedObj;
   });
@@ -15776,7 +15796,7 @@ function promiseAllObject(promisesObj) {
 function randomString(length = 10) {
   const chars = "abcdefghijklmnopqrstuvwxyz";
   let str = "";
-  for (let i2 = 0; i2 < length; i2++) {
+  for (let i = 0; i < length; i++) {
     str += chars[Math.floor(Math.random() * chars.length)];
   }
   return str;
@@ -15794,10 +15814,10 @@ var allowsEval = cached(() => {
     return false;
   }
   try {
-    const F2 = Function;
-    new F2("");
+    const F3 = Function;
+    new F3("");
     return true;
-  } catch (_2) {
+  } catch (_3) {
     return false;
   }
 });
@@ -15898,31 +15918,31 @@ function normalizeParams(_params) {
 function createTransparentProxy(getter) {
   let target;
   return new Proxy({}, {
-    get(_2, prop, receiver) {
+    get(_3, prop, receiver) {
       target ?? (target = getter());
       return Reflect.get(target, prop, receiver);
     },
-    set(_2, prop, value, receiver) {
+    set(_3, prop, value, receiver) {
       target ?? (target = getter());
       return Reflect.set(target, prop, value, receiver);
     },
-    has(_2, prop) {
+    has(_3, prop) {
       target ?? (target = getter());
       return Reflect.has(target, prop);
     },
-    deleteProperty(_2, prop) {
+    deleteProperty(_3, prop) {
       target ?? (target = getter());
       return Reflect.deleteProperty(target, prop);
     },
-    ownKeys(_2) {
+    ownKeys(_3) {
       target ?? (target = getter());
       return Reflect.ownKeys(target);
     },
-    getOwnPropertyDescriptor(_2, prop) {
+    getOwnPropertyDescriptor(_3, prop) {
       target ?? (target = getter());
       return Reflect.getOwnPropertyDescriptor(target, prop);
     },
-    defineProperty(_2, prop, descriptor) {
+    defineProperty(_3, prop, descriptor) {
       target ?? (target = getter());
       return Reflect.defineProperty(target, prop, descriptor);
     }
@@ -16001,15 +16021,15 @@ function extend(schema, shape) {
   };
   return clone(schema, def);
 }
-function merge(a, b2) {
+function merge(a, b3) {
   return clone(a, {
     ...a._zod.def,
     get shape() {
-      const _shape = { ...a._zod.def.shape, ...b2._zod.def.shape };
+      const _shape = { ...a._zod.def.shape, ...b3._zod.def.shape };
       assignProp(this, "shape", _shape);
       return _shape;
     },
-    catchall: b2._zod.def.catchall,
+    catchall: b3._zod.def.catchall,
     checks: []
     // delete existing checks
   });
@@ -16073,18 +16093,18 @@ function required(Class2, schema, mask) {
     checks: []
   });
 }
-function aborted(x2, startIndex = 0) {
-  for (let i2 = startIndex; i2 < x2.issues.length; i2++) {
-    if (x2.issues[i2]?.continue !== true)
+function aborted(x3, startIndex = 0) {
+  for (let i = startIndex; i < x3.issues.length; i++) {
+    if (x3.issues[i]?.continue !== true)
       return true;
   }
   return false;
 }
-function prefixIssues(path3, issues) {
+function prefixIssues(path4, issues) {
   return issues.map((iss) => {
-    var _a2;
-    (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path3);
+    var _a;
+    (_a = iss).path ?? (_a.path = []);
+    iss.path.unshift(path4);
     return iss;
   });
 }
@@ -16133,7 +16153,7 @@ function issue(...args) {
   return { ...iss };
 }
 function cleanEnum(obj) {
-  return Object.entries(obj).filter(([k2, _2]) => {
+  return Object.entries(obj).filter(([k2, _3]) => {
     return Number.isNaN(Number.parseInt(k2, 10));
   }).map((el) => el[1]);
 }
@@ -16197,10 +16217,10 @@ function formatError(error2, _mapper) {
         fieldErrors._errors.push(mapper(issue2));
       } else {
         let curr = fieldErrors;
-        let i2 = 0;
-        while (i2 < issue2.path.length) {
-          const el = issue2.path[i2];
-          const terminal = i2 === issue2.path.length - 1;
+        let i = 0;
+        while (i < issue2.path.length) {
+          const el = issue2.path[i];
+          const terminal = i === issue2.path.length - 1;
           if (!terminal) {
             curr[el] = curr[el] || { _errors: [] };
           } else {
@@ -16208,7 +16228,7 @@ function formatError(error2, _mapper) {
             curr[el]._errors.push(mapper(issue2));
           }
           curr = curr[el];
-          i2++;
+          i++;
         }
       }
     }
@@ -16327,10 +16347,10 @@ var uppercase = /^[^a-z]*$/;
 
 // node_modules/zod/v4/core/checks.js
 var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
-  var _a2;
+  var _a;
   inst._zod ?? (inst._zod = {});
   inst._zod.def = def;
-  (_a2 = inst._zod).onattach ?? (_a2.onattach = []);
+  (_a = inst._zod).onattach ?? (_a.onattach = []);
 });
 var numericOriginMap = {
   number: "number",
@@ -16396,8 +16416,8 @@ var $ZodCheckGreaterThan = /* @__PURE__ */ $constructor("$ZodCheckGreaterThan", 
 var $ZodCheckMultipleOf = /* @__PURE__ */ $constructor("$ZodCheckMultipleOf", (inst, def) => {
   $ZodCheck.init(inst, def);
   inst._zod.onattach.push((inst2) => {
-    var _a2;
-    (_a2 = inst2._zod.bag).multipleOf ?? (_a2.multipleOf = def.value);
+    var _a;
+    (_a = inst2._zod.bag).multipleOf ?? (_a.multipleOf = def.value);
   });
   inst._zod.check = (payload) => {
     if (typeof payload.value !== typeof def.value)
@@ -16490,9 +16510,9 @@ var $ZodCheckNumberFormat = /* @__PURE__ */ $constructor("$ZodCheckNumberFormat"
   };
 });
 var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -16519,9 +16539,9 @@ var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (ins
   };
 });
 var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -16548,9 +16568,9 @@ var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (ins
   };
 });
 var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
-  var _a2;
+  var _a;
   $ZodCheck.init(inst, def);
-  (_a2 = inst._zod.def).when ?? (_a2.when = (payload) => {
+  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
     const val = payload.value;
     return !nullish(val) && val.length !== void 0;
   });
@@ -16579,7 +16599,7 @@ var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals"
   };
 });
 var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
-  var _a2, _b;
+  var _a, _b;
   $ZodCheck.init(inst, def);
   inst._zod.onattach.push((inst2) => {
     const bag = inst2._zod.bag;
@@ -16590,7 +16610,7 @@ var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat"
     }
   });
   if (def.pattern)
-    (_a2 = inst._zod).check ?? (_a2.check = (payload) => {
+    (_a = inst._zod).check ?? (_a.check = (payload) => {
       def.pattern.lastIndex = 0;
       if (def.pattern.test(payload.value))
         return;
@@ -16718,9 +16738,9 @@ var Doc = class {
     if (this)
       this.args = args;
   }
-  indented(fn) {
+  indented(fn2) {
     this.indent += 1;
-    fn(this);
+    fn2(this);
     this.indent -= 1;
   }
   write(arg) {
@@ -16730,19 +16750,19 @@ var Doc = class {
       return;
     }
     const content = arg;
-    const lines = content.split("\n").filter((x2) => x2);
-    const minIndent = Math.min(...lines.map((x2) => x2.length - x2.trimStart().length));
-    const dedented = lines.map((x2) => x2.slice(minIndent)).map((x2) => " ".repeat(this.indent * 2) + x2);
+    const lines = content.split("\n").filter((x3) => x3);
+    const minIndent = Math.min(...lines.map((x3) => x3.length - x3.trimStart().length));
+    const dedented = lines.map((x3) => x3.slice(minIndent)).map((x3) => " ".repeat(this.indent * 2) + x3);
     for (const line of dedented) {
       this.content.push(line);
     }
   }
   compile() {
-    const F2 = Function;
+    const F3 = Function;
     const args = this?.args;
     const content = this?.content ?? [``];
-    const lines = [...content.map((x2) => `  ${x2}`)];
-    return new F2(...args, lines.join("\n"));
+    const lines = [...content.map((x3) => `  ${x3}`)];
+    return new F3(...args, lines.join("\n"));
   }
 };
 
@@ -16755,7 +16775,7 @@ var version = {
 
 // node_modules/zod/v4/core/schemas.js
 var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
-  var _a2;
+  var _a;
   inst ?? (inst = {});
   inst._zod.def = def;
   inst._zod.bag = inst._zod.bag || {};
@@ -16765,12 +16785,12 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
     checks.unshift(inst);
   }
   for (const ch of checks) {
-    for (const fn of ch._zod.onattach) {
-      fn(inst);
+    for (const fn2 of ch._zod.onattach) {
+      fn2(inst);
     }
   }
   if (checks.length === 0) {
-    (_a2 = inst._zod).deferred ?? (_a2.deferred = []);
+    (_a = inst._zod).deferred ?? (_a.deferred = []);
     inst._zod.deferred?.push(() => {
       inst._zod.run = inst._zod.parse;
     });
@@ -16787,13 +16807,13 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
           continue;
         }
         const currLen = payload.issues.length;
-        const _2 = ch._zod.check(payload);
-        if (_2 instanceof Promise && ctx?.async === false) {
+        const _3 = ch._zod.check(payload);
+        if (_3 instanceof Promise && ctx?.async === false) {
           throw new $ZodAsyncError();
         }
-        if (asyncResult || _2 instanceof Promise) {
+        if (asyncResult || _3 instanceof Promise) {
           asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
-            await _2;
+            await _3;
             const nextLen = payload.issues.length;
             if (nextLen === currLen)
               return;
@@ -16830,7 +16850,7 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
       try {
         const r2 = safeParse(inst, value);
         return r2.success ? { value: r2.data } : { issues: r2.error?.issues };
-      } catch (_2) {
+      } catch (_3) {
         return safeParseAsync(inst, value).then((r2) => r2.success ? { value: r2.data } : { issues: r2.error?.issues });
       }
     },
@@ -16841,11 +16861,11 @@ var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
 var $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
   $ZodType.init(inst, def);
   inst._zod.pattern = [...inst?._zod.bag?.patterns ?? []].pop() ?? string(inst._zod.bag);
-  inst._zod.parse = (payload, _2) => {
+  inst._zod.parse = (payload, _3) => {
     if (def.coerce)
       try {
         payload.value = String(payload.value);
-      } catch (_3) {
+      } catch (_4) {
       }
     if (typeof payload.value === "string")
       return payload;
@@ -16878,10 +16898,10 @@ var $ZodUUID = /* @__PURE__ */ $constructor("$ZodUUID", (inst, def) => {
       v7: 7,
       v8: 8
     };
-    const v = versionMap[def.version];
-    if (v === void 0)
+    const v2 = versionMap[def.version];
+    if (v2 === void 0)
       throw new Error(`Invalid UUID version: "${def.version}"`);
-    def.pattern ?? (def.pattern = uuid(v));
+    def.pattern ?? (def.pattern = uuid(v2));
   } else
     def.pattern ?? (def.pattern = uuid());
   $ZodStringFormat.init(inst, def);
@@ -16931,7 +16951,7 @@ var $ZodURL = /* @__PURE__ */ $constructor("$ZodURL", (inst, def) => {
         payload.value = href;
       }
       return;
-    } catch (_2) {
+    } catch (_3) {
       payload.issues.push({
         code: "invalid_format",
         format: "url",
@@ -17144,7 +17164,7 @@ var $ZodNumber = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
     if (def.coerce)
       try {
         payload.value = Number(payload.value);
-      } catch (_2) {
+      } catch (_3) {
       }
     const input = payload.value;
     if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) {
@@ -17172,7 +17192,7 @@ var $ZodBoolean = /* @__PURE__ */ $constructor("$ZodBoolean", (inst, def) => {
     if (def.coerce)
       try {
         payload.value = Boolean(payload.value);
-      } catch (_2) {
+      } catch (_3) {
       }
     const input = payload.value;
     if (typeof input === "boolean")
@@ -17240,16 +17260,16 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     }
     payload.value = Array(input.length);
     const proms = [];
-    for (let i2 = 0; i2 < input.length; i2++) {
-      const item = input[i2];
+    for (let i = 0; i < input.length; i++) {
+      const item = input[i];
       const result = def.element._zod.run({
         value: item,
         issues: []
       }, ctx);
       if (result instanceof Promise) {
-        proms.push(result.then((result2) => handleArrayResult(result2, payload, i2)));
+        proms.push(result.then((result2) => handleArrayResult(result2, payload, i)));
       } else {
-        handleArrayResult(result, payload, i2);
+        handleArrayResult(result, payload, i);
       }
     }
     if (proms.length) {
@@ -17307,8 +17327,8 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
       const field = shape[key]._zod;
       if (field.values) {
         propValues[key] ?? (propValues[key] = /* @__PURE__ */ new Set());
-        for (const v of field.values)
-          propValues[key].add(v);
+        for (const v2 of field.values)
+          propValues[key].add(v2);
       }
     }
     return propValues;
@@ -17365,8 +17385,8 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
     }
     doc.write(`payload.value = newResult;`);
     doc.write(`return payload;`);
-    const fn = doc.compile();
-    return (payload, ctx) => fn(shape, payload, ctx);
+    const fn2 = doc.compile();
+    return (payload, ctx) => fn2(shape, payload, ctx);
   };
   let fastpass;
   const isObject2 = isObject;
@@ -17509,10 +17529,10 @@ var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnio
       const pv = option._zod.propValues;
       if (!pv || Object.keys(pv).length === 0)
         throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(option)}"`);
-      for (const [k2, v] of Object.entries(pv)) {
+      for (const [k2, v2] of Object.entries(pv)) {
         if (!propValues[k2])
           propValues[k2] = /* @__PURE__ */ new Set();
-        for (const val of v) {
+        for (const val of v2) {
           propValues[k2].add(val);
         }
       }
@@ -17526,11 +17546,11 @@ var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnio
       const values = o2._zod.propValues[def.discriminator];
       if (!values || values.size === 0)
         throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(o2)}"`);
-      for (const v of values) {
-        if (map.has(v)) {
-          throw new Error(`Duplicate discriminator value "${String(v)}"`);
+      for (const v2 of values) {
+        if (map.has(v2)) {
+          throw new Error(`Duplicate discriminator value "${String(v2)}"`);
         }
-        map.set(v, o2);
+        map.set(v2, o2);
       }
     }
     return map;
@@ -17579,19 +17599,19 @@ var $ZodIntersection = /* @__PURE__ */ $constructor("$ZodIntersection", (inst, d
     return handleIntersectionResults(payload, left, right);
   };
 });
-function mergeValues(a, b2) {
-  if (a === b2) {
+function mergeValues(a, b3) {
+  if (a === b3) {
     return { valid: true, data: a };
   }
-  if (a instanceof Date && b2 instanceof Date && +a === +b2) {
+  if (a instanceof Date && b3 instanceof Date && +a === +b3) {
     return { valid: true, data: a };
   }
-  if (isPlainObject(a) && isPlainObject(b2)) {
-    const bKeys = Object.keys(b2);
+  if (isPlainObject(a) && isPlainObject(b3)) {
+    const bKeys = Object.keys(b3);
     const sharedKeys = Object.keys(a).filter((key) => bKeys.indexOf(key) !== -1);
-    const newObj = { ...a, ...b2 };
+    const newObj = { ...a, ...b3 };
     for (const key of sharedKeys) {
-      const sharedValue = mergeValues(a[key], b2[key]);
+      const sharedValue = mergeValues(a[key], b3[key]);
       if (!sharedValue.valid) {
         return {
           valid: false,
@@ -17602,14 +17622,14 @@ function mergeValues(a, b2) {
     }
     return { valid: true, data: newObj };
   }
-  if (Array.isArray(a) && Array.isArray(b2)) {
-    if (a.length !== b2.length) {
+  if (Array.isArray(a) && Array.isArray(b3)) {
+    if (a.length !== b3.length) {
       return { valid: false, mergeErrorPath: [] };
     }
     const newArray = [];
     for (let index = 0; index < a.length; index++) {
       const itemA = a[index];
-      const itemB = b2[index];
+      const itemB = b3[index];
       const sharedValue = mergeValues(itemA, itemB);
       if (!sharedValue.valid) {
         return {
@@ -17861,8 +17881,8 @@ var $ZodPrefault = /* @__PURE__ */ $constructor("$ZodPrefault", (inst, def) => {
 var $ZodNonOptional = /* @__PURE__ */ $constructor("$ZodNonOptional", (inst, def) => {
   $ZodType.init(inst, def);
   defineLazy(inst._zod, "values", () => {
-    const v = def.innerType._zod.values;
-    return v ? new Set([...v].filter((x2) => x2 !== void 0)) : void 0;
+    const v2 = def.innerType._zod.values;
+    return v2 ? new Set([...v2].filter((x3) => x3 !== void 0)) : void 0;
   });
   inst._zod.parse = (payload, ctx) => {
     const result = def.innerType._zod.run(payload, ctx);
@@ -17960,7 +17980,7 @@ function handleReadonlyResult(payload) {
 var $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
   $ZodCheck.init(inst, def);
   $ZodType.init(inst, def);
-  inst._zod.parse = (payload, _2) => {
+  inst._zod.parse = (payload, _3) => {
     return payload;
   };
   inst._zod.check = (payload) => {
@@ -18577,22 +18597,22 @@ function _array(Class2, element, params) {
     ...normalizeParams(params)
   });
 }
-function _custom(Class2, fn, _params) {
+function _custom(Class2, fn2, _params) {
   const norm = normalizeParams(_params);
   norm.abort ?? (norm.abort = true);
   const schema = new Class2({
     type: "custom",
     check: "custom",
-    fn,
+    fn: fn2,
     ...norm
   });
   return schema;
 }
-function _refine(Class2, fn, _params) {
+function _refine(Class2, fn2, _params) {
   const schema = new Class2({
     type: "custom",
     check: "custom",
-    fn,
+    fn: fn2,
     ...normalizeParams(_params)
   });
   return schema;
@@ -18772,7 +18792,7 @@ var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
   inst.spa = inst.safeParseAsync;
   inst.refine = (check2, params) => inst.check(refine(check2, params));
   inst.superRefine = (refinement) => inst.check(superRefine(refinement));
-  inst.overwrite = (fn) => inst.check(_overwrite(fn));
+  inst.overwrite = (fn2) => inst.check(_overwrite(fn2));
   inst.optional = () => optional(inst);
   inst.nullable = () => nullable(inst);
   inst.nullish = () => optional(nullable(inst));
@@ -19149,7 +19169,7 @@ var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
   };
 });
 function _enum(values, params) {
-  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
+  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v2) => [v2, v2])) : values;
   return new ZodEnum({
     type: "enum",
     entries,
@@ -19205,10 +19225,10 @@ var ZodTransform = /* @__PURE__ */ $constructor("ZodTransform", (inst, def) => {
     return payload;
   };
 });
-function transform(fn) {
+function transform(fn2) {
   return new ZodTransform({
     type: "transform",
-    transform: fn
+    transform: fn2
   });
 }
 var ZodOptional = /* @__PURE__ */ $constructor("ZodOptional", (inst, def) => {
@@ -19315,21 +19335,21 @@ var ZodCustom = /* @__PURE__ */ $constructor("ZodCustom", (inst, def) => {
   $ZodCustom.init(inst, def);
   ZodType.init(inst, def);
 });
-function check(fn) {
+function check(fn2) {
   const ch = new $ZodCheck({
     check: "custom"
     // ...util.normalizeParams(params),
   });
-  ch._zod.check = fn;
+  ch._zod.check = fn2;
   return ch;
 }
-function custom(fn, _params) {
-  return _custom(ZodCustom, fn ?? (() => true), _params);
+function custom(fn2, _params) {
+  return _custom(ZodCustom, fn2 ?? (() => true), _params);
 }
-function refine(fn, _params = {}) {
-  return _refine(ZodCustom, fn, _params);
+function refine(fn2, _params = {}) {
+  return _refine(ZodCustom, fn2, _params);
 }
-function superRefine(fn) {
+function superRefine(fn2) {
   const ch = check((payload) => {
     payload.addIssue = (issue2) => {
       if (typeof issue2 === "string") {
@@ -19345,12 +19365,12 @@ function superRefine(fn) {
         payload.issues.push(util_exports.issue(_issue));
       }
     };
-    return fn(payload.value, payload);
+    return fn2(payload.value, payload);
   });
   return ch;
 }
-function preprocess(fn, schema) {
-  return pipe(transform(fn), schema);
+function preprocess(fn2, schema) {
+  return pipe(transform(fn2), schema);
 }
 
 // node_modules/zod/v4/classic/external.js
@@ -19361,7 +19381,7 @@ var LATEST_PROTOCOL_VERSION = "2025-11-25";
 var SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, "2025-06-18", "2025-03-26", "2024-11-05", "2024-10-07"];
 var RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
 var JSONRPC_VERSION = "2.0";
-var AssertObjectSchema = custom((v) => v !== null && (typeof v === "object" || typeof v === "function"));
+var AssertObjectSchema = custom((v2) => v2 !== null && (typeof v2 === "object" || typeof v2 === "function"));
 var ProgressTokenSchema = union([string2(), number2().int()]);
 var CursorSchema = string2();
 var TaskCreationParamsSchema = looseObject({
@@ -22680,14 +22700,15 @@ var StdioServerTransport = class {
 
 // packages/cowork-mcp/src/index.ts
 var import_qrcode_terminal = __toESM(require_main(), 1);
-var import_node_path3 = __toESM(require("node:path"), 1);
+var import_node_path4 = __toESM(require("node:path"), 1);
+
+// packages/cowork-mcp/src/poller.ts
+var import_node_crypto2 = require("node:crypto");
 
 // packages/cowork-mcp/src/git.ts
-var import_node_fs = __toESM(require("node:fs"), 1);
-var import_node_path2 = __toESM(require("node:path"), 1);
-
-// node_modules/simple-git/dist/esm/index.js
-var import_file_exists = __toESM(require_dist2(), 1);
+var import_node_fs2 = __toESM(require("node:fs"), 1);
+var import_node_path3 = __toESM(require("node:path"), 1);
+var import_node_child_process2 = require("node:child_process");
 
 // node_modules/@simple-git/args-pathspec/dist/index.mjs
 var t = /* @__PURE__ */ new WeakMap();
@@ -22702,19 +22723,20 @@ function o(n) {
   return t.get(n) ?? [];
 }
 
-// node_modules/simple-git/dist/esm/index.js
+// node_modules/simple-git/dist/index.mjs
+var import_file_exists = __toESM(require_dist2(), 1);
+var import_node_child_process = require("node:child_process");
 var import_debug = __toESM(require_src(), 1);
-var import_child_process = require("child_process");
 var import_promise_deferred = __toESM(require_dist3(), 1);
-var import_node_path = require("node:path");
+var import_node_path2 = require("node:path");
 
 // node_modules/@simple-git/argv-parser/dist/index.mjs
-function* U(e, t2) {
-  const n = t2 === "global";
+function* x(e, n) {
+  const t2 = n === "global";
   for (const o2 of e)
-    o2.isGlobal === n && (yield o2);
+    o2.isGlobal === t2 && (yield o2);
 }
-var k = /* @__PURE__ */ new Set([
+var P = /* @__PURE__ */ new Set([
   "--add",
   "--edit",
   "--remove-section",
@@ -22734,46 +22756,46 @@ var S = /* @__PURE__ */ new Set([
   "--list",
   "-l"
 ]);
-var P = /* @__PURE__ */ new Set([
+var E = /* @__PURE__ */ new Set([
   "edit",
   "remove-section",
   "rename-section",
   "set",
   "unset"
 ]);
-var E = /* @__PURE__ */ new Set(["get", "get-color", "get-colorbool", "list"]);
-function F(e, t2) {
-  for (const { name: o2 } of U(e, "task")) {
-    if (k.has(o2))
-      return p(true, t2);
+var F = /* @__PURE__ */ new Set(["get", "get-color", "get-colorbool", "list"]);
+function A(e, n) {
+  for (const { name: o2 } of x(e, "task")) {
+    if (P.has(o2))
+      return w(true, n);
     if (S.has(o2))
-      return p(false, t2);
+      return w(false, n);
   }
-  const n = t2.at(0)?.toLowerCase();
-  return n === void 0 ? null : P.has(n) ? p(true, t2.slice(1)) : E.has(n) ? p(false, t2.slice(1)) : t2.length === 1 ? p(false, t2) : p(true, t2);
+  const t2 = n.at(0)?.toLowerCase();
+  return t2 === void 0 ? null : E.has(t2) ? w(true, n.slice(1)) : F.has(t2) ? w(false, n.slice(1)) : n.length === 1 ? w(false, n) : w(true, n);
 }
-function p(e = false, t2 = []) {
-  const n = t2.at(0)?.toLowerCase();
-  return n === void 0 ? null : {
+function w(e = false, n = []) {
+  const t2 = n.at(0)?.toLowerCase();
+  return t2 === void 0 ? null : {
     isWrite: e,
     isRead: !e,
-    key: n,
-    value: t2.at(1)
+    key: t2,
+    value: n.at(1)
   };
 }
-function A(e, t2) {
-  return t2.isWrite && t2.value !== void 0 ? { key: t2.key, value: t2.value, scope: e } : { key: t2.key, scope: e };
+function O(e, n) {
+  return n.isWrite && n.value !== void 0 ? { key: n.key, value: n.value, scope: e } : { key: n.key, scope: e };
+}
+function G(e) {
+  const n = e?.indexOf("=") || -1;
+  return !e || n < 0 ? null : {
+    key: e.slice(0, n).trim().toLowerCase(),
+    value: e.slice(n + 1)
+  };
 }
 function M(e) {
-  const t2 = e?.indexOf("=") || -1;
-  return !e || t2 < 0 ? null : {
-    key: e.slice(0, t2).trim().toLowerCase(),
-    value: e.slice(t2 + 1)
-  };
-}
-function N(e) {
-  for (const { name: t2 } of U(e, "task"))
-    switch (t2) {
+  for (const { name: n } of x(e, "task"))
+    switch (n) {
       case "--global":
         return "global";
       case "--system":
@@ -22788,45 +22810,45 @@ function N(e) {
     }
   return "local";
 }
-function G({ name: e }) {
+function N({ name: e }) {
   if (e === "-c" || e === "--config")
     return "inline";
   if (e === "--config-env")
     return "env";
 }
-function* O(e) {
-  for (const t2 of e) {
-    const n = G(t2), o2 = n && M(t2.value);
+function* $(e) {
+  for (const n of e) {
+    const t2 = N(n), o2 = t2 && G(n.value);
     o2 && (yield {
       ...o2,
-      scope: n
+      scope: t2
     });
   }
 }
-function L(e, t2, n) {
+function D(e, n, t2) {
   const o2 = {
     read: [],
-    write: [...O(t2)]
+    write: [...$(n)]
   };
-  return e === "config" && $(
+  return e === "config" && L(
     o2,
-    N(t2),
-    F(t2, n)
+    M(n),
+    A(n, t2)
   ), o2;
 }
-function $(e, t2, n) {
-  if (n === null)
+function L(e, n, t2) {
+  if (t2 === null)
     return;
-  const o2 = A(t2, n);
-  n.isWrite ? e.write.push(o2) : e.read.push(o2);
+  const o2 = O(n, t2);
+  t2.isWrite ? e.write.push(o2) : e.read.push(o2);
 }
-var x = {
+var C = {
   short: /* @__PURE__ */ new Map([
     ["c", true]
     //  -c <k=v>    set config key for this invocation
   ])
 };
-var D = {
+var I = {
   short: new Map([
     ["C", true],
     //  -C <path>   change working directory
@@ -22838,7 +22860,7 @@ var D = {
     // -p          paginate
     ["v", false],
     // -v          version
-    ...x.short.entries()
+    ...C.short.entries()
   ]),
   long: /* @__PURE__ */ new Set([
     "attr-source",
@@ -22914,189 +22936,233 @@ var R = {
   push: {
     short: /* @__PURE__ */ new Map(),
     long: /* @__PURE__ */ new Set(["exec", "receive-pack"])
+  },
+  rebase: {
+    short: /* @__PURE__ */ new Map([
+      ["X", true],
+      // -X <option>   strategy option
+      ["f", false],
+      // -f force-rebase
+      ["i", false],
+      // -i interactive
+      ["k", false],
+      // -k keep-base
+      ["m", false],
+      // -m merge
+      ["n", false],
+      // -n no-stat
+      ["q", false],
+      // -q quiet
+      ["r", false],
+      // -r rebase-merges
+      ["s", true],
+      // -s <strategy>
+      ["v", false],
+      // -v verbose
+      ["x", true]
+      // -x <cmd>      exec
+    ]),
+    long: /* @__PURE__ */ new Set(["exec", "onto", "strategy", "strategy-option"])
   }
 };
 var T = { short: /* @__PURE__ */ new Map(), long: /* @__PURE__ */ new Set() };
-function I(e) {
-  const t2 = R[e ?? ""] ?? T;
+function B(e) {
+  const n = R[e ?? ""] ?? T;
   return {
-    short: new Map([...x.short.entries(), ...t2.short.entries()]),
-    long: t2.long
+    short: new Map([...C.short.entries(), ...n.short.entries()]),
+    long: n.long
   };
 }
-function b(e, t2 = D) {
+function b(e, n = I) {
   if (e.startsWith("--")) {
-    const n = e.indexOf("=");
-    if (n > 2)
-      return [{ name: e.slice(0, n), value: e.slice(n + 1), needsNext: false }];
+    const t2 = e.indexOf("=");
+    if (t2 > 2)
+      return [{ name: e.slice(0, t2), value: e.slice(t2 + 1), needsNext: false }];
     const o2 = e.slice(2);
-    return [{ name: e, needsNext: t2.long.has(o2) }];
+    return [{ name: e, needsNext: n.long.has(o2) }];
   }
   if (e.length === 2) {
-    const n = e.charAt(1), o2 = t2.short.get(n);
+    const t2 = e.charAt(1), o2 = n.short.get(t2);
     return [{ name: e, needsNext: o2 === true }];
   }
-  return W(e, t2.short);
+  return j(e, n.short);
 }
-function W(e, t2) {
-  const n = e.slice(1).split(""), o2 = [];
-  for (let s = 0; s < n.length; s++) {
-    const r2 = n[s], l = t2.get(r2);
-    if (l === void 0)
+function j(e, n) {
+  const t2 = e.slice(1).split(""), o2 = [];
+  for (let a = 0; a < t2.length; a++) {
+    const s = t2[a], r2 = n.get(s);
+    if (r2 === void 0)
       return [{ name: e, needsNext: false }];
-    if (l) {
-      const a = n.slice(s + 1).join("");
-      if (a && ![...a].every((w) => t2.has(w)))
-        return o2.push({ name: `-${r2}`, value: a, needsNext: false }), o2;
+    if (r2) {
+      const i = t2.slice(a + 1).join("");
+      if (i && ![...i].every((m2) => n.has(m2)))
+        return o2.push({ name: `-${s}`, value: i, needsNext: false }), o2;
     }
-    o2.push({ name: `-${r2}`, needsNext: l });
+    o2.push({ name: `-${s}`, needsNext: r2 });
   }
   return o2;
 }
-function j(e, t2 = []) {
-  let n = 0;
-  for (; n < e.length; ) {
-    const o2 = String(e[n]);
+function W(e, n = []) {
+  let t2 = 0;
+  for (; t2 < e.length; ) {
+    const o2 = String(e[t2]);
     if (!o2.startsWith("-") || o2.length < 2) break;
-    const s = b(o2);
-    let r2 = n + 1;
-    for (const l of s) {
-      const a = {
-        name: l.name,
-        value: l.value,
+    const a = b(o2);
+    let s = t2 + 1;
+    for (const r2 of a) {
+      const i = {
+        name: r2.name,
+        value: r2.value,
         absorbedNext: false,
         isGlobal: true
       };
-      l.needsNext && a.value === void 0 && r2 < e.length && (a.value = String(e[r2]), a.absorbedNext = true, r2++), t2.push(a);
+      r2.needsNext && i.value === void 0 && s < e.length && (i.value = String(e[s]), i.absorbedNext = true, s++), n.push(i);
     }
-    n = r2;
+    t2 = s;
   }
-  return { flags: t2, taskIndex: n };
+  return { flags: n, taskIndex: t2 };
 }
-function B(e, t2, n = []) {
-  const o2 = I(t2), s = [], r2 = [];
-  let l = 0;
-  for (; l < e.length; ) {
-    const a = e[l];
-    if (r(a)) {
-      r2.push(...o(a)), l++;
+function V(e, n, t2 = []) {
+  const o2 = B(n), a = [], s = [];
+  let r2 = 0;
+  for (; r2 < e.length; ) {
+    const i = e[r2];
+    if (r(i)) {
+      s.push(...o(i)), r2++;
       continue;
     }
-    const f = String(a);
-    if (f === "--") {
-      for (let g = l + 1; g < e.length; g++) {
-        const u = e[g];
-        r(u) ? r2.push(...o(u)) : r2.push(String(u));
+    const p2 = String(i);
+    if (p2 === "--") {
+      for (let d2 = r2 + 1; d2 < e.length; d2++) {
+        const g2 = e[d2];
+        r(g2) ? s.push(...o(g2)) : s.push(String(g2));
       }
       break;
     }
-    if (!f.startsWith("-") || f.length < 2) {
-      s.push(f), l++;
+    if (!p2.startsWith("-") || p2.length < 2) {
+      a.push(p2), r2++;
       continue;
     }
-    const w = b(f, o2);
-    let d = l + 1;
-    for (const g of w) {
-      const u = {
-        name: g.name,
-        value: g.value,
+    const m2 = b(p2, o2);
+    let u2 = r2 + 1;
+    for (const d2 of m2) {
+      const g2 = {
+        name: d2.name,
+        value: d2.value,
         absorbedNext: false,
         isGlobal: false
       };
-      g.needsNext && u.value === void 0 && d < e.length && !r(e[d]) && (u.value = String(e[d]), u.absorbedNext = true, d++), n.push(u);
+      d2.needsNext && g2.value === void 0 && u2 < e.length && !r(e[u2]) && (g2.value = String(e[u2]), g2.absorbedNext = true, u2++), t2.push(g2);
     }
-    l = d;
+    r2 = u2;
   }
-  return { flags: n, positionals: s, pathspecs: r2 };
+  return { flags: t2, positionals: a, pathspecs: s };
 }
-function* V({
+function* q({
   write: e
 }) {
-  for (const t2 of e)
-    for (const n of q) {
-      const o2 = n(t2.key);
+  for (const n of e)
+    for (const t2 of K) {
+      const o2 = t2(n.key);
       o2 && (yield o2);
     }
 }
-function c2(e, t2, n = String(e)) {
+function f(e, n, t2 = String(e)) {
   const o2 = typeof e == "string" ? new RegExp(`\\s*${e.toLowerCase()}`) : e;
-  return function(r2) {
-    if (o2.test(r2))
-      return {
-        category: t2,
-        message: `Configuring ${n} is not permitted without enabling ${t2}`
-      };
-  };
-}
-function i(e, t2) {
-  const n = new RegExp(`\\s*${e.toLowerCase().replace(/\./g, "(..+)?.")}`);
-  return c2(n, t2, e);
-}
-var q = [
-  c2("alias", "allowUnsafeAlias"),
-  c2("core.askPass", "allowUnsafeAskPass"),
-  c2("core.editor", "allowUnsafeEditor"),
-  c2("core.fsmonitor", "allowUnsafeFsMonitor"),
-  c2("core.gitProxy", "allowUnsafeGitProxy"),
-  c2("core.hooksPath", "allowUnsafeHooksPath"),
-  c2("core.pager", "allowUnsafePager"),
-  c2("core.sshCommand", "allowUnsafeSshCommand"),
-  i("credential.helper", "allowUnsafeCredentialHelper"),
-  i("diff.command", "allowUnsafeDiffExternal"),
-  c2("diff.external", "allowUnsafeDiffExternal"),
-  i("diff.textconv", "allowUnsafeDiffTextConv"),
-  i("filter.clean", "allowUnsafeFilter"),
-  i("filter.smudge", "allowUnsafeFilter"),
-  i("gpg.program", "allowUnsafeGpgProgram"),
-  c2("init.templateDir", "allowUnsafeTemplateDir"),
-  i("merge.driver", "allowUnsafeMergeDriver"),
-  i("mergetool.path", "allowUnsafeMergeDriver"),
-  i("mergetool.cmd", "allowUnsafeMergeDriver"),
-  i("protocol.allow", "allowUnsafeProtocolOverride"),
-  i("remote.receivepack", "allowUnsafePack"),
-  i("remote.uploadpack", "allowUnsafePack"),
-  c2("sequence.editor", "allowUnsafeEditor")
-];
-function* K(e, t2) {
-  for (const n of t2)
-    for (const o2 of H) {
-      const s = o2(e, n.name);
-      s && (yield s);
-    }
-}
-function h(e, t2, n, o2 = String(t2)) {
-  const s = typeof t2 == "string" ? new RegExp(`\\s*${t2.toLowerCase()}`) : t2, r2 = `Use of ${e ? `${e} with option ` : ""}${o2} is not permitted without enabling ${n}`;
-  return function(a, f) {
-    if ((!e || a === e) && s.test(f))
+  return function(s) {
+    if (o2.test(s))
       return {
         category: n,
-        message: r2
+        message: `Configuring ${t2} is not permitted without enabling ${n}`
       };
   };
 }
-var H = [
-  h(
-    null,
-    /--(upload|receive)-pack/,
-    "allowUnsafePack",
-    "--upload-pack or --receive-pack"
-  ),
-  h("clone", /^-\w*u/, "allowUnsafePack"),
-  h("clone", "--u", "allowUnsafePack"),
-  h("push", "--exec", "allowUnsafePack"),
-  h(null, "--template", "allowUnsafeTemplateDir")
+function l(e, n) {
+  const t2 = new RegExp(`\\s*${e.toLowerCase().replace(/\./g, "(..+)?.")}`);
+  return f(t2, n, e);
+}
+var K = [
+  f("alias", "allowUnsafeAlias"),
+  f("core.askPass", "allowUnsafeAskPass"),
+  f("core.editor", "allowUnsafeEditor"),
+  f("core.fsmonitor", "allowUnsafeFsMonitor"),
+  f("core.gitProxy", "allowUnsafeGitProxy"),
+  f("core.hooksPath", "allowUnsafeHooksPath"),
+  f("core.pager", "allowUnsafePager"),
+  f("core.sshCommand", "allowUnsafeSshCommand"),
+  l("credential.helper", "allowUnsafeCredentialHelper"),
+  l("diff.command", "allowUnsafeDiffExternal"),
+  f("diff.external", "allowUnsafeDiffExternal"),
+  l("difftool.cmd", "allowUnsafeDiffExternal"),
+  l("diff.textconv", "allowUnsafeDiffTextConv"),
+  l("filter.clean", "allowUnsafeFilter"),
+  l("filter.process", "allowUnsafeFilter"),
+  l("filter.smudge", "allowUnsafeFilter"),
+  l("gpg.program", "allowUnsafeGpgProgram"),
+  f("include.path", "allowUnsafeInclude"),
+  l("includeIf", "allowUnsafeInclude"),
+  f("init.templateDir", "allowUnsafeTemplateDir"),
+  l("pager.", "allowUnsafePager"),
+  l("merge.driver", "allowUnsafeMergeDriver"),
+  l("mergetool.path", "allowUnsafeMergeDriver"),
+  l("mergetool.cmd", "allowUnsafeMergeDriver"),
+  l("protocol.allow", "allowUnsafeProtocolOverride"),
+  l("remote.receivepack", "allowUnsafePack"),
+  l("remote.uploadpack", "allowUnsafePack"),
+  f("uploadpack.packObjectsHook", "allowUnsafePack"),
+  f("sequence.editor", "allowUnsafeEditor"),
+  l("submodule.update", "allowUnsafeSubmodule"),
+  l("tar.command", "allowUnsafeCommandBinaries"),
+  l("trailer.cmd", "allowUnsafeCommandBinaries"),
+  l("trailer.command", "allowUnsafeCommandBinaries"),
+  l("url.insteadOf", "allowUnsafeUrlRewrite")
 ];
-function C(e, t2, n) {
-  return [...K(e, t2), ...V(n)];
+function* H(e, n) {
+  for (const t2 of n)
+    for (const o2 of X) {
+      const a = o2(e, t2);
+      a && (yield a);
+    }
+}
+function c2(e, n, t2, { name: o2 = String(n), globalOnly: a = false, withValue: s = false } = {}) {
+  const r2 = typeof n == "string" ? new RegExp(`\\s*${n.toLowerCase()}`) : n, i = `Use of ${e ? `${e} with option ` : ""}${o2} is not permitted without enabling ${t2}`;
+  return function(m2, u2) {
+    if (!(e && m2 !== e) && !(a && !u2.isGlobal) && !(s && u2.value === void 0) && r2.test(u2.name))
+      return {
+        category: t2,
+        message: i
+      };
+  };
+}
+var h = { globalOnly: true, withValue: true };
+var X = [
+  c2(null, /--(upload|receive)-pack/, "allowUnsafePack", {
+    name: "--upload-pack or --receive-pack"
+  }),
+  c2("clone", /^-\w*u/, "allowUnsafePack"),
+  c2("clone", "--u", "allowUnsafePack"),
+  c2("push", /^--exec$/, "allowUnsafePack", { name: "--exec" }),
+  // `git` accepts unambiguous abbreviations of long options, so `--ex` and `--exe` are `--exec`
+  c2("rebase", /^(-x|--ex(ec?)?)$/, "allowUnsafeExec", { name: "-x or --exec" }),
+  c2(null, "--template", "allowUnsafeTemplateDir"),
+  c2(null, "--exec-path", "allowUnsafeExec", h),
+  // `git` reads the configuration of whichever repository these name, so the
+  // directory alone is enough to deliver config the argv guards never see
+  c2(null, "--git-dir", "allowUnsafeConfigPaths", h),
+  c2(null, "--work-tree", "allowUnsafeConfigPaths", h),
+  c2(null, /^-C$/, "allowUnsafeConfigPaths", { ...h, name: "-C" })
+];
+function k(e, n, t2) {
+  return [...H(e, n), ...q(t2)];
 }
 function Y(...e) {
-  const { flags: t2, taskIndex: n } = j(e), o2 = n < e.length ? String(e[n]).toLowerCase() : null, s = o2 !== null ? e.slice(n + 1) : [], { positionals: r2, pathspecs: l } = B(s, o2, t2), a = L(o2, t2, r2);
+  const { flags: n, taskIndex: t2 } = W(e), o2 = t2 < e.length ? String(e[t2]).toLowerCase() : null, a = o2 !== null ? e.slice(t2 + 1) : [], { positionals: s, pathspecs: r2 } = V(a, o2, n), i = D(o2, n, s);
   return {
     task: o2,
-    flags: t2.map(J),
-    paths: l,
-    config: a,
-    vulnerabilities: z(C(o2, t2, a))
+    flags: n.map(J),
+    paths: r2,
+    config: i,
+    vulnerabilities: z(k(o2, n, i))
   };
 }
 function z(e) {
@@ -23104,8 +23170,8 @@ function z(e) {
     value: e
   });
 }
-function J({ value: e, name: t2 }) {
-  return e !== void 0 ? { name: t2, value: e } : { name: t2 };
+function J({ value: e, name: n }) {
+  return e !== void 0 ? { name: n, value: e } : { name: n };
 }
 var y = {
   editor: "allowUnsafeEditor",
@@ -23113,9 +23179,10 @@ var y = {
   git_config_global: "allowUnsafeConfigPaths",
   git_config_system: "allowUnsafeConfigPaths",
   git_config_count: "allowUnsafeConfigEnvCount",
+  git_config_parameters: "allowUnsafeConfigEnvCount",
   git_config: "allowUnsafeConfigPaths",
   git_editor: "allowUnsafeEditor",
-  git_exec_path: "allowUnsafeConfigPaths",
+  git_exec_path: "allowUnsafeExec",
   git_external_diff: "allowUnsafeDiffExternal",
   git_pager: "allowUnsafePager",
   git_proxy_command: "allowUnsafeGitProxy",
@@ -23125,1589 +23192,1032 @@ var y = {
   git_ssh_command: "allowUnsafeSshCommand",
   pager: "allowUnsafePager",
   prefix: "allowUnsafeConfigPaths",
-  ssh_askpass: "allowUnsafeAskPass"
+  ssh_askpass: "allowUnsafeAskPass",
+  visual: "allowUnsafeEditor"
 };
 function* Q(e) {
-  const t2 = parseInt(e.git_config_count ?? "0", 10);
-  for (let n = 0; n < t2; n++) {
-    const o2 = e[`git_config_key_${n}`], s = e[`git_config_value_${n}`];
-    o2 !== void 0 && (yield { key: o2.toLowerCase().trim(), value: s, scope: "env" });
+  const n = parseInt(e.git_config_count ?? "0", 10);
+  for (let t2 = 0; t2 < n; t2++) {
+    const o2 = e[`git_config_key_${t2}`], a = e[`git_config_value_${t2}`];
+    o2 !== void 0 && (yield { key: o2.toLowerCase().trim(), value: a, scope: "env" });
   }
 }
-function* X(e) {
-  for (const t2 of Object.keys(e))
-    if (_(t2)) {
-      const n = y[t2];
+function* Z(e) {
+  for (const n of Object.keys(e))
+    if (_(n)) {
+      const t2 = y[n];
       yield {
-        category: n,
-        message: `Use of "${t2.toUpperCase()}" is not permitted without enabling ${n}`
+        category: t2,
+        message: `Use of "${n.toUpperCase()}" is not permitted without enabling ${t2}`
       };
     }
 }
 function _(e) {
   return Object.hasOwn(y, e);
 }
-function Z(e) {
-  const t2 = {};
-  for (const [n, o2] of Object.entries(e)) {
-    const s = n.toLowerCase().trim();
-    (_(s) || s.startsWith("git")) && (t2[s] = String(o2));
-  }
-  return t2;
-}
 function ee(e) {
-  const t2 = Z(e), n = {
+  const n = {};
+  for (const [t2, o2] of Object.entries(e)) {
+    const a = t2.toLowerCase().trim();
+    (_(a) || a.startsWith("git")) && (n[a] = String(o2));
+  }
+  return n;
+}
+function ne(e) {
+  const n = ee(e), t2 = {
     read: [],
-    write: [...Q(t2)]
+    write: [...Q(n)]
   }, o2 = [
-    ...X(t2),
-    ...C(null, [], n)
+    ...Z(n),
+    ...k(null, [], t2)
   ];
   return {
-    config: n,
+    config: t2,
     vulnerabilities: o2
   };
 }
-function ne(e, t2) {
-  return [...Y(...e).vulnerabilities, ...ee(t2).vulnerabilities];
+function oe(e, n) {
+  return [...Y(...e).vulnerabilities, ...ne(n).vulnerabilities];
 }
 
-// node_modules/simple-git/dist/esm/index.js
-var import_promise_deferred2 = __toESM(require_dist3(), 1);
+// node_modules/simple-git/dist/index.mjs
 var import_node_events = require("node:events");
-var __defProp2 = Object.defineProperty;
-var __getOwnPropDesc2 = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames2 = Object.getOwnPropertyNames;
-var __hasOwnProp2 = Object.prototype.hasOwnProperty;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames2(fn)[0]])(fn = 0)), res;
+var O2 = class extends Error {
+  constructor(e, n) {
+    super(n), this.task = e, Object.setPrototypeOf(this, new.target.prototype);
+  }
 };
-var __commonJS2 = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames2(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+var Ae = class extends O2 {
+  constructor(e, n) {
+    super(void 0, n), this.config = e;
+  }
 };
-var __export2 = (target, all) => {
-  for (var name in all)
-    __defProp2(target, name, { get: all[name], enumerable: true });
+var A2 = class extends O2 {
+  constructor(e, n, r2) {
+    super(e, r2), this.task = e, this.plugin = n, Object.setPrototypeOf(this, new.target.prototype);
+  }
 };
-var __copyProps2 = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames2(from))
-      if (!__hasOwnProp2.call(to, key) && key !== except)
-        __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc2(from, key)) || desc.enumerable });
+var at = class extends O2 {
+  constructor(e, n) {
+    super(void 0, n || String(e)), this.git = e;
   }
-  return to;
 };
-var __toCommonJS2 = (mod) => __copyProps2(__defProp2({}, "__esModule", { value: true }), mod);
-var GitError;
-var init_git_error = __esm({
-  "src/lib/errors/git-error.ts"() {
-    "use strict";
-    GitError = class extends Error {
-      constructor(task, message) {
-        super(message);
-        this.task = task;
-        Object.setPrototypeOf(this, new.target.prototype);
-      }
-    };
+var xe = class extends O2 {
+  constructor(e) {
+    super(void 0, e);
   }
-});
-var GitResponseError;
-var init_git_response_error = __esm({
-  "src/lib/errors/git-response-error.ts"() {
-    "use strict";
-    init_git_error();
-    GitResponseError = class extends GitError {
-      constructor(git, message) {
-        super(void 0, message || String(git));
-        this.git = git;
-      }
-    };
-  }
-});
-var TaskConfigurationError;
-var init_task_configuration_error = __esm({
-  "src/lib/errors/task-configuration-error.ts"() {
-    "use strict";
-    init_git_error();
-    TaskConfigurationError = class extends GitError {
-      constructor(message) {
-        super(void 0, message);
-      }
-    };
-  }
-});
-function asFunction(source) {
-  if (typeof source !== "function") {
-    return NOOP;
-  }
-  return source;
+};
+var I2 = "\0";
+var W2 = () => {
+};
+function Ne(t2) {
+  return typeof t2 != "function" ? W2 : t2;
 }
-function isUserFunction(source) {
-  return typeof source === "function" && source !== NOOP;
+function $e(t2) {
+  return typeof t2 == "function" && t2 !== W2;
 }
-function splitOn(input, char) {
-  const index = input.indexOf(char);
-  if (index <= 0) {
-    return [input, ""];
-  }
-  return [input.substr(0, index), input.substr(index + 1)];
+function Pe(t2, e) {
+  const n = t2.indexOf(e);
+  return n <= 0 ? [t2, ""] : [t2.substr(0, n), t2.substr(n + 1)];
 }
-function first(input, offset = 0) {
-  return isArrayLike(input) && input.length > offset ? input[offset] : void 0;
+function Me(t2, e = 0) {
+  return Dt(t2) && t2.length > e ? t2[e] : void 0;
 }
-function last(input, offset = 0) {
-  if (isArrayLike(input) && input.length > offset) {
-    return input[input.length - 1 - offset];
-  }
+function N2(t2, e = 0) {
+  if (Dt(t2) && t2.length > e)
+    return t2[t2.length - 1 - e];
 }
-function isArrayLike(input) {
-  return filterHasLength(input);
+function Dt(t2) {
+  return Bt(t2);
 }
-function toLinesWithContent(input = "", trimmed2 = true, separator = "\n") {
-  return input.split(separator).reduce((output, line) => {
-    const lineContent = trimmed2 ? line.trim() : line;
-    if (lineContent) {
-      output.push(lineContent);
-    }
-    return output;
+function H2(t2 = "", e = true, n = `
+`) {
+  return t2.split(n).reduce((r2, s) => {
+    const o2 = e ? s.trim() : s;
+    return o2 && r2.push(o2), r2;
   }, []);
 }
-function forEachLineWithContent(input, callback) {
-  return toLinesWithContent(input, true).map((line) => callback(line));
+function ut(t2, e) {
+  return H2(t2, true).map((n) => e(n));
 }
-function folderExists(path3) {
-  return (0, import_file_exists.exists)(path3, import_file_exists.FOLDER);
+function Lt(t2) {
+  return (0, import_file_exists.exists)(t2, import_file_exists.FOLDER);
 }
-function append(target, item) {
-  if (Array.isArray(target)) {
-    if (!target.includes(item)) {
-      target.push(item);
-    }
-  } else {
-    target.add(item);
+function S2(t2, e) {
+  return Array.isArray(t2) ? t2.includes(e) || t2.push(e) : t2.add(e), e;
+}
+function De(t2, e) {
+  return Array.isArray(t2) && !t2.includes(e) && t2.push(e), t2;
+}
+function ct(t2, e) {
+  if (Array.isArray(t2)) {
+    const n = t2.indexOf(e);
+    n >= 0 && t2.splice(n, 1);
+  } else
+    t2.delete(e);
+  return e;
+}
+var ft = Object.prototype.toString.call.bind(Object.prototype.toString);
+function v(t2) {
+  return Array.isArray(t2) ? t2 : [t2];
+}
+function jt(t2) {
+  return t2.replace(/[\s-]+(.)/g, (e, n) => n.toUpperCase());
+}
+function L2(t2) {
+  return v(t2).map((e) => e instanceof String ? e : String(e));
+}
+function p(t2, e = 0) {
+  if (t2 == null)
+    return e;
+  const n = parseInt(t2, 10);
+  return Number.isNaN(n) ? e : n;
+}
+function U(t2, e) {
+  const n = [];
+  for (let r2 = 0, s = t2.length; r2 < s; r2++)
+    n.push(e, t2[r2]);
+  return n;
+}
+function F2(t2) {
+  return (Array.isArray(t2) ? Buffer.concat(t2) : t2).toString("utf-8");
+}
+function Le(t2) {
+  return t2 ? Buffer.isBuffer(t2) ? t2.length : Buffer.byteLength(t2) : 0;
+}
+function je(t2, e) {
+  const n = {};
+  return e.forEach((r2) => {
+    t2[r2] !== void 0 && (n[r2] = t2[r2]);
+  }), n;
+}
+function wt(t2 = 0) {
+  return new Promise((e) => setTimeout(e, t2));
+}
+function bt(t2) {
+  if (t2 !== false)
+    return t2;
+}
+function d(t2, e, n) {
+  return e(t2) ? t2 : arguments.length > 2 ? n : void 0;
+}
+var K2 = (t2) => Array.isArray(t2);
+function st(t2, e) {
+  const n = r(t2) ? "string" : typeof t2;
+  return /number|string|boolean/.test(n) && (!e || !e.includes(n));
+}
+var m = (t2) => typeof t2 == "string" || r(t2);
+var Be = (t2) => m(t2) || Buffer.isBuffer(t2);
+var G2 = (t2) => m(t2) || Array.isArray(t2) && t2.every(m);
+function lt(t2) {
+  return !!t2 && ft(t2) === "[object Object]";
+}
+function Ie(t2) {
+  return typeof t2 == "function";
+}
+var Bt = (t2) => t2 == null || "number|boolean|function".includes(typeof t2) ? false : typeof t2.length == "number";
+var V2 = /* @__PURE__ */ ((t2) => (t2[t2.SUCCESS = 0] = "SUCCESS", t2[t2.ERROR = 1] = "ERROR", t2[t2.NOT_FOUND = -2] = "NOT_FOUND", t2[t2.UNCLEAN = 128] = "UNCLEAN", t2))(V2 || {});
+var z2 = class _z {
+  constructor(e, n) {
+    this.stdOut = e, this.stdErr = n;
   }
-  return item;
-}
-function including(target, item) {
-  if (Array.isArray(target) && !target.includes(item)) {
-    target.push(item);
+  asStrings() {
+    return new _z(this.stdOut.toString("utf8"), this.stdErr.toString("utf8"));
   }
-  return target;
+};
+function Ue() {
+  throw new Error("LineParser:useMatches not implemented");
 }
-function remove(target, item) {
-  if (Array.isArray(target)) {
-    const index = target.indexOf(item);
-    if (index >= 0) {
-      target.splice(index, 1);
-    }
-  } else {
-    target.delete(item);
+var l2 = class {
+  constructor(e, n) {
+    this.matches = [], this.useMatches = Ue, this.parse = (r2, s) => (this.resetMatches(), this._regExp.every((o2, i) => this.addMatch(o2, i, r2(i))) ? this.useMatches(s, this.prepareMatches()) !== false : false), this._regExp = Array.isArray(e) ? e : [e], n && (this.useMatches = n);
   }
-  return item;
-}
-function asArray(source) {
-  return Array.isArray(source) ? source : [source];
-}
-function asCamelCase(str) {
-  return str.replace(/[\s-]+(.)/g, (_all, chr) => {
-    return chr.toUpperCase();
-  });
-}
-function asStringArray(source) {
-  return asArray(source).map((item) => {
-    return item instanceof String ? item : String(item);
-  });
-}
-function asNumber(source, onNaN = 0) {
-  if (source == null) {
-    return onNaN;
+  resetMatches() {
+    this.matches.length = 0;
   }
-  const num = parseInt(source, 10);
-  return Number.isNaN(num) ? onNaN : num;
-}
-function prefixedArray(input, prefix) {
-  const output = [];
-  for (let i2 = 0, max = input.length; i2 < max; i2++) {
-    output.push(prefix, input[i2]);
+  prepareMatches() {
+    return this.matches;
   }
-  return output;
-}
-function bufferToString(input) {
-  return (Array.isArray(input) ? Buffer.concat(input) : input).toString("utf-8");
-}
-function pick2(source, properties) {
-  const out = {};
-  properties.forEach((key) => {
-    if (source[key] !== void 0) {
-      out[key] = source[key];
-    }
-  });
-  return out;
-}
-function delay(duration3 = 0) {
-  return new Promise((done) => setTimeout(done, duration3));
-}
-function orVoid(input) {
-  if (input === false) {
-    return void 0;
+  addMatch(e, n, r2) {
+    const s = r2 && e.exec(r2);
+    return s && this.pushMatch(n, s), !!s;
   }
-  return input;
-}
-var NULL;
-var NOOP;
-var objectToString;
-var init_util = __esm({
-  "src/lib/utils/util.ts"() {
-    "use strict";
-    init_argument_filters();
-    NULL = "\0";
-    NOOP = () => {
-    };
-    objectToString = Object.prototype.toString.call.bind(Object.prototype.toString);
+  pushMatch(e, n) {
+    this.matches.push(...n.slice(1));
   }
-});
-function filterType(input, filter, def) {
-  if (filter(input)) {
-    return input;
+};
+var x2 = class extends l2 {
+  addMatch(e, n, r2) {
+    return /^remote:\s/.test(String(r2)) && super.addMatch(e, n, r2);
   }
-  return arguments.length > 2 ? def : void 0;
-}
-function filterPrimitives(input, omit2) {
-  const type = r(input) ? "string" : typeof input;
-  return /number|string|boolean/.test(type) && (!omit2 || !omit2.includes(type));
-}
-function filterPlainObject(input) {
-  return !!input && objectToString(input) === "[object Object]";
-}
-function filterFunction(input) {
-  return typeof input === "function";
-}
-var filterArray;
-var filterNumber;
-var filterString;
-var filterStringOrStringArray;
-var filterHasLength;
-var init_argument_filters = __esm({
-  "src/lib/utils/argument-filters.ts"() {
-    "use strict";
-    init_util();
-    filterArray = (input) => {
-      return Array.isArray(input);
-    };
-    filterNumber = (input) => {
-      return typeof input === "number";
-    };
-    filterString = (input) => {
-      return typeof input === "string" || r(input);
-    };
-    filterStringOrStringArray = (input) => {
-      return filterString(input) || Array.isArray(input) && input.every(filterString);
-    };
-    filterHasLength = (input) => {
-      if (input == null || "number|boolean|function".includes(typeof input)) {
-        return false;
-      }
-      return typeof input.length === "number";
-    };
+  pushMatch(e, n) {
+    (e > 0 || n.length > 1) && super.pushMatch(e, n);
   }
-});
-var ExitCodes;
-var init_exit_codes = __esm({
-  "src/lib/utils/exit-codes.ts"() {
-    "use strict";
-    ExitCodes = /* @__PURE__ */ ((ExitCodes2) => {
-      ExitCodes2[ExitCodes2["SUCCESS"] = 0] = "SUCCESS";
-      ExitCodes2[ExitCodes2["ERROR"] = 1] = "ERROR";
-      ExitCodes2[ExitCodes2["NOT_FOUND"] = -2] = "NOT_FOUND";
-      ExitCodes2[ExitCodes2["UNCLEAN"] = 128] = "UNCLEAN";
-      return ExitCodes2;
-    })(ExitCodes || {});
-  }
-});
-var GitOutputStreams;
-var init_git_output_streams = __esm({
-  "src/lib/utils/git-output-streams.ts"() {
-    "use strict";
-    GitOutputStreams = class _GitOutputStreams {
-      constructor(stdOut, stdErr) {
-        this.stdOut = stdOut;
-        this.stdErr = stdErr;
-      }
-      asStrings() {
-        return new _GitOutputStreams(this.stdOut.toString("utf8"), this.stdErr.toString("utf8"));
-      }
-    };
-  }
-});
-function useMatchesDefault() {
-  throw new Error(`LineParser:useMatches not implemented`);
-}
-var LineParser;
-var RemoteLineParser;
-var init_line_parser = __esm({
-  "src/lib/utils/line-parser.ts"() {
-    "use strict";
-    LineParser = class {
-      constructor(regExp, useMatches) {
-        this.matches = [];
-        this.useMatches = useMatchesDefault;
-        this.parse = (line, target) => {
-          this.resetMatches();
-          if (!this._regExp.every((reg, index) => this.addMatch(reg, index, line(index)))) {
-            return false;
-          }
-          return this.useMatches(target, this.prepareMatches()) !== false;
-        };
-        this._regExp = Array.isArray(regExp) ? regExp : [regExp];
-        if (useMatches) {
-          this.useMatches = useMatches;
-        }
-      }
-      resetMatches() {
-        this.matches.length = 0;
-      }
-      prepareMatches() {
-        return this.matches;
-      }
-      addMatch(reg, index, line) {
-        const matched = line && reg.exec(line);
-        if (matched) {
-          this.pushMatch(index, matched);
-        }
-        return !!matched;
-      }
-      pushMatch(_index, matched) {
-        this.matches.push(...matched.slice(1));
-      }
-    };
-    RemoteLineParser = class extends LineParser {
-      addMatch(reg, index, line) {
-        return /^remote:\s/.test(String(line)) && super.addMatch(reg, index, line);
-      }
-      pushMatch(index, matched) {
-        if (index > 0 || matched.length > 1) {
-          super.pushMatch(index, matched);
-        }
-      }
-    };
-  }
-});
-function createInstanceConfig(...options) {
-  const baseDir = process.cwd();
-  const config2 = Object.assign(
-    { baseDir, ...defaultOptions },
-    ...options.filter((o2) => typeof o2 === "object" && o2)
+};
+var Fe = {
+  binary: "git",
+  maxConcurrentProcesses: 5,
+  config: [],
+  trimmed: false
+};
+function Ge(...t2) {
+  const e = process.cwd(), n = Object.assign(
+    { baseDir: e, ...Fe },
+    ...t2.filter((r2) => typeof r2 == "object" && r2)
   );
-  config2.baseDir = config2.baseDir || baseDir;
-  config2.trimmed = config2.trimmed === true;
-  return config2;
+  return n.baseDir = n.baseDir || e, n.trimmed = n.trimmed === true, n;
 }
-var defaultOptions;
-var init_simple_git_options = __esm({
-  "src/lib/utils/simple-git-options.ts"() {
-    "use strict";
-    defaultOptions = {
-      binary: "git",
-      maxConcurrentProcesses: 5,
-      config: [],
-      trimmed: false
-    };
-  }
-});
-function appendTaskOptions(options, commands = []) {
-  if (!filterPlainObject(options)) {
-    return commands;
-  }
-  return Object.keys(options).reduce((commands2, key) => {
-    const value = options[key];
-    if (r(value)) {
-      commands2.push(value);
-    } else if (filterPrimitives(value, ["boolean"])) {
-      commands2.push(key + "=" + value);
-    } else if (Array.isArray(value)) {
-      for (const v of value) {
-        if (!filterPrimitives(v, ["string", "number"])) {
-          commands2.push(key + "=" + v);
-        }
-      }
-    } else {
-      commands2.push(key);
-    }
-    return commands2;
-  }, commands);
+function It(t2, e = []) {
+  return lt(t2) ? Object.keys(t2).reduce((n, r2) => {
+    const s = t2[r2];
+    if (r(s))
+      n.push(s);
+    else if (st(s, ["boolean"]))
+      n.push(r2 + "=" + s);
+    else if (Array.isArray(s))
+      for (const o2 of s)
+        st(o2, ["string", "number"]) || n.push(r2 + "=" + o2);
+    else
+      n.push(r2);
+    return n;
+  }, e) : e;
 }
-function getTrailingOptions(args, initialPrimitive = 0, objectOnly = false) {
-  const command = [];
-  for (let i2 = 0, max = initialPrimitive < 0 ? args.length : initialPrimitive; i2 < max; i2++) {
-    if ("string|number".includes(typeof args[i2])) {
-      command.push(String(args[i2]));
-    }
-  }
-  appendTaskOptions(trailingOptionsArgument(args), command);
-  if (!objectOnly) {
-    command.push(...trailingArrayArgument(args));
-  }
-  return command;
+function h2(t2, e = 0, n = false) {
+  const r2 = [];
+  for (let s = 0, o2 = e < 0 ? t2.length : e; s < o2; s++)
+    "string|number".includes(typeof t2[s]) && r2.push(String(t2[s]));
+  return It(ht(t2), r2), n || r2.push(...ze(t2)), r2;
 }
-function trailingArrayArgument(args) {
-  const hasTrailingCallback = typeof last(args) === "function";
-  return asStringArray(filterType(last(args, hasTrailingCallback ? 1 : 0), filterArray, []));
+function ze(t2) {
+  const e = typeof N2(t2) == "function";
+  return L2(d(N2(t2, e ? 1 : 0), K2, []));
 }
-function trailingOptionsArgument(args) {
-  const hasTrailingCallback = filterFunction(last(args));
-  return filterType(last(args, hasTrailingCallback ? 1 : 0), filterPlainObject);
+function ht(t2) {
+  const e = Ie(N2(t2));
+  return d(N2(t2, e ? 1 : 0), lt);
 }
-function trailingFunctionArgument(args, includeNoop = true) {
-  const callback = asFunction(last(args));
-  return includeNoop || isUserFunction(callback) ? callback : void 0;
+function u(t2, e = true) {
+  const n = Ne(N2(t2));
+  return e || $e(n) ? n : void 0;
 }
-var init_task_options = __esm({
-  "src/lib/utils/task-options.ts"() {
-    "use strict";
-    init_argument_filters();
-    init_util();
-  }
-});
-function callTaskParser(parser4, streams) {
-  return parser4(streams.stdOut, streams.stdErr);
+function Tt(t2, e) {
+  return t2(e.stdOut, e.stdErr);
 }
-function parseStringResponse(result, parsers12, texts, trim = true) {
-  asArray(texts).forEach((text) => {
-    for (let lines = toLinesWithContent(text, trim), i2 = 0, max = lines.length; i2 < max; i2++) {
-      const line = (offset = 0) => {
-        if (i2 + offset >= max) {
-          return;
-        }
-        return lines[i2 + offset];
+function E2(t2, e, n, r2 = true) {
+  return v(n).forEach((s) => {
+    for (let o2 = H2(s, r2), i = 0, a = o2.length; i < a; i++) {
+      const c3 = (y2 = 0) => {
+        if (!(i + y2 >= a))
+          return o2[i + y2];
       };
-      parsers12.some(({ parse: parse3 }) => parse3(line, result));
+      e.some(({ parse: y2 }) => y2(c3, t2));
     }
-  });
-  return result;
+  }), t2;
 }
-var init_task_parser = __esm({
-  "src/lib/utils/task-parser.ts"() {
-    "use strict";
-    init_util();
-  }
-});
-var utils_exports = {};
-__export2(utils_exports, {
-  ExitCodes: () => ExitCodes,
-  GitOutputStreams: () => GitOutputStreams,
-  LineParser: () => LineParser,
-  NOOP: () => NOOP,
-  NULL: () => NULL,
-  RemoteLineParser: () => RemoteLineParser,
-  append: () => append,
-  appendTaskOptions: () => appendTaskOptions,
-  asArray: () => asArray,
-  asCamelCase: () => asCamelCase,
-  asFunction: () => asFunction,
-  asNumber: () => asNumber,
-  asStringArray: () => asStringArray,
-  bufferToString: () => bufferToString,
-  callTaskParser: () => callTaskParser,
-  createInstanceConfig: () => createInstanceConfig,
-  delay: () => delay,
-  filterArray: () => filterArray,
-  filterFunction: () => filterFunction,
-  filterHasLength: () => filterHasLength,
-  filterNumber: () => filterNumber,
-  filterPlainObject: () => filterPlainObject,
-  filterPrimitives: () => filterPrimitives,
-  filterString: () => filterString,
-  filterStringOrStringArray: () => filterStringOrStringArray,
-  filterType: () => filterType,
-  first: () => first,
-  folderExists: () => folderExists,
-  forEachLineWithContent: () => forEachLineWithContent,
-  getTrailingOptions: () => getTrailingOptions,
-  including: () => including,
-  isUserFunction: () => isUserFunction,
-  last: () => last,
-  objectToString: () => objectToString,
-  orVoid: () => orVoid,
-  parseStringResponse: () => parseStringResponse,
-  pick: () => pick2,
-  prefixedArray: () => prefixedArray,
-  remove: () => remove,
-  splitOn: () => splitOn,
-  toLinesWithContent: () => toLinesWithContent,
-  trailingFunctionArgument: () => trailingFunctionArgument,
-  trailingOptionsArgument: () => trailingOptionsArgument
-});
-var init_utils = __esm({
-  "src/lib/utils/index.ts"() {
-    "use strict";
-    init_argument_filters();
-    init_exit_codes();
-    init_git_output_streams();
-    init_line_parser();
-    init_simple_git_options();
-    init_task_options();
-    init_task_parser();
-    init_util();
-  }
-});
-var check_is_repo_exports = {};
-__export2(check_is_repo_exports, {
-  CheckRepoActions: () => CheckRepoActions,
-  checkIsBareRepoTask: () => checkIsBareRepoTask,
-  checkIsRepoRootTask: () => checkIsRepoRootTask,
-  checkIsRepoTask: () => checkIsRepoTask
-});
-function checkIsRepoTask(action) {
-  switch (action) {
+var mt = ({ exitCode: t2 }, e, n, r2) => {
+  if (t2 === V2.UNCLEAN && Ve(e))
+    return n(Buffer.from("false"));
+  r2(e);
+};
+var Ut = (t2) => t2.trim() === "true";
+function We(t2) {
+  switch (t2) {
     case "bare":
-      return checkIsBareRepoTask();
+      return Ke();
     case "root":
-      return checkIsRepoRootTask();
+      return He();
   }
-  const commands = ["rev-parse", "--is-inside-work-tree"];
   return {
-    commands,
+    commands: ["rev-parse", "--is-inside-work-tree"],
     format: "utf-8",
-    onError,
-    parser
+    onError: mt,
+    parser: Ut
   };
 }
-function checkIsRepoRootTask() {
-  const commands = ["rev-parse", "--git-dir"];
+function He() {
   return {
-    commands,
+    commands: ["rev-parse", "--git-dir"],
     format: "utf-8",
-    onError,
-    parser(path3) {
-      return /^\.(git)?$/.test(path3.trim());
+    onError: mt,
+    parser(e) {
+      return /^\.(git)?$/.test(e.trim());
     }
   };
 }
-function checkIsBareRepoTask() {
-  const commands = ["rev-parse", "--is-bare-repository"];
+function Ke() {
   return {
-    commands,
+    commands: ["rev-parse", "--is-bare-repository"],
     format: "utf-8",
-    onError,
-    parser
+    onError: mt,
+    parser: Ut
   };
 }
-function isNotRepoMessage(error2) {
-  return /(Not a git repository|Kein Git-Repository)/i.test(String(error2));
+function Ve(t2) {
+  return /(Not a git repository|Kein Git-Repository)/i.test(String(t2));
 }
-var CheckRepoActions;
-var onError;
-var parser;
-var init_check_is_repo = __esm({
-  "src/lib/tasks/check-is-repo.ts"() {
-    "use strict";
-    init_utils();
-    CheckRepoActions = /* @__PURE__ */ ((CheckRepoActions2) => {
-      CheckRepoActions2["BARE"] = "bare";
-      CheckRepoActions2["IN_TREE"] = "tree";
-      CheckRepoActions2["IS_REPO_ROOT"] = "root";
-      return CheckRepoActions2;
-    })(CheckRepoActions || {});
-    onError = ({ exitCode }, error2, done, fail) => {
-      if (exitCode === 128 && isNotRepoMessage(error2)) {
-        return done(Buffer.from("false"));
-      }
-      fail(error2);
-    };
-    parser = (text) => {
-      return text.trim() === "true";
-    };
+var Xe = class {
+  constructor(e) {
+    this.paths = [], this.files = [], this.folders = [], this.dryRun = e;
   }
-});
-function cleanSummaryParser(dryRun, text) {
-  const summary = new CleanResponse(dryRun);
-  const regexp = dryRun ? dryRunRemovalRegexp : removalRegexp;
-  toLinesWithContent(text).forEach((line) => {
-    const removed = line.replace(regexp, "");
-    summary.paths.push(removed);
-    (isFolderRegexp.test(removed) ? summary.folders : summary.files).push(removed);
-  });
-  return summary;
+};
+var Ye = /^[a-z]+\s*/i;
+var Qe = /^[a-z]+\s+[a-z]+\s*/i;
+var Je = /\/$/;
+function Ze(t2, e) {
+  const n = new Xe(t2), r2 = t2 ? Qe : Ye;
+  return H2(e).forEach((s) => {
+    const o2 = s.replace(r2, "");
+    n.paths.push(o2), (Je.test(o2) ? n.folders : n.files).push(o2);
+  }), n;
 }
-var CleanResponse;
-var removalRegexp;
-var dryRunRemovalRegexp;
-var isFolderRegexp;
-var init_CleanSummary = __esm({
-  "src/lib/responses/CleanSummary.ts"() {
-    "use strict";
-    init_utils();
-    CleanResponse = class {
-      constructor(dryRun) {
-        this.dryRun = dryRun;
-        this.paths = [];
-        this.files = [];
-        this.folders = [];
-      }
-    };
-    removalRegexp = /^[a-z]+\s*/i;
-    dryRunRemovalRegexp = /^[a-z]+\s+[a-z]+\s*/i;
-    isFolderRegexp = /\/$/;
-  }
-});
-var task_exports = {};
-__export2(task_exports, {
-  EMPTY_COMMANDS: () => EMPTY_COMMANDS,
-  adhocExecTask: () => adhocExecTask,
-  configurationErrorTask: () => configurationErrorTask,
-  isBufferTask: () => isBufferTask,
-  isEmptyTask: () => isEmptyTask,
-  straightThroughBufferTask: () => straightThroughBufferTask,
-  straightThroughStringTask: () => straightThroughStringTask
-});
-function adhocExecTask(parser4) {
+var Ft = [];
+function tn(t2) {
   return {
-    commands: EMPTY_COMMANDS,
+    commands: Ft,
     format: "empty",
-    parser: parser4
+    parser: t2
   };
 }
-function configurationErrorTask(error2) {
+function b2(t2) {
   return {
-    commands: EMPTY_COMMANDS,
+    commands: Ft,
     format: "empty",
     parser() {
-      throw typeof error2 === "string" ? new TaskConfigurationError(error2) : error2;
+      throw typeof t2 == "string" ? new xe(t2) : t2;
     }
   };
 }
-function straightThroughStringTask(commands, trimmed2 = false) {
+function g(t2, e = false) {
   return {
-    commands,
+    commands: t2,
     format: "utf-8",
-    parser(text) {
-      return trimmed2 ? String(text).trim() : text;
+    parser(n) {
+      return e ? String(n).trim() : n;
     }
   };
 }
-function straightThroughBufferTask(commands) {
+function Gt(t2) {
   return {
-    commands,
+    commands: t2,
     format: "buffer",
-    parser(buffer) {
-      return buffer;
+    parser(e) {
+      return e;
     }
   };
 }
-function isBufferTask(task) {
-  return task.format === "buffer";
+function en(t2) {
+  return t2.format === "buffer";
 }
-function isEmptyTask(task) {
-  return task.format === "empty" || !task.commands.length;
+function kt(t2) {
+  return t2.format === "empty" || !t2.commands.length;
 }
-var EMPTY_COMMANDS;
-var init_task = __esm({
-  "src/lib/tasks/task.ts"() {
-    "use strict";
-    init_task_configuration_error();
-    EMPTY_COMMANDS = [];
-  }
-});
-var clean_exports = {};
-__export2(clean_exports, {
-  CONFIG_ERROR_INTERACTIVE_MODE: () => CONFIG_ERROR_INTERACTIVE_MODE,
-  CONFIG_ERROR_MODE_REQUIRED: () => CONFIG_ERROR_MODE_REQUIRED,
-  CONFIG_ERROR_UNKNOWN_OPTION: () => CONFIG_ERROR_UNKNOWN_OPTION,
-  CleanOptions: () => CleanOptions,
-  cleanTask: () => cleanTask,
-  cleanWithOptionsTask: () => cleanWithOptionsTask,
-  isCleanOptionsArray: () => isCleanOptionsArray
-});
-function cleanWithOptionsTask(mode, customArgs) {
-  const { cleanMode, options, valid } = getCleanOptions(mode);
-  if (!cleanMode) {
-    return configurationErrorTask(CONFIG_ERROR_MODE_REQUIRED);
-  }
-  if (!valid.options) {
-    return configurationErrorTask(CONFIG_ERROR_UNKNOWN_OPTION + JSON.stringify(mode));
-  }
-  options.push(...customArgs);
-  if (options.some(isInteractiveMode)) {
-    return configurationErrorTask(CONFIG_ERROR_INTERACTIVE_MODE);
-  }
-  return cleanTask(cleanMode, options);
+var nn = "Git clean interactive mode is not supported";
+var rn = 'Git clean mode parameter ("n" or "f") is required';
+var sn = "Git clean unknown option found in: ";
+var zt = /* @__PURE__ */ ((t2) => (t2.DRY_RUN = "n", t2.FORCE = "f", t2.IGNORED_INCLUDED = "x", t2.IGNORED_ONLY = "X", t2.EXCLUDING = "e", t2.QUIET = "q", t2.RECURSIVE = "d", t2))(zt || {});
+var qt = /* @__PURE__ */ new Set([
+  "i",
+  ...L2(Object.values(zt))
+]);
+function on(t2, e) {
+  const { cleanMode: n, options: r2, valid: s } = cn(t2);
+  return n ? s.options ? (r2.push(...e), r2.some(hn) ? b2(nn) : an(n, r2)) : b2(sn + JSON.stringify(t2)) : b2(rn);
 }
-function cleanTask(mode, customArgs) {
-  const commands = ["clean", `-${mode}`, ...customArgs];
+function an(t2, e) {
   return {
-    commands,
+    commands: ["clean", `-${t2}`, ...e],
     format: "utf-8",
-    parser(text) {
-      return cleanSummaryParser(mode === "n", text);
+    parser(r2) {
+      return Ze(t2 === "n", r2);
     }
   };
 }
-function isCleanOptionsArray(input) {
-  return Array.isArray(input) && input.every((test) => CleanOptionValues.has(test));
+function un(t2) {
+  return Array.isArray(t2) && t2.every((e) => qt.has(e));
 }
-function getCleanOptions(input) {
-  let cleanMode;
-  let options = [];
-  let valid = { cleanMode: false, options: true };
-  input.replace(/[^a-z]i/g, "").split("").forEach((char) => {
-    if (isCleanMode(char)) {
-      cleanMode = char;
-      valid.cleanMode = true;
-    } else {
-      valid.options = valid.options && isKnownOption(options[options.length] = `-${char}`);
-    }
-  });
-  return {
-    cleanMode,
-    options,
-    valid
+function cn(t2) {
+  let e, n = [], r2 = { cleanMode: false, options: true };
+  return t2.replace(/[^a-z]i/g, "").split("").forEach((s) => {
+    fn(s) ? (e = s, r2.cleanMode = true) : r2.options = r2.options && ln(n[n.length] = `-${s}`);
+  }), {
+    cleanMode: e,
+    options: n,
+    valid: r2
   };
 }
-function isCleanMode(cleanMode) {
-  return cleanMode === "f" || cleanMode === "n";
+function fn(t2) {
+  return t2 === "f" || t2 === "n";
 }
-function isKnownOption(option) {
-  return /^-[a-z]$/i.test(option) && CleanOptionValues.has(option.charAt(1));
+function ln(t2) {
+  return /^-[a-z]$/i.test(t2) && qt.has(t2.charAt(1));
 }
-function isInteractiveMode(option) {
-  if (/^-[^\-]/.test(option)) {
-    return option.indexOf("i") > 0;
+function hn(t2) {
+  return /^-[^\-]/.test(t2) ? t2.indexOf("i") > 0 : t2 === "--interactive";
+}
+var mn = class {
+  constructor() {
+    this.files = [], this.values = /* @__PURE__ */ Object.create(null);
   }
-  return option === "--interactive";
-}
-var CONFIG_ERROR_INTERACTIVE_MODE;
-var CONFIG_ERROR_MODE_REQUIRED;
-var CONFIG_ERROR_UNKNOWN_OPTION;
-var CleanOptions;
-var CleanOptionValues;
-var init_clean = __esm({
-  "src/lib/tasks/clean.ts"() {
-    "use strict";
-    init_CleanSummary();
-    init_utils();
-    init_task();
-    CONFIG_ERROR_INTERACTIVE_MODE = "Git clean interactive mode is not supported";
-    CONFIG_ERROR_MODE_REQUIRED = 'Git clean mode parameter ("n" or "f") is required';
-    CONFIG_ERROR_UNKNOWN_OPTION = "Git clean unknown option found in: ";
-    CleanOptions = /* @__PURE__ */ ((CleanOptions2) => {
-      CleanOptions2["DRY_RUN"] = "n";
-      CleanOptions2["FORCE"] = "f";
-      CleanOptions2["IGNORED_INCLUDED"] = "x";
-      CleanOptions2["IGNORED_ONLY"] = "X";
-      CleanOptions2["EXCLUDING"] = "e";
-      CleanOptions2["QUIET"] = "q";
-      CleanOptions2["RECURSIVE"] = "d";
-      return CleanOptions2;
-    })(CleanOptions || {});
-    CleanOptionValues = /* @__PURE__ */ new Set([
-      "i",
-      ...asStringArray(Object.values(CleanOptions))
-    ]);
+  get all() {
+    return this._all || (this._all = this.files.reduce((e, n) => Object.assign(e, this.values[n]), {})), this._all;
   }
-});
-function configListParser(text) {
-  const config2 = new ConfigList();
-  for (const item of configParser(text)) {
-    config2.addValue(item.file, String(item.key), item.value);
-  }
-  return config2;
-}
-function configGetParser(text, key) {
-  let value = null;
-  const values = [];
-  const scopes = /* @__PURE__ */ new Map();
-  for (const item of configParser(text, key)) {
-    if (item.key !== key) {
-      continue;
+  addFile(e) {
+    if (!(e in this.values)) {
+      const n = N2(this.files);
+      this.values[e] = n ? Object.create(this.values[n]) : {}, this.files.push(e);
     }
-    values.push(value = item.value);
-    if (!scopes.has(item.file)) {
-      scopes.set(item.file, []);
-    }
-    scopes.get(item.file).push(value);
+    return this.values[e];
   }
+  addValue(e, n, r2) {
+    const s = this.addFile(e);
+    Object.hasOwn(s, n) ? Array.isArray(s[n]) ? s[n].push(r2) : s[n] = [s[n], r2] : s[n] = r2, this._all = void 0;
+  }
+};
+function pn(t2) {
+  const e = new mn();
+  for (const n of Wt(t2))
+    e.addValue(n.file, String(n.key), n.value);
+  return e;
+}
+function dn(t2, e) {
+  let n = null;
+  const r2 = [], s = /* @__PURE__ */ new Map();
+  for (const o2 of Wt(t2, e))
+    o2.key === e && (r2.push(n = o2.value), s.has(o2.file) || s.set(o2.file, []), s.get(o2.file).push(n));
   return {
-    key,
-    paths: Array.from(scopes.keys()),
-    scopes,
-    value,
-    values
+    key: e,
+    paths: Array.from(s.keys()),
+    scopes: s,
+    value: n,
+    values: r2
   };
 }
-function configFilePath(filePath) {
-  return filePath.replace(/^(file):/, "");
+function gn(t2) {
+  return t2.replace(/^(file):/, "");
 }
-function* configParser(text, requestedKey = null) {
-  const lines = text.split("\0");
-  for (let i2 = 0, max = lines.length - 1; i2 < max; ) {
-    const file = configFilePath(lines[i2++]);
-    let value = lines[i2++];
-    let key = requestedKey;
-    if (value.includes("\n")) {
-      const line = splitOn(value, "\n");
-      key = line[0];
-      value = line[1];
+function* Wt(t2, e = null) {
+  const n = t2.split("\0");
+  for (let r2 = 0, s = n.length - 1; r2 < s; ) {
+    const o2 = gn(n[r2++]);
+    let i = n[r2++], a = e;
+    if (i.includes(`
+`)) {
+      const c3 = Pe(i, `
+`);
+      a = c3[0], i = c3[1];
     }
-    yield { file, key, value };
+    yield { file: o2, key: a, value: i };
   }
 }
-var ConfigList;
-var init_ConfigList = __esm({
-  "src/lib/responses/ConfigList.ts"() {
-    "use strict";
-    init_utils();
-    ConfigList = class {
-      constructor() {
-        this.files = [];
-        this.values = /* @__PURE__ */ Object.create(null);
-      }
-      get all() {
-        if (!this._all) {
-          this._all = this.files.reduce((all, file) => {
-            return Object.assign(all, this.values[file]);
-          }, {});
-        }
-        return this._all;
-      }
-      addFile(file) {
-        if (!(file in this.values)) {
-          const latest = last(this.files);
-          this.values[file] = latest ? Object.create(this.values[latest]) : {};
-          this.files.push(file);
-        }
-        return this.values[file];
-      }
-      addValue(file, key, value) {
-        const values = this.addFile(file);
-        if (!Object.hasOwn(values, key)) {
-          values[key] = value;
-        } else if (Array.isArray(values[key])) {
-          values[key].push(value);
-        } else {
-          values[key] = [values[key], value];
-        }
-        this._all = void 0;
-      }
-    };
-  }
-});
-function asConfigScope(scope, fallback) {
-  if (typeof scope === "string" && Object.hasOwn(GitConfigScope, scope)) {
-    return scope;
-  }
-  return fallback;
+var Ht = /* @__PURE__ */ ((t2) => (t2.system = "system", t2.global = "global", t2.local = "local", t2.worktree = "worktree", t2))(Ht || {});
+function Y2(t2, e) {
+  return typeof t2 == "string" && Object.hasOwn(Ht, t2) ? t2 : e;
 }
-function addConfigTask(key, value, append2, scope) {
-  const commands = ["config", `--${scope}`];
-  if (append2) {
-    commands.push("--add");
-  }
-  commands.push(key, value);
-  return {
-    commands,
+function yn(t2, e, n, r2) {
+  const s = ["config", `--${r2}`];
+  return n && s.push("--add"), s.push(t2, e), {
+    commands: s,
     format: "utf-8",
-    parser(text) {
-      return text;
+    parser(o2) {
+      return o2;
     }
   };
 }
-function getConfigTask(key, scope) {
-  const commands = ["config", "--null", "--show-origin", "--get-all", key];
-  if (scope) {
-    commands.splice(1, 0, `--${scope}`);
-  }
-  return {
-    commands,
+function wn(t2, e) {
+  const n = ["config", "--null", "--show-origin", "--get-all", t2];
+  return e && n.splice(1, 0, `--${e}`), {
+    commands: n,
     format: "utf-8",
-    parser(text) {
-      return configGetParser(text, key);
+    parser(r2) {
+      return dn(r2, t2);
     }
   };
 }
-function listConfigTask(scope) {
-  const commands = ["config", "--list", "--show-origin", "--null"];
-  if (scope) {
-    commands.push(`--${scope}`);
-  }
-  return {
-    commands,
+function bn(t2) {
+  const e = ["config", "--list", "--show-origin", "--null"];
+  return t2 && e.push(`--${t2}`), {
+    commands: e,
     format: "utf-8",
-    parser(text) {
-      return configListParser(text);
+    parser(n) {
+      return pn(n);
     }
   };
 }
-function config_default() {
+function Tn() {
   return {
-    addConfig(key, value, ...rest) {
+    addConfig(t2, e, ...n) {
       return this._runTask(
-        addConfigTask(
-          key,
-          value,
-          rest[0] === true,
-          asConfigScope(
-            rest[1],
+        yn(
+          t2,
+          e,
+          n[0] === true,
+          Y2(
+            n[1],
             "local"
             /* local */
           )
         ),
-        trailingFunctionArgument(arguments)
+        u(arguments)
       );
     },
-    getConfig(key, scope) {
+    getConfig(t2, e) {
       return this._runTask(
-        getConfigTask(key, asConfigScope(scope, void 0)),
-        trailingFunctionArgument(arguments)
+        wn(t2, Y2(e, void 0)),
+        u(arguments)
       );
     },
-    listConfig(...rest) {
+    listConfig(...t2) {
       return this._runTask(
-        listConfigTask(asConfigScope(rest[0], void 0)),
-        trailingFunctionArgument(arguments)
+        bn(Y2(t2[0], void 0)),
+        u(arguments)
       );
     }
   };
 }
-var GitConfigScope;
-var init_config = __esm({
-  "src/lib/tasks/config.ts"() {
-    "use strict";
-    init_ConfigList();
-    init_utils();
-    GitConfigScope = /* @__PURE__ */ ((GitConfigScope2) => {
-      GitConfigScope2["system"] = "system";
-      GitConfigScope2["global"] = "global";
-      GitConfigScope2["local"] = "local";
-      GitConfigScope2["worktree"] = "worktree";
-      return GitConfigScope2;
-    })(GitConfigScope || {});
-  }
-});
-function isDiffNameStatus(input) {
-  return diffNameStatus.has(input);
+var Kt = /* @__PURE__ */ ((t2) => (t2.ADDED = "A", t2.COPIED = "C", t2.DELETED = "D", t2.MODIFIED = "M", t2.RENAMED = "R", t2.CHANGED = "T", t2.UNMERGED = "U", t2.UNKNOWN = "X", t2.BROKEN = "B", t2))(Kt || {});
+var kn = new Set(Object.values(Kt));
+function _n(t2) {
+  return kn.has(t2);
 }
-var DiffNameStatus;
-var diffNameStatus;
-var init_diff_name_status = __esm({
-  "src/lib/tasks/diff-name-status.ts"() {
-    "use strict";
-    DiffNameStatus = /* @__PURE__ */ ((DiffNameStatus2) => {
-      DiffNameStatus2["ADDED"] = "A";
-      DiffNameStatus2["COPIED"] = "C";
-      DiffNameStatus2["DELETED"] = "D";
-      DiffNameStatus2["MODIFIED"] = "M";
-      DiffNameStatus2["RENAMED"] = "R";
-      DiffNameStatus2["CHANGED"] = "T";
-      DiffNameStatus2["UNMERGED"] = "U";
-      DiffNameStatus2["UNKNOWN"] = "X";
-      DiffNameStatus2["BROKEN"] = "B";
-      return DiffNameStatus2;
-    })(DiffNameStatus || {});
-    diffNameStatus = new Set(Object.values(DiffNameStatus));
+var _t;
+var vn = ["-h"];
+var j2 = /* @__PURE__ */ Symbol("grepQuery");
+var En = class {
+  constructor() {
+    this[_t] = [];
   }
-});
-function grepQueryBuilder(...params) {
-  return new GrepQuery().param(...params);
+  *[(_t = j2, Symbol.iterator)]() {
+    for (const e of this[j2])
+      yield e;
+  }
+  and(...e) {
+    return e.length && this[j2].push("--and", "(", ...U(e, "-e"), ")"), this;
+  }
+  param(...e) {
+    return this[j2].push(...U(e, "-e")), this;
+  }
+};
+function Sn(...t2) {
+  return new En().param(...t2);
 }
-function parseGrep(grep) {
-  const paths = /* @__PURE__ */ new Set();
-  const results = {};
-  forEachLineWithContent(grep, (input) => {
-    const [path3, line, preview] = input.split(NULL);
-    paths.add(path3);
-    (results[path3] = results[path3] || []).push({
-      line: asNumber(line),
-      path: path3,
-      preview
+function Rn(t2) {
+  const e = /* @__PURE__ */ new Set(), n = {};
+  return ut(t2, (r2) => {
+    const [s, o2, i] = r2.split(I2);
+    e.add(s), (n[s] = n[s] || []).push({
+      line: p(o2),
+      path: s,
+      preview: i
     });
-  });
-  return {
-    paths,
-    results
+  }), {
+    paths: e,
+    results: n
   };
 }
-function grep_default() {
+function On() {
   return {
-    grep(searchTerm) {
-      const then = trailingFunctionArgument(arguments);
-      const options = getTrailingOptions(arguments);
-      for (const option of disallowedOptions) {
-        if (options.includes(option)) {
+    grep(t2) {
+      const e = u(arguments), n = h2(arguments);
+      for (const s of vn)
+        if (n.includes(s))
           return this._runTask(
-            configurationErrorTask(`git.grep: use of "${option}" is not supported.`),
-            then
+            b2(`git.grep: use of "${s}" is not supported.`),
+            e
           );
-        }
-      }
-      if (typeof searchTerm === "string") {
-        searchTerm = grepQueryBuilder().param(searchTerm);
-      }
-      const commands = ["grep", "--null", "-n", "--full-name", ...options, ...searchTerm];
+      typeof t2 == "string" && (t2 = Sn().param(t2));
+      const r2 = ["grep", "--null", "-n", "--full-name", ...n, ...t2];
       return this._runTask(
         {
-          commands,
+          commands: r2,
           format: "utf-8",
-          parser(stdOut) {
-            return parseGrep(stdOut);
+          parser(s) {
+            return Rn(s);
           }
         },
-        then
+        e
       );
     }
   };
 }
-var disallowedOptions;
-var Query;
-var _a;
-var GrepQuery;
-var init_grep = __esm({
-  "src/lib/tasks/grep.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
-    disallowedOptions = ["-h"];
-    Query = Symbol("grepQuery");
-    GrepQuery = class {
-      constructor() {
-        this[_a] = [];
-      }
-      *[(_a = Query, Symbol.iterator)]() {
-        for (const query of this[Query]) {
-          yield query;
-        }
-      }
-      and(...and) {
-        and.length && this[Query].push("--and", "(", ...prefixedArray(and, "-e"), ")");
-        return this;
-      }
-      param(...param) {
-        this[Query].push(...prefixedArray(param, "-e"));
-        return this;
-      }
-    };
-  }
-});
-var reset_exports = {};
-__export2(reset_exports, {
-  ResetMode: () => ResetMode,
-  getResetMode: () => getResetMode,
-  resetTask: () => resetTask
-});
-function resetTask(mode, customArgs) {
-  const commands = ["reset"];
-  if (isValidResetMode(mode)) {
-    commands.push(`--${mode}`);
-  }
-  commands.push(...customArgs);
-  return straightThroughStringTask(commands);
+var Vt = /* @__PURE__ */ ((t2) => (t2.MIXED = "mixed", t2.SOFT = "soft", t2.HARD = "hard", t2.MERGE = "merge", t2.KEEP = "keep", t2))(Vt || {});
+var Cn = L2(Object.values(Vt));
+function An(t2, e) {
+  const n = ["reset"];
+  return Xt(t2) && n.push(`--${t2}`), n.push(...e), g(n);
 }
-function getResetMode(mode) {
-  if (isValidResetMode(mode)) {
-    return mode;
-  }
-  switch (typeof mode) {
+function xn(t2) {
+  if (Xt(t2))
+    return t2;
+  switch (typeof t2) {
     case "string":
     case "undefined":
       return "soft";
   }
-  return;
 }
-function isValidResetMode(mode) {
-  return typeof mode === "string" && validResetModes.includes(mode);
+function Xt(t2) {
+  return typeof t2 == "string" && Cn.includes(t2);
 }
-var ResetMode;
-var validResetModes;
-var init_reset = __esm({
-  "src/lib/tasks/reset.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
-    ResetMode = /* @__PURE__ */ ((ResetMode2) => {
-      ResetMode2["MIXED"] = "mixed";
-      ResetMode2["SOFT"] = "soft";
-      ResetMode2["HARD"] = "hard";
-      ResetMode2["MERGE"] = "merge";
-      ResetMode2["KEEP"] = "keep";
-      return ResetMode2;
-    })(ResetMode || {});
-    validResetModes = asStringArray(Object.values(ResetMode));
-  }
-});
-function createLog() {
+import_debug.default.formatters.L = (t2) => String(Bt(t2) ? t2.length : "-");
+import_debug.default.formatters.B = (t2) => Buffer.isBuffer(t2) ? t2.toString("utf8") : ft(t2);
+function Nn() {
   return (0, import_debug.default)("simple-git");
 }
-function prefixedLogger(to, prefix, forward) {
-  if (!prefix || !String(prefix).replace(/\s*/, "")) {
-    return !forward ? to : (message, ...args) => {
-      to(message, ...args);
-      forward(message, ...args);
-    };
-  }
-  return (message, ...args) => {
-    to(`%s ${message}`, prefix, ...args);
-    if (forward) {
-      forward(message, ...args);
-    }
+function vt(t2, e, n) {
+  return !e || !String(e).replace(/\s*/, "") ? n ? (r2, ...s) => {
+    t2(r2, ...s), n(r2, ...s);
+  } : t2 : (r2, ...s) => {
+    t2(`%s ${r2}`, e, ...s), n && n(r2, ...s);
   };
 }
-function childLoggerName(name, childDebugger, { namespace: parentNamespace }) {
-  if (typeof name === "string") {
-    return name;
-  }
-  const childNamespace = childDebugger && childDebugger.namespace || "";
-  if (childNamespace.startsWith(parentNamespace)) {
-    return childNamespace.substr(parentNamespace.length + 1);
-  }
-  return childNamespace || parentNamespace;
+function $n(t2, e, { namespace: n }) {
+  if (typeof t2 == "string")
+    return t2;
+  const r2 = e && e.namespace || "";
+  return r2.startsWith(n) ? r2.substr(n.length + 1) : r2 || n;
 }
-function createLogger(label, verbose, initialStep, infoDebugger = createLog()) {
-  const labelPrefix = label && `[${label}]` || "";
-  const spawned = [];
-  const debugDebugger = typeof verbose === "string" ? infoDebugger.extend(verbose) : verbose;
-  const key = childLoggerName(filterType(verbose, filterString), debugDebugger, infoDebugger);
-  return step(initialStep);
-  function sibling(name, initial) {
-    return append(
-      spawned,
-      createLogger(label, key.replace(/^[^:]+/, name), initial, infoDebugger)
+function $2(t2, e, n, r2 = Nn()) {
+  const s = t2 && `[${t2}]` || "", o2 = [], i = typeof e == "string" ? r2.extend(e) : e, a = $n(d(e, m), i, r2);
+  return y2(n);
+  function c3(w2, T2) {
+    return S2(
+      o2,
+      $2(t2, a.replace(/^[^:]+/, w2), T2, r2)
     );
   }
-  function step(phase) {
-    const stepPrefix = phase && `[${phase}]` || "";
-    const debug2 = debugDebugger && prefixedLogger(debugDebugger, stepPrefix) || NOOP;
-    const info = prefixedLogger(infoDebugger, `${labelPrefix} ${stepPrefix}`, debug2);
-    return Object.assign(debugDebugger ? debug2 : info, {
-      label,
-      sibling,
-      info,
-      step
+  function y2(w2) {
+    const T2 = w2 && `[${w2}]` || "", k2 = i && vt(i, T2) || W2, C2 = vt(r2, `${s} ${T2}`, k2);
+    return Object.assign(i ? k2 : C2, {
+      label: t2,
+      sibling: c3,
+      info: C2,
+      step: y2
     });
   }
 }
-var init_git_logger = __esm({
-  "src/lib/git-logger.ts"() {
-    "use strict";
-    init_utils();
-    import_debug.default.formatters.L = (value) => String(filterHasLength(value) ? value.length : "-");
-    import_debug.default.formatters.B = (value) => {
-      if (Buffer.isBuffer(value)) {
-        return value.toString("utf8");
-      }
-      return objectToString(value);
+var M2 = class M3 {
+  constructor(e = "GitExecutor") {
+    this.logLabel = e, this._queue = /* @__PURE__ */ new Map();
+  }
+  withProgress(e) {
+    return this._queue.get(e);
+  }
+  createProgress(e) {
+    const n = M3.getName(e.commands[0]), r2 = $2(this.logLabel, n);
+    return {
+      task: e,
+      logger: r2,
+      name: n
     };
   }
-});
-var TasksPendingQueue;
-var init_tasks_pending_queue = __esm({
-  "src/lib/runners/tasks-pending-queue.ts"() {
-    "use strict";
-    init_git_error();
-    init_git_logger();
-    TasksPendingQueue = class _TasksPendingQueue {
-      constructor(logLabel = "GitExecutor") {
-        this.logLabel = logLabel;
-        this._queue = /* @__PURE__ */ new Map();
-      }
-      withProgress(task) {
-        return this._queue.get(task);
-      }
-      createProgress(task) {
-        const name = _TasksPendingQueue.getName(task.commands[0]);
-        const logger = createLogger(this.logLabel, name);
-        return {
-          task,
-          logger,
-          name
-        };
-      }
-      push(task) {
-        const progress = this.createProgress(task);
-        progress.logger("Adding task to the queue, commands = %o", task.commands);
-        this._queue.set(task, progress);
-        return progress;
-      }
-      fatal(err) {
-        for (const [task, { logger }] of Array.from(this._queue.entries())) {
-          if (task === err.task) {
-            logger.info(`Failed %o`, err);
-            logger(
-              `Fatal exception, any as-yet un-started tasks run through this executor will not be attempted`
-            );
-          } else {
-            logger.info(
-              `A fatal exception occurred in a previous task, the queue has been purged: %o`,
-              err.message
-            );
-          }
-          this.complete(task);
-        }
-        if (this._queue.size !== 0) {
-          throw new Error(`Queue size should be zero after fatal: ${this._queue.size}`);
-        }
-      }
-      complete(task) {
-        const progress = this.withProgress(task);
-        if (progress) {
-          this._queue.delete(task);
-        }
-      }
-      attempt(task) {
-        const progress = this.withProgress(task);
-        if (!progress) {
-          throw new GitError(void 0, "TasksPendingQueue: attempt called for an unknown task");
-        }
-        progress.logger("Starting task");
-        return progress;
-      }
-      static getName(name = "empty") {
-        return `task:${name}:${++_TasksPendingQueue.counter}`;
-      }
-      static {
-        this.counter = 0;
-      }
-    };
+  push(e) {
+    const n = this.createProgress(e);
+    return n.logger("Adding task to the queue, commands = %o", e.commands), this._queue.set(e, n), n;
   }
-});
-function pluginContext(task, commands) {
-  return {
-    method: first(task.commands) || "",
-    commands
-  };
-}
-function onErrorReceived(target, logger) {
-  return (err) => {
-    logger(`[ERROR] child process exception %o`, err);
-    target.push(Buffer.from(String(err.stack), "ascii"));
-  };
-}
-function onDataReceived(target, name, logger, output) {
-  return (buffer) => {
-    logger(`%s received %L bytes`, name, buffer);
-    output(`%B`, buffer);
-    target.push(buffer);
-  };
-}
-var GitExecutorChain;
-var init_git_executor_chain = __esm({
-  "src/lib/runners/git-executor-chain.ts"() {
-    "use strict";
-    init_git_error();
-    init_task();
-    init_utils();
-    init_tasks_pending_queue();
-    GitExecutorChain = class {
-      constructor(_executor, _scheduler, _plugins) {
-        this._executor = _executor;
-        this._scheduler = _scheduler;
-        this._plugins = _plugins;
-        this._chain = Promise.resolve();
-        this._queue = new TasksPendingQueue();
-      }
-      get cwd() {
-        return this._cwd || this._executor.cwd;
-      }
-      set cwd(cwd) {
-        this._cwd = cwd;
-      }
-      get env() {
-        return this._executor.env;
-      }
-      get outputHandler() {
-        return this._executor.outputHandler;
-      }
-      chain() {
-        return this;
-      }
-      push(task) {
-        this._queue.push(task);
-        return this._chain = this._chain.then(() => this.attemptTask(task));
-      }
-      async attemptTask(task) {
-        const onScheduleComplete = await this._scheduler.next();
-        const onQueueComplete = () => this._queue.complete(task);
-        try {
-          const { logger } = this._queue.attempt(task);
-          return await (isEmptyTask(task) ? this.attemptEmptyTask(task, logger) : this.attemptRemoteTask(task, logger));
-        } catch (e) {
-          throw this.onFatalException(task, e);
-        } finally {
-          onQueueComplete();
-          onScheduleComplete();
-        }
-      }
-      onFatalException(task, e) {
-        const gitError = e instanceof GitError ? Object.assign(e, { task }) : new GitError(task, e && String(e));
-        this._chain = Promise.resolve();
-        this._queue.fatal(gitError);
-        return gitError;
-      }
-      async attemptRemoteTask(task, logger) {
-        const binary = this._plugins.exec("spawn.binary", "", pluginContext(task, task.commands));
-        const args = this._plugins.exec("spawn.args", [...task.commands], {
-          ...pluginContext(task, task.commands),
-          env: { ...this.env }
-        });
-        const raw = await this.gitResponse(
-          task,
-          binary,
-          args,
-          this.outputHandler,
-          logger.step("SPAWN")
-        );
-        const outputStreams = await this.handleTaskData(task, args, raw, logger.step("HANDLE"));
-        logger(`passing response to task's parser as a %s`, task.format);
-        if (isBufferTask(task)) {
-          return callTaskParser(task.parser, outputStreams);
-        }
-        return callTaskParser(task.parser, outputStreams.asStrings());
-      }
-      async attemptEmptyTask(task, logger) {
-        logger(`empty task bypassing child process to call to task's parser`);
-        return task.parser(this);
-      }
-      handleTaskData(task, args, result, logger) {
-        const { exitCode, rejection, stdOut, stdErr } = result;
-        return new Promise((done, fail) => {
-          logger(`Preparing to handle process response exitCode=%d stdOut=`, exitCode);
-          const { error: error2 } = this._plugins.exec(
-            "task.error",
-            { error: rejection },
-            {
-              ...pluginContext(task, args),
-              ...result
-            }
-          );
-          if (error2 && task.onError) {
-            logger.info(`exitCode=%s handling with custom error handler`);
-            return task.onError(
-              result,
-              error2,
-              (newStdOut) => {
-                logger.info(`custom error handler treated as success`);
-                logger(`custom error returned a %s`, objectToString(newStdOut));
-                done(
-                  new GitOutputStreams(
-                    Array.isArray(newStdOut) ? Buffer.concat(newStdOut) : newStdOut,
-                    Buffer.concat(stdErr)
-                  )
-                );
-              },
-              fail
-            );
-          }
-          if (error2) {
-            logger.info(
-              `handling as error: exitCode=%s stdErr=%s rejection=%o`,
-              exitCode,
-              stdErr.length,
-              rejection
-            );
-            return fail(error2);
-          }
-          logger.info(`retrieving task output complete`);
-          done(new GitOutputStreams(Buffer.concat(stdOut), Buffer.concat(stdErr)));
-        });
-      }
-      async gitResponse(task, command, args, outputHandler, logger) {
-        const outputLogger = logger.sibling("output");
-        const spawnOptions = this._plugins.exec(
-          "spawn.options",
-          {
-            cwd: this.cwd,
-            env: this.env,
-            windowsHide: true
-          },
-          pluginContext(task, task.commands)
-        );
-        return new Promise((done) => {
-          const stdOut = [];
-          const stdErr = [];
-          logger.info(`%s %o`, command, args);
-          logger("%O", spawnOptions);
-          let rejection = this._beforeSpawn(task, args);
-          if (rejection) {
-            return done({
-              stdOut,
-              stdErr,
-              exitCode: 9901,
-              rejection
-            });
-          }
-          this._plugins.exec("spawn.before", void 0, {
-            ...pluginContext(task, args),
-            kill(reason) {
-              rejection = reason || rejection;
-            }
-          });
-          const spawned = (0, import_child_process.spawn)(command, args, spawnOptions);
-          spawned.stdout.on(
-            "data",
-            onDataReceived(stdOut, "stdOut", logger, outputLogger.step("stdOut"))
-          );
-          spawned.stderr.on(
-            "data",
-            onDataReceived(stdErr, "stdErr", logger, outputLogger.step("stdErr"))
-          );
-          spawned.on("error", onErrorReceived(stdErr, logger));
-          if (outputHandler) {
-            logger(`Passing child process stdOut/stdErr to custom outputHandler`);
-            outputHandler(command, spawned.stdout, spawned.stderr, [...args]);
-          }
-          this._plugins.exec("spawn.after", void 0, {
-            ...pluginContext(task, args),
-            spawned,
-            close(exitCode, reason) {
-              done({
-                stdOut,
-                stdErr,
-                exitCode,
-                rejection: rejection || reason
-              });
-            },
-            kill(reason) {
-              if (spawned.killed) {
-                return;
-              }
-              rejection = reason;
-              spawned.kill("SIGINT");
-            }
-          });
-        });
-      }
-      _beforeSpawn(task, args) {
-        let rejection;
-        this._plugins.exec("spawn.before", void 0, {
-          ...pluginContext(task, args),
-          kill(reason) {
-            rejection = reason || rejection;
-          }
-        });
-        return rejection;
-      }
-    };
+  fatal(e) {
+    for (const [n, { logger: r2 }] of Array.from(this._queue.entries()))
+      n === e.task ? (r2.info("Failed %o", e), r2(
+        "Fatal exception, any as-yet un-started tasks run through this executor will not be attempted"
+      )) : r2.info(
+        "A fatal exception occurred in a previous task, the queue has been purged: %o",
+        e.message
+      ), this.complete(n);
+    if (this._queue.size !== 0)
+      throw new Error(`Queue size should be zero after fatal: ${this._queue.size}`);
   }
-});
-var git_executor_exports = {};
-__export2(git_executor_exports, {
-  GitExecutor: () => GitExecutor
-});
-var GitExecutor;
-var init_git_executor = __esm({
-  "src/lib/runners/git-executor.ts"() {
-    "use strict";
-    init_git_executor_chain();
-    GitExecutor = class {
-      constructor(cwd, _scheduler, _plugins) {
-        this.cwd = cwd;
-        this._scheduler = _scheduler;
-        this._plugins = _plugins;
-        this._chain = new GitExecutorChain(this, this._scheduler, this._plugins);
-      }
-      chain() {
-        return new GitExecutorChain(this, this._scheduler, this._plugins);
-      }
-      push(task) {
-        return this._chain.push(task);
-      }
-    };
+  complete(e) {
+    this.withProgress(e) && this._queue.delete(e);
   }
-});
-function taskCallback(task, response, callback = NOOP) {
-  const onSuccess = (data) => {
-    callback(null, data);
-  };
-  const onError2 = (err) => {
-    if (err?.task === task) {
-      callback(
-        err instanceof GitResponseError ? addDeprecationNoticeToError(err) : err,
-        void 0
+  attempt(e) {
+    const n = this.withProgress(e);
+    if (!n)
+      throw new O2(void 0, "TasksPendingQueue: attempt called for an unknown task");
+    return n.logger("Starting task"), n;
+  }
+  static getName(e = "empty") {
+    return `task:${e}:${++M3.counter}`;
+  }
+};
+M2.counter = 0;
+var ot = M2;
+var Pn = class {
+  constructor(e, n, r2) {
+    this._executor = e, this._scheduler = n, this._plugins = r2, this._chain = Promise.resolve(), this._queue = new ot();
+  }
+  get cwd() {
+    return this._cwd || this._executor.cwd;
+  }
+  set cwd(e) {
+    this._cwd = e;
+  }
+  get env() {
+    return this._executor.env;
+  }
+  get outputHandler() {
+    return this._executor.outputHandler;
+  }
+  chain() {
+    return this;
+  }
+  push(e) {
+    return this._queue.push(e), this._chain = this._chain.then(() => this.attemptTask(e));
+  }
+  async attemptTask(e) {
+    const n = await this._scheduler.next(), r2 = () => this._queue.complete(e);
+    try {
+      const { logger: s } = this._queue.attempt(e);
+      return await (kt(e) ? this.attemptEmptyTask(e, s) : this.attemptRemoteTask(e, s));
+    } catch (s) {
+      throw this.onFatalException(e, s);
+    } finally {
+      r2(), n();
+    }
+  }
+  onFatalException(e, n) {
+    const r2 = n instanceof O2 ? Object.assign(n, { task: e }) : new O2(e, n && String(n));
+    return this._chain = Promise.resolve(), this._queue.fatal(r2), r2;
+  }
+  async attemptRemoteTask(e, n) {
+    const r2 = this._plugins.exec("spawn.binary", "", this.taskContext(e, e.commands)), s = this._plugins.exec(
+      "spawn.args",
+      [...e.commands],
+      this.taskContext(e, e.commands)
+    ), o2 = await this.gitResponse(
+      e,
+      r2,
+      s,
+      this.outputHandler,
+      n.step("SPAWN")
+    ), i = await this.handleTaskData(e, s, o2, n.step("HANDLE"));
+    return n("passing response to task's parser as a %s", e.format), en(e) ? Tt(e.parser, i) : Tt(e.parser, i.asStrings());
+  }
+  async attemptEmptyTask(e, n) {
+    return n("empty task bypassing child process to call to task's parser"), e.parser(this);
+  }
+  handleTaskData(e, n, r2, s) {
+    const { exitCode: o2, rejection: i, stdOut: a, stdErr: c3 } = r2;
+    return new Promise((y2, w2) => {
+      s("Preparing to handle process response exitCode=%d stdOut=", o2);
+      const { error: T2 } = this._plugins.exec(
+        "task.error",
+        { error: i },
+        {
+          ...this.taskContext(e, n),
+          ...r2
+        }
       );
-    }
-  };
-  response.then(onSuccess, onError2);
-}
-function addDeprecationNoticeToError(err) {
-  let log = (name) => {
-    console.warn(
-      `simple-git deprecation notice: accessing GitResponseError.${name} should be GitResponseError.git.${name}, this will no longer be available in version 3`
+      if (T2 && e.onError)
+        return s.info("exitCode=%s handling with custom error handler"), e.onError(
+          r2,
+          T2,
+          (k2) => {
+            s.info("custom error handler treated as success"), s("custom error returned a %s", ft(k2)), y2(
+              new z2(
+                Array.isArray(k2) ? Buffer.concat(k2) : k2,
+                Buffer.concat(c3)
+              )
+            );
+          },
+          w2
+        );
+      if (T2)
+        return s.info(
+          "handling as error: exitCode=%s stdErr=%s rejection=%o",
+          o2,
+          c3.length,
+          i
+        ), w2(T2);
+      s.info("retrieving task output complete"), y2(new z2(Buffer.concat(a), Buffer.concat(c3)));
+    });
+  }
+  async gitResponse(e, n, r2, s, o2) {
+    const i = o2.sibling("output"), a = this._plugins.exec(
+      "spawn.options",
+      {
+        cwd: this.cwd,
+        env: this.env,
+        windowsHide: true
+      },
+      this.taskContext(e, e.commands)
     );
-    log = NOOP;
-  };
-  return Object.create(err, Object.getOwnPropertyNames(err.git).reduce(descriptorReducer, {}));
-  function descriptorReducer(all, name) {
-    if (name in err) {
-      return all;
-    }
-    all[name] = {
-      enumerable: false,
-      configurable: false,
-      get() {
-        log(name);
-        return err.git[name];
+    return new Promise((c3) => {
+      const y2 = [], w2 = [];
+      o2.info("%s %o", n, r2), o2("%O", a);
+      let T2 = this._beforeSpawn(e, r2);
+      if (T2)
+        return c3({
+          stdOut: y2,
+          stdErr: w2,
+          exitCode: 9901,
+          rejection: T2
+        });
+      this._plugins.exec("spawn.before", void 0, {
+        ...this.taskContext(e, r2),
+        kill(C2) {
+          T2 = C2 || T2;
+        }
+      });
+      const k2 = (0, import_node_child_process.spawn)(n, r2, a);
+      k2.stdout.on(
+        "data",
+        Et(y2, "stdOut", o2, i.step("stdOut"))
+      ), k2.stderr.on(
+        "data",
+        Et(w2, "stdErr", o2, i.step("stdErr"))
+      ), k2.on("error", Mn(w2, o2)), s && (o2("Passing child process stdOut/stdErr to custom outputHandler"), s(n, k2.stdout, k2.stderr, [...r2])), this._plugins.exec("spawn.after", void 0, {
+        ...this.taskContext(e, r2),
+        spawned: k2,
+        close(C2, Te) {
+          c3({
+            stdOut: y2,
+            stdErr: w2,
+            exitCode: C2,
+            rejection: T2 || Te
+          });
+        },
+        kill(C2) {
+          k2.killed || (T2 = C2, k2.kill("SIGINT"));
+        }
+      });
+    });
+  }
+  _beforeSpawn(e, n) {
+    let r2;
+    return this._plugins.exec("spawn.before", void 0, {
+      ...this.taskContext(e, n),
+      kill(s) {
+        r2 = s || r2;
       }
+    }), r2;
+  }
+  taskContext(e, n) {
+    return {
+      method: String(Me(e.commands) || ""),
+      commands: n,
+      env: { ...this.env },
+      input: kt(e) ? void 0 : e.input
     };
-    return all;
   }
+};
+function Mn(t2, e) {
+  return (n) => {
+    e("[ERROR] child process exception %o", n), t2.push(Buffer.from(String(n.stack), "ascii"));
+  };
 }
-var init_task_callback = __esm({
-  "src/lib/task-callback.ts"() {
-    "use strict";
-    init_git_response_error();
-    init_utils();
+function Et(t2, e, n, r2) {
+  return (s) => {
+    n("%s received %L bytes", e, s), r2("%B", s), t2.push(s);
+  };
+}
+var Dn = class {
+  constructor(e, n, r2) {
+    this.cwd = e, this._scheduler = n, this._plugins = r2, this._chain = this.chain();
   }
-});
-function changeWorkingDirectoryTask(directory, root) {
-  return adhocExecTask((instance) => {
-    if (!folderExists(directory)) {
-      throw new Error(`Git.cwd: cannot change to non-directory "${directory}"`);
-    }
-    return (root || instance).cwd = directory;
+  chain() {
+    return new Pn(this, this._scheduler, this._plugins);
+  }
+  push(e) {
+    return this._chain.push(e);
+  }
+};
+function Ln(t2, e, n = W2) {
+  const r2 = (o2) => {
+    n(null, o2);
+  }, s = (o2) => {
+    o2?.task === t2 && n(o2, void 0);
+  };
+  e.then(r2, s);
+}
+function St(t2, e) {
+  return tn((n) => {
+    if (!Lt(t2))
+      throw new Error(`Git.cwd: cannot change to non-directory "${t2}"`);
+    return (e || n).cwd = t2;
   });
 }
-var init_change_working_directory = __esm({
-  "src/lib/tasks/change-working-directory.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
-  }
-});
-function checkoutTask(args) {
-  const commands = ["checkout", ...args];
-  if (commands[1] === "-b" && commands.includes("-B")) {
-    commands[1] = remove(commands, "-B");
-  }
-  return straightThroughStringTask(commands);
+function Q2(t2) {
+  const e = ["checkout", ...t2];
+  return e[1] === "-b" && e.includes("-B") && (e[1] = ct(e, "-B")), g(e);
 }
-function checkout_default() {
+function jn() {
   return {
     checkout() {
       return this._runTask(
-        checkoutTask(getTrailingOptions(arguments, 1)),
-        trailingFunctionArgument(arguments)
+        Q2(h2(arguments, 1)),
+        u(arguments)
       );
     },
-    checkoutBranch(branchName, startPoint) {
+    checkoutBranch(t2, e) {
       return this._runTask(
-        checkoutTask(["-b", branchName, startPoint, ...getTrailingOptions(arguments)]),
-        trailingFunctionArgument(arguments)
+        Q2(["-b", t2, e, ...h2(arguments)]),
+        u(arguments)
       );
     },
-    checkoutLocalBranch(branchName) {
+    checkoutLocalBranch(t2) {
       return this._runTask(
-        checkoutTask(["-b", branchName, ...getTrailingOptions(arguments)]),
-        trailingFunctionArgument(arguments)
+        Q2(["-b", t2, ...h2(arguments)]),
+        u(arguments)
       );
     }
   };
 }
-var init_checkout = __esm({
-  "src/lib/tasks/checkout.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
+var Yt = (t2, e, n) => {
+  const r2 = ["clone", ...n];
+  return m(t2) && r2.push(c(t2)), m(e) && r2.push(c(e)), g(r2);
+};
+var Bn = (t2, e, n) => (S2(n, "--mirror"), Yt(t2, e, n));
+function Rt(t2, e, n, ...r2) {
+  return m(n) ? e(n, d(r2[0], m), h2(arguments)) : b2(`git.${t2}() requires a string 'repoPath'`);
+}
+function In() {
+  return {
+    clone(t2, ...e) {
+      return this._runTask(
+        Rt("clone", Yt, d(t2, m), ...e),
+        u(arguments)
+      );
+    },
+    mirror(t2, ...e) {
+      return this._runTask(
+        Rt("mirror", Bn, d(t2, m), ...e),
+        u(arguments)
+      );
+    }
+  };
+}
+var Un = [
+  new l2(/^\[([^\s]+)( \([^)]+\))? ([^\]]+)/, (t2, [e, n, r2]) => {
+    t2.branch = e, t2.commit = r2, t2.root = !!n;
+  }),
+  new l2(/\s*Author:\s(.+)/i, (t2, [e]) => {
+    const n = e.split("<"), r2 = n.pop();
+    !r2 || !r2.includes("@") || (t2.author = {
+      email: r2.substr(0, r2.length - 1),
+      name: n.join("<").trim()
+    });
+  }),
+  new l2(
+    /(\d+)[^,]*(?:,\s*(\d+)[^,]*)(?:,\s*(\d+))/g,
+    (t2, [e, n, r2]) => {
+      t2.summary.changes = parseInt(e, 10) || 0, t2.summary.insertions = parseInt(n, 10) || 0, t2.summary.deletions = parseInt(r2, 10) || 0;
+    }
+  ),
+  new l2(
+    /^(\d+)[^,]*(?:,\s*(\d+)[^(]+\(([+-]))?/,
+    (t2, [e, n, r2]) => {
+      t2.summary.changes = parseInt(e, 10) || 0;
+      const s = parseInt(n, 10) || 0;
+      r2 === "-" ? t2.summary.deletions = s : r2 === "+" && (t2.summary.insertions = s);
+    }
+  )
+];
+function Fn(t2) {
+  return E2({
+    author: null,
+    branch: "",
+    commit: "",
+    root: false,
+    summary: {
+      changes: 0,
+      insertions: 0,
+      deletions: 0
+    }
+  }, Un, t2);
+}
+function Gn(t2, e, n) {
+  return {
+    commands: [
+      "-c",
+      "core.abbrev=40",
+      "commit",
+      ...U(t2, "-m"),
+      ...e,
+      ...n
+    ],
+    format: "utf-8",
+    parser: Fn
+  };
+}
+function zn() {
+  return {
+    commit(e, ...n) {
+      const r2 = u(arguments), s = t2(e) || Gn(
+        v(e),
+        v(d(n[0], G2, [])),
+        [
+          ...L2(d(n[1], K2, [])),
+          ...h2(arguments, 0, true)
+        ]
+      );
+      return this._runTask(s, r2);
+    }
+  };
+  function t2(e) {
+    return !G2(e) && b2(
+      "git.commit: requires the commit message to be supplied as a string/string[]"
+    );
   }
-});
-function countObjectsResponse() {
+}
+function qn() {
   return {
     count: 0,
     garbage: 0,
@@ -24719,670 +24229,382 @@ function countObjectsResponse() {
     sizePack: 0
   };
 }
-function count_objects_default() {
+var Wn = new l2(
+  /([a-z-]+): (\d+)$/,
+  (t2, [e, n]) => {
+    const r2 = jt(e);
+    Object.hasOwn(t2, r2) && (t2[r2] = p(n));
+  }
+);
+function Hn() {
   return {
     countObjects() {
       return this._runTask({
         commands: ["count-objects", "--verbose"],
         format: "utf-8",
-        parser(stdOut) {
-          return parseStringResponse(countObjectsResponse(), [parser2], stdOut);
+        parser(t2) {
+          return E2(qn(), [Wn], t2);
         }
       });
     }
   };
 }
-var parser2;
-var init_count_objects = __esm({
-  "src/lib/tasks/count-objects.ts"() {
-    "use strict";
-    init_utils();
-    parser2 = new LineParser(
-      /([a-z-]+): (\d+)$/,
-      (result, [key, value]) => {
-        const property = asCamelCase(key);
-        if (Object.hasOwn(result, property)) {
-          result[property] = asNumber(value);
-        }
-      }
-    );
-  }
-});
-function parseCommitResult(stdOut) {
-  const result = {
-    author: null,
-    branch: "",
-    commit: "",
-    root: false,
-    summary: {
-      changes: 0,
-      insertions: 0,
-      deletions: 0
-    }
-  };
-  return parseStringResponse(result, parsers, stdOut);
-}
-var parsers;
-var init_parse_commit = __esm({
-  "src/lib/parsers/parse-commit.ts"() {
-    "use strict";
-    init_utils();
-    parsers = [
-      new LineParser(/^\[([^\s]+)( \([^)]+\))? ([^\]]+)/, (result, [branch, root, commit]) => {
-        result.branch = branch;
-        result.commit = commit;
-        result.root = !!root;
-      }),
-      new LineParser(/\s*Author:\s(.+)/i, (result, [author]) => {
-        const parts = author.split("<");
-        const email2 = parts.pop();
-        if (!email2 || !email2.includes("@")) {
-          return;
-        }
-        result.author = {
-          email: email2.substr(0, email2.length - 1),
-          name: parts.join("<").trim()
-        };
-      }),
-      new LineParser(
-        /(\d+)[^,]*(?:,\s*(\d+)[^,]*)(?:,\s*(\d+))/g,
-        (result, [changes, insertions, deletions]) => {
-          result.summary.changes = parseInt(changes, 10) || 0;
-          result.summary.insertions = parseInt(insertions, 10) || 0;
-          result.summary.deletions = parseInt(deletions, 10) || 0;
-        }
-      ),
-      new LineParser(
-        /^(\d+)[^,]*(?:,\s*(\d+)[^(]+\(([+-]))?/,
-        (result, [changes, lines, direction]) => {
-          result.summary.changes = parseInt(changes, 10) || 0;
-          const count = parseInt(lines, 10) || 0;
-          if (direction === "-") {
-            result.summary.deletions = count;
-          } else if (direction === "+") {
-            result.summary.insertions = count;
-          }
-        }
-      )
-    ];
-  }
-});
-function commitTask(message, files, customArgs) {
-  const commands = [
-    "-c",
-    "core.abbrev=40",
-    "commit",
-    ...prefixedArray(message, "-m"),
-    ...files,
-    ...customArgs
-  ];
-  return {
-    commands,
-    format: "utf-8",
-    parser: parseCommitResult
-  };
-}
-function commit_default() {
-  return {
-    commit(message, ...rest) {
-      const next = trailingFunctionArgument(arguments);
-      const task = rejectDeprecatedSignatures(message) || commitTask(
-        asArray(message),
-        asArray(filterType(rest[0], filterStringOrStringArray, [])),
-        [
-          ...asStringArray(filterType(rest[1], filterArray, [])),
-          ...getTrailingOptions(arguments, 0, true)
-        ]
-      );
-      return this._runTask(task, next);
-    }
-  };
-  function rejectDeprecatedSignatures(message) {
-    return !filterStringOrStringArray(message) && configurationErrorTask(
-      `git.commit: requires the commit message to be supplied as a string/string[]`
-    );
-  }
-}
-var init_commit = __esm({
-  "src/lib/tasks/commit.ts"() {
-    "use strict";
-    init_parse_commit();
-    init_utils();
-    init_task();
-  }
-});
-function first_commit_default() {
+function Kn() {
   return {
     firstCommit() {
       return this._runTask(
-        straightThroughStringTask(["rev-list", "--max-parents=0", "HEAD"], true),
-        trailingFunctionArgument(arguments)
+        g(["rev-list", "--max-parents=0", "HEAD"], true),
+        u(arguments)
       );
     }
   };
 }
-var init_first_commit = __esm({
-  "src/lib/tasks/first-commit.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
-  }
-});
-function hashObjectTask(filePath, write) {
-  const commands = ["hash-object", filePath];
-  if (write) {
-    commands.push("-w");
-  }
-  return straightThroughStringTask(commands, true);
+function Vn(t2, e) {
+  const n = ["hash-object", t2];
+  return e && n.push("-w"), g(n, true);
 }
-var init_hash_object = __esm({
-  "src/lib/tasks/hash-object.ts"() {
-    "use strict";
-    init_task();
+var J2 = class {
+  constructor(e, n, r2, s) {
+    this.bare = e, this.path = n, this.existing = r2, this.gitDir = s;
   }
-});
-function parseInit(bare, path3, text) {
-  const response = String(text).trim();
-  let result;
-  if (result = initResponseRegex.exec(response)) {
-    return new InitSummary(bare, path3, false, result[1]);
-  }
-  if (result = reInitResponseRegex.exec(response)) {
-    return new InitSummary(bare, path3, true, result[1]);
-  }
-  let gitDir = "";
-  const tokens = response.split(" ");
-  while (tokens.length) {
-    const token = tokens.shift();
-    if (token === "in") {
-      gitDir = tokens.join(" ");
+};
+var Xn = /^Init.+ repository in (.+)$/;
+var Yn = /^Rein.+ in (.+)$/;
+function Qn(t2, e, n) {
+  const r2 = String(n).trim();
+  let s;
+  if (s = Xn.exec(r2))
+    return new J2(t2, e, false, s[1]);
+  if (s = Yn.exec(r2))
+    return new J2(t2, e, true, s[1]);
+  let o2 = "";
+  const i = r2.split(" ");
+  for (; i.length; )
+    if (i.shift() === "in") {
+      o2 = i.join(" ");
       break;
     }
-  }
-  return new InitSummary(bare, path3, /^re/i.test(response), gitDir);
+  return new J2(t2, e, /^re/i.test(r2), o2);
 }
-var InitSummary;
-var initResponseRegex;
-var reInitResponseRegex;
-var init_InitSummary = __esm({
-  "src/lib/responses/InitSummary.ts"() {
-    "use strict";
-    InitSummary = class {
-      constructor(bare, path3, existing, gitDir) {
-        this.bare = bare;
-        this.path = path3;
-        this.existing = existing;
-        this.gitDir = gitDir;
-      }
-    };
-    initResponseRegex = /^Init.+ repository in (.+)$/;
-    reInitResponseRegex = /^Rein.+ in (.+)$/;
-  }
-});
-function hasBareCommand(command) {
-  return command.includes(bareCommand);
+var Qt = "--bare";
+function Jn(t2) {
+  return t2.includes(Qt);
 }
-function initTask(bare = false, path3, customArgs) {
-  const commands = ["init", ...customArgs];
-  if (bare && !hasBareCommand(commands)) {
-    commands.splice(1, 0, bareCommand);
-  }
-  return {
-    commands,
+function Zn(t2 = false, e, n) {
+  const r2 = ["init", ...n];
+  return t2 && !Jn(r2) && r2.splice(1, 0, Qt), {
+    commands: r2,
     format: "utf-8",
-    parser(text) {
-      return parseInit(commands.includes("--bare"), path3, text);
+    parser(s) {
+      return Qn(r2.includes("--bare"), e, s);
     }
   };
 }
-var bareCommand;
-var init_init = __esm({
-  "src/lib/tasks/init.ts"() {
-    "use strict";
-    init_InitSummary();
-    bareCommand = "--bare";
-  }
-});
-function logFormatFromCommand(customArgs) {
-  for (let i2 = 0; i2 < customArgs.length; i2++) {
-    const format = logFormatRegex.exec(customArgs[i2]);
-    if (format) {
-      return `--${format[1]}`;
+function tr(t2) {
+  return t2 === void 0 ? b2("interpretTrailers called without input content") : {
+    format: "utf-8",
+    parser(e) {
+      return Object.fromEntries(
+        ut(e, (n) => {
+          const r2 = n.indexOf(":");
+          return [
+            jt(n.substring(0, r2).toLowerCase()),
+            n.substring(r2 + 2).trim()
+          ];
+        })
+      );
+    },
+    commands: ["interpret-trailers", "--parse"],
+    input: t2
+  };
+}
+function er() {
+  return {
+    interpretTrailers(t2) {
+      return this._runTask(
+        tr(d(t2, Be)),
+        u(arguments)
+      );
     }
+  };
+}
+var R2 = /* @__PURE__ */ ((t2) => (t2.NONE = "", t2.STAT = "--stat", t2.NUM_STAT = "--numstat", t2.NAME_ONLY = "--name-only", t2.NAME_STATUS = "--name-status", t2))(R2 || {});
+var Jt = /^--(stat|numstat|name-only|name-status)(=|$)/;
+function pt(t2) {
+  for (let e = 0; e < t2.length; e++) {
+    const n = Jt.exec(t2[e]);
+    if (n)
+      return `--${n[1]}`;
   }
   return "";
 }
-function isLogFormat(customArg) {
-  return logFormatRegex.test(customArg);
+function nr(t2) {
+  return Jt.test(t2);
 }
-var logFormatRegex;
-var init_log_format = __esm({
-  "src/lib/args/log-format.ts"() {
-    "use strict";
-    logFormatRegex = /^--(stat|numstat|name-only|name-status)(=|$)/;
+var rr = class {
+  constructor() {
+    this.changed = 0, this.deletions = 0, this.insertions = 0, this.files = [];
   }
-});
-var DiffSummary;
-var init_DiffSummary = __esm({
-  "src/lib/responses/DiffSummary.ts"() {
-    "use strict";
-    DiffSummary = class {
-      constructor() {
-        this.changed = 0;
-        this.deletions = 0;
-        this.insertions = 0;
-        this.files = [];
-      }
-    };
-  }
-});
-function getDiffParser(format = "") {
-  const parser4 = diffSummaryParsers[format];
-  return (stdOut) => parseStringResponse(new DiffSummary(), parser4, stdOut, false);
+};
+var Ot = [
+  new l2(
+    /^(.+)\s+\|\s+(\d+)(\s+[+\-]+)?$/,
+    (t2, [e, n, r2 = ""]) => {
+      t2.files.push({
+        file: e.trim(),
+        changes: p(n),
+        insertions: r2.replace(/[^+]/g, "").length,
+        deletions: r2.replace(/[^-]/g, "").length,
+        binary: false
+      });
+    }
+  ),
+  new l2(
+    /^(.+) \|\s+Bin ([0-9.]+) -> ([0-9.]+) ([a-z]+)/,
+    (t2, [e, n, r2]) => {
+      t2.files.push({
+        file: e.trim(),
+        before: p(n),
+        after: p(r2),
+        binary: true
+      });
+    }
+  ),
+  new l2(/^(.+)\s+\|\s+Bin\s*$/, (t2, [e]) => {
+    t2.files.push({
+      file: e.trim(),
+      before: 0,
+      after: 0,
+      binary: true
+    });
+  }),
+  new l2(
+    /(\d+) files? changed\s*((?:, \d+ [^,]+){0,2})/,
+    (t2, [e, n]) => {
+      const r2 = /(\d+) i/.exec(n), s = /(\d+) d/.exec(n);
+      t2.changed = p(e), t2.insertions = p(r2?.[1]), t2.deletions = p(s?.[1]);
+    }
+  )
+];
+var sr = [
+  new l2(
+    /(\d+)\t(\d+)\t(.+)$/,
+    (t2, [e, n, r2]) => {
+      const s = p(e), o2 = p(n);
+      t2.changed++, t2.insertions += s, t2.deletions += o2, t2.files.push({
+        file: r2,
+        changes: s + o2,
+        insertions: s,
+        deletions: o2,
+        binary: false
+      });
+    }
+  ),
+  new l2(/-\t-\t(.+)$/, (t2, [e]) => {
+    t2.changed++, t2.files.push({
+      file: e,
+      after: 0,
+      before: 0,
+      binary: true
+    });
+  })
+];
+var or = [
+  new l2(/(.+)$/, (t2, [e]) => {
+    t2.changed++, t2.files.push({
+      file: e,
+      changes: 0,
+      insertions: 0,
+      deletions: 0,
+      binary: false
+    });
+  })
+];
+var ir = [
+  new l2(
+    /([ACDMRTUXB])([0-9]{0,3})\t(.[^\t]*)(\t(.[^\t]*))?$/,
+    (t2, [e, n, r2, s, o2]) => {
+      t2.changed++, t2.files.push({
+        file: o2 ?? r2,
+        changes: 0,
+        insertions: 0,
+        deletions: 0,
+        binary: false,
+        status: bt(_n(e) && e),
+        from: bt(!!o2 && r2 !== o2 && r2),
+        similarity: p(n)
+      });
+    }
+  )
+];
+var ar = {
+  [R2.NONE]: Ot,
+  [R2.STAT]: Ot,
+  [R2.NUM_STAT]: sr,
+  [R2.NAME_STATUS]: ir,
+  [R2.NAME_ONLY]: or
+};
+function Zt(t2 = R2.NONE) {
+  const e = ar[t2];
+  return (n) => E2(new rr(), e, n, false);
 }
-var statParser;
-var numStatParser;
-var nameOnlyParser;
-var nameStatusParser;
-var diffSummaryParsers;
-var init_parse_diff_summary = __esm({
-  "src/lib/parsers/parse-diff-summary.ts"() {
-    "use strict";
-    init_log_format();
-    init_DiffSummary();
-    init_diff_name_status();
-    init_utils();
-    statParser = [
-      new LineParser(
-        /^(.+)\s+\|\s+(\d+)(\s+[+\-]+)?$/,
-        (result, [file, changes, alterations = ""]) => {
-          result.files.push({
-            file: file.trim(),
-            changes: asNumber(changes),
-            insertions: alterations.replace(/[^+]/g, "").length,
-            deletions: alterations.replace(/[^-]/g, "").length,
-            binary: false
-          });
-        }
-      ),
-      new LineParser(
-        /^(.+) \|\s+Bin ([0-9.]+) -> ([0-9.]+) ([a-z]+)/,
-        (result, [file, before, after]) => {
-          result.files.push({
-            file: file.trim(),
-            before: asNumber(before),
-            after: asNumber(after),
-            binary: true
-          });
-        }
-      ),
-      new LineParser(
-        /(\d+) files? changed\s*((?:, \d+ [^,]+){0,2})/,
-        (result, [changed, summary]) => {
-          const inserted = /(\d+) i/.exec(summary);
-          const deleted = /(\d+) d/.exec(summary);
-          result.changed = asNumber(changed);
-          result.insertions = asNumber(inserted?.[1]);
-          result.deletions = asNumber(deleted?.[1]);
-        }
-      )
-    ];
-    numStatParser = [
-      new LineParser(
-        /(\d+)\t(\d+)\t(.+)$/,
-        (result, [changesInsert, changesDelete, file]) => {
-          const insertions = asNumber(changesInsert);
-          const deletions = asNumber(changesDelete);
-          result.changed++;
-          result.insertions += insertions;
-          result.deletions += deletions;
-          result.files.push({
-            file,
-            changes: insertions + deletions,
-            insertions,
-            deletions,
-            binary: false
-          });
-        }
-      ),
-      new LineParser(/-\t-\t(.+)$/, (result, [file]) => {
-        result.changed++;
-        result.files.push({
-          file,
-          after: 0,
-          before: 0,
-          binary: true
-        });
-      })
-    ];
-    nameOnlyParser = [
-      new LineParser(/(.+)$/, (result, [file]) => {
-        result.changed++;
-        result.files.push({
-          file,
-          changes: 0,
-          insertions: 0,
-          deletions: 0,
-          binary: false
-        });
-      })
-    ];
-    nameStatusParser = [
-      new LineParser(
-        /([ACDMRTUXB])([0-9]{0,3})\t(.[^\t]*)(\t(.[^\t]*))?$/,
-        (result, [status, similarity, from, _to, to]) => {
-          result.changed++;
-          result.files.push({
-            file: to ?? from,
-            changes: 0,
-            insertions: 0,
-            deletions: 0,
-            binary: false,
-            status: orVoid(isDiffNameStatus(status) && status),
-            from: orVoid(!!to && from !== to && from),
-            similarity: asNumber(similarity)
-          });
-        }
-      )
-    ];
-    diffSummaryParsers = {
-      [
-        ""
-        /* NONE */
-      ]: statParser,
-      [
-        "--stat"
-        /* STAT */
-      ]: statParser,
-      [
-        "--numstat"
-        /* NUM_STAT */
-      ]: numStatParser,
-      [
-        "--name-status"
-        /* NAME_STATUS */
-      ]: nameStatusParser,
-      [
-        "--name-only"
-        /* NAME_ONLY */
-      ]: nameOnlyParser
-    };
-  }
-});
-function lineBuilder(tokens, fields) {
-  return fields.reduce(
-    (line, field, index) => {
-      line[field] = tokens[index] || "";
-      return line;
-    },
+var te = "\xF2\xF2\xF2\xF2\xF2\xF2 ";
+var ee2 = " \xF2\xF2";
+var ne2 = " \xF2 ";
+var ur = ["hash", "date", "message", "refs", "author_name", "author_email"];
+function cr(t2, e) {
+  return e.reduce(
+    (n, r2, s) => (n[r2] = t2[s] || "", n),
     /* @__PURE__ */ Object.create({ diff: null })
   );
 }
-function createListLogSummaryParser(splitter = SPLITTER, fields = defaultFieldNames, logFormat = "") {
-  const parseDiffResult = getDiffParser(logFormat);
-  return function(stdOut) {
-    const all = toLinesWithContent(
-      stdOut.trim(),
+function re(t2 = ne2, e = ur, n = R2.NONE) {
+  const r2 = Zt(n);
+  return function(s) {
+    const o2 = H2(
+      s.trim(),
       false,
-      START_BOUNDARY
-    ).map(function(item) {
-      const lineDetail = item.split(COMMIT_BOUNDARY);
-      const listLogLine = lineBuilder(lineDetail[0].split(splitter), fields);
-      if (lineDetail.length > 1 && !!lineDetail[1].trim()) {
-        listLogLine.diff = parseDiffResult(lineDetail[1]);
-      }
-      return listLogLine;
+      te
+    ).map(function(i) {
+      const a = i.split(ee2), c3 = cr(a[0].split(t2), e);
+      return a.length > 1 && a[1].trim() && (c3.diff = r2(a[1])), c3;
     });
     return {
-      all,
-      latest: all.length && all[0] || null,
-      total: all.length
+      all: o2,
+      latest: o2.length && o2[0] || null,
+      total: o2.length
     };
   };
 }
-var START_BOUNDARY;
-var COMMIT_BOUNDARY;
-var SPLITTER;
-var defaultFieldNames;
-var init_parse_list_log_summary = __esm({
-  "src/lib/parsers/parse-list-log-summary.ts"() {
-    "use strict";
-    init_utils();
-    init_parse_diff_summary();
-    init_log_format();
-    START_BOUNDARY = "\xF2\xF2\xF2\xF2\xF2\xF2 ";
-    COMMIT_BOUNDARY = " \xF2\xF2";
-    SPLITTER = " \xF2 ";
-    defaultFieldNames = ["hash", "date", "message", "refs", "author_name", "author_email"];
-  }
-});
-var diff_exports = {};
-__export2(diff_exports, {
-  diffSummaryTask: () => diffSummaryTask,
-  validateLogFormatConfig: () => validateLogFormatConfig
-});
-function diffSummaryTask(customArgs) {
-  let logFormat = logFormatFromCommand(customArgs);
-  const commands = ["diff"];
-  if (logFormat === "") {
-    logFormat = "--stat";
-    commands.push("--stat=4096");
-  }
-  commands.push(...customArgs);
-  return validateLogFormatConfig(commands) || {
-    commands,
+function fr(t2) {
+  let e = pt(t2);
+  const n = ["diff"];
+  return e === R2.NONE && (e = R2.STAT, n.push("--stat=4096")), n.push(...t2), dt(n) || {
+    commands: n,
     format: "utf-8",
-    parser: getDiffParser(logFormat)
+    parser: Zt(e)
   };
 }
-function validateLogFormatConfig(customArgs) {
-  const flags = customArgs.filter(isLogFormat);
-  if (flags.length > 1) {
-    return configurationErrorTask(
-      `Summary flags are mutually exclusive - pick one of ${flags.join(",")}`
+function dt(t2) {
+  const e = t2.filter(nr);
+  if (e.length > 1)
+    return b2(
+      `Summary flags are mutually exclusive - pick one of ${e.join(",")}`
     );
-  }
-  if (flags.length && customArgs.includes("-z")) {
-    return configurationErrorTask(
-      `Summary flag ${flags} parsing is not compatible with null termination option '-z'`
+  if (e.length && t2.includes("-z"))
+    return b2(
+      `Summary flag ${e} parsing is not compatible with null termination option '-z'`
     );
-  }
 }
-var init_diff = __esm({
-  "src/lib/tasks/diff.ts"() {
-    "use strict";
-    init_log_format();
-    init_parse_diff_summary();
-    init_task();
-  }
-});
-function prettyFormat(format, splitter) {
-  const fields = [];
-  const formatStr = [];
-  Object.keys(format).forEach((field) => {
-    fields.push(field);
-    formatStr.push(String(format[field]));
-  });
-  return [fields, formatStr.join(splitter)];
+var se = /* @__PURE__ */ ((t2) => (t2[t2["--pretty"] = 0] = "--pretty", t2[t2["max-count"] = 1] = "max-count", t2[t2.maxCount = 2] = "maxCount", t2[t2.n = 3] = "n", t2[t2.file = 4] = "file", t2[t2.format = 5] = "format", t2[t2.from = 6] = "from", t2[t2.to = 7] = "to", t2[t2.splitter = 8] = "splitter", t2[t2.symmetric = 9] = "symmetric", t2[t2.mailMap = 10] = "mailMap", t2[t2.multiLine = 11] = "multiLine", t2[t2.strictDate = 12] = "strictDate", t2))(se || {});
+function lr(t2, e) {
+  const n = [], r2 = [];
+  return Object.keys(t2).forEach((s) => {
+    n.push(s), r2.push(String(t2[s]));
+  }), [n, r2.join(e)];
 }
-function userOptions(input) {
-  return Object.keys(input).reduce((out, key) => {
-    if (!(key in excludeOptions)) {
-      out[key] = input[key];
-    }
-    return out;
-  }, {});
+function hr(t2) {
+  return Object.keys(t2).reduce((e, n) => (n in se || (e[n] = t2[n]), e), {});
 }
-function parseLogOptions(opt = {}, customArgs = []) {
-  const splitter = filterType(opt.splitter, filterString, SPLITTER);
-  const format = filterPlainObject(opt.format) ? opt.format : {
+function oe2(t2 = {}, e = []) {
+  const n = d(t2.splitter, m, ne2), r2 = lt(t2.format) ? t2.format : {
     hash: "%H",
-    date: opt.strictDate === false ? "%ai" : "%aI",
+    date: t2.strictDate === false ? "%ai" : "%aI",
     message: "%s",
     refs: "%D",
-    body: opt.multiLine ? "%B" : "%b",
-    author_name: opt.mailMap !== false ? "%aN" : "%an",
-    author_email: opt.mailMap !== false ? "%aE" : "%ae"
-  };
-  const [fields, formatStr] = prettyFormat(format, splitter);
-  const suffix = [];
-  const command = [
-    `--pretty=format:${START_BOUNDARY}${formatStr}${COMMIT_BOUNDARY}`,
-    ...customArgs
-  ];
-  const maxCount = opt.n || opt["max-count"] || opt.maxCount;
-  if (maxCount) {
-    command.push(`--max-count=${maxCount}`);
+    body: t2.multiLine ? "%B" : "%b",
+    author_name: t2.mailMap !== false ? "%aN" : "%an",
+    author_email: t2.mailMap !== false ? "%aE" : "%ae"
+  }, [s, o2] = lr(r2, n), i = [], a = [
+    `--pretty=format:${te}${o2}${ee2}`,
+    ...e
+  ], c3 = t2.n || t2["max-count"] || t2.maxCount;
+  if (c3 && a.push(`--max-count=${c3}`), t2.from || t2.to) {
+    const y2 = t2.symmetric !== false ? "..." : "..";
+    i.push(`${t2.from || ""}${y2}${t2.to || ""}`);
   }
-  if (opt.from || opt.to) {
-    const rangeOperator = opt.symmetric !== false ? "..." : "..";
-    suffix.push(`${opt.from || ""}${rangeOperator}${opt.to || ""}`);
-  }
-  if (filterString(opt.file)) {
-    command.push("--follow", c(opt.file));
-  }
-  appendTaskOptions(userOptions(opt), command);
-  return {
-    fields,
-    splitter,
-    commands: [...command, ...suffix]
+  return m(t2.file) && a.push("--follow", c(t2.file)), It(hr(t2), a), {
+    fields: s,
+    splitter: n,
+    commands: [...a, ...i]
   };
 }
-function logTask(splitter, fields, customArgs) {
-  const parser4 = createListLogSummaryParser(splitter, fields, logFormatFromCommand(customArgs));
+function mr(t2, e, n) {
+  const r2 = re(t2, e, pt(n));
   return {
-    commands: ["log", ...customArgs],
+    commands: ["log", ...n],
     format: "utf-8",
-    parser: parser4
+    parser: r2
   };
 }
-function log_default() {
+function pr() {
   return {
-    log(...rest) {
-      const next = trailingFunctionArgument(arguments);
-      const options = parseLogOptions(
-        trailingOptionsArgument(arguments),
-        asStringArray(filterType(arguments[0], filterArray, []))
-      );
-      const task = rejectDeprecatedSignatures(...rest) || validateLogFormatConfig(options.commands) || createLogTask(options);
-      return this._runTask(task, next);
+    log(...n) {
+      const r2 = u(arguments), s = oe2(
+        ht(arguments),
+        L2(d(arguments[0], K2, []))
+      ), o2 = e(...n) || dt(s.commands) || t2(s);
+      return this._runTask(o2, r2);
     }
   };
-  function createLogTask(options) {
-    return logTask(options.splitter, options.fields, options.commands);
+  function t2(n) {
+    return mr(n.splitter, n.fields, n.commands);
   }
-  function rejectDeprecatedSignatures(from, to) {
-    return filterString(from) && filterString(to) && configurationErrorTask(
-      `git.log(string, string) should be replaced with git.log({ from: string, to: string })`
+  function e(n, r2) {
+    return m(n) && m(r2) && b2(
+      "git.log(string, string) should be replaced with git.log({ from: string, to: string })"
     );
   }
 }
-var excludeOptions;
-var init_log = __esm({
-  "src/lib/tasks/log.ts"() {
-    "use strict";
-    init_log_format();
-    init_parse_list_log_summary();
-    init_utils();
-    init_task();
-    init_diff();
-    excludeOptions = /* @__PURE__ */ ((excludeOptions2) => {
-      excludeOptions2[excludeOptions2["--pretty"] = 0] = "--pretty";
-      excludeOptions2[excludeOptions2["max-count"] = 1] = "max-count";
-      excludeOptions2[excludeOptions2["maxCount"] = 2] = "maxCount";
-      excludeOptions2[excludeOptions2["n"] = 3] = "n";
-      excludeOptions2[excludeOptions2["file"] = 4] = "file";
-      excludeOptions2[excludeOptions2["format"] = 5] = "format";
-      excludeOptions2[excludeOptions2["from"] = 6] = "from";
-      excludeOptions2[excludeOptions2["to"] = 7] = "to";
-      excludeOptions2[excludeOptions2["splitter"] = 8] = "splitter";
-      excludeOptions2[excludeOptions2["symmetric"] = 9] = "symmetric";
-      excludeOptions2[excludeOptions2["mailMap"] = 10] = "mailMap";
-      excludeOptions2[excludeOptions2["multiLine"] = 11] = "multiLine";
-      excludeOptions2[excludeOptions2["strictDate"] = 12] = "strictDate";
-      return excludeOptions2;
-    })(excludeOptions || {});
+var Z2 = class {
+  constructor(e, n = null, r2) {
+    this.reason = e, this.file = n, this.meta = r2;
   }
-});
-var MergeSummaryConflict;
-var MergeSummaryDetail;
-var init_MergeSummary = __esm({
-  "src/lib/responses/MergeSummary.ts"() {
-    "use strict";
-    MergeSummaryConflict = class {
-      constructor(reason, file = null, meta) {
-        this.reason = reason;
-        this.file = file;
-        this.meta = meta;
-      }
-      toString() {
-        return `${this.file}:${this.reason}`;
-      }
-    };
-    MergeSummaryDetail = class {
-      constructor() {
-        this.conflicts = [];
-        this.merges = [];
-        this.result = "success";
-      }
-      get failed() {
-        return this.conflicts.length > 0;
-      }
-      get reason() {
-        return this.result;
-      }
-      toString() {
-        if (this.conflicts.length) {
-          return `CONFLICTS: ${this.conflicts.join(", ")}`;
-        }
-        return "OK";
-      }
+  toString() {
+    return `${this.file}:${this.reason}`;
+  }
+};
+var dr = class {
+  constructor() {
+    this.conflicts = [], this.merges = [], this.result = "success";
+  }
+  get failed() {
+    return this.conflicts.length > 0;
+  }
+  get reason() {
+    return this.result;
+  }
+  toString() {
+    return this.conflicts.length ? `CONFLICTS: ${this.conflicts.join(", ")}` : "OK";
+  }
+};
+var ie = class {
+  constructor() {
+    this.remoteMessages = {
+      all: []
+    }, this.created = [], this.deleted = [], this.files = [], this.deletions = {}, this.insertions = {}, this.summary = {
+      changes: 0,
+      deletions: 0,
+      insertions: 0
     };
   }
-});
-var PullSummary;
-var PullFailedSummary;
-var init_PullSummary = __esm({
-  "src/lib/responses/PullSummary.ts"() {
-    "use strict";
-    PullSummary = class {
-      constructor() {
-        this.remoteMessages = {
-          all: []
-        };
-        this.created = [];
-        this.deleted = [];
-        this.files = [];
-        this.deletions = {};
-        this.insertions = {};
-        this.summary = {
-          changes: 0,
-          deletions: 0,
-          insertions: 0
-        };
-      }
-    };
-    PullFailedSummary = class {
-      constructor() {
-        this.remote = "";
-        this.hash = {
-          local: "",
-          remote: ""
-        };
-        this.branch = {
-          local: "",
-          remote: ""
-        };
-        this.message = "";
-      }
-      toString() {
-        return this.message;
-      }
-    };
+};
+var gr = class {
+  constructor() {
+    this.remote = "", this.hash = {
+      local: "",
+      remote: ""
+    }, this.branch = {
+      local: "",
+      remote: ""
+    }, this.message = "";
   }
-});
-function objectEnumerationResult(remoteMessages) {
-  return remoteMessages.objects = remoteMessages.objects || {
+  toString() {
+    return this.message;
+  }
+};
+function tt(t2) {
+  return t2.objects = t2.objects || {
     compressing: 0,
     counting: 0,
     enumerating: 0,
@@ -25391,583 +24613,373 @@ function objectEnumerationResult(remoteMessages) {
     total: { count: 0, delta: 0 }
   };
 }
-function asObjectCount(source) {
-  const count = /^\s*(\d+)/.exec(source);
-  const delta = /delta (\d+)/i.exec(source);
+function Ct(t2) {
+  const e = /^\s*(\d+)/.exec(t2), n = /delta (\d+)/i.exec(t2);
   return {
-    count: asNumber(count && count[1] || "0"),
-    delta: asNumber(delta && delta[1] || "0")
+    count: p(e && e[1] || "0"),
+    delta: p(n && n[1] || "0")
   };
 }
-var remoteMessagesObjectParsers;
-var init_parse_remote_objects = __esm({
-  "src/lib/parsers/parse-remote-objects.ts"() {
-    "use strict";
-    init_utils();
-    remoteMessagesObjectParsers = [
-      new RemoteLineParser(
-        /^remote:\s*(enumerating|counting|compressing) objects: (\d+),/i,
-        (result, [action, count]) => {
-          const key = action.toLowerCase();
-          const enumeration = objectEnumerationResult(result.remoteMessages);
-          Object.assign(enumeration, { [key]: asNumber(count) });
-        }
-      ),
-      new RemoteLineParser(
-        /^remote:\s*(enumerating|counting|compressing) objects: \d+% \(\d+\/(\d+)\),/i,
-        (result, [action, count]) => {
-          const key = action.toLowerCase();
-          const enumeration = objectEnumerationResult(result.remoteMessages);
-          Object.assign(enumeration, { [key]: asNumber(count) });
-        }
-      ),
-      new RemoteLineParser(
-        /total ([^,]+), reused ([^,]+), pack-reused (\d+)/i,
-        (result, [total, reused, packReused]) => {
-          const objects = objectEnumerationResult(result.remoteMessages);
-          objects.total = asObjectCount(total);
-          objects.reused = asObjectCount(reused);
-          objects.packReused = asNumber(packReused);
-        }
-      )
-    ];
-  }
-});
-function parseRemoteMessages(_stdOut, stdErr) {
-  return parseStringResponse({ remoteMessages: new RemoteMessageSummary() }, parsers2, stdErr);
-}
-var parsers2;
-var RemoteMessageSummary;
-var init_parse_remote_messages = __esm({
-  "src/lib/parsers/parse-remote-messages.ts"() {
-    "use strict";
-    init_utils();
-    init_parse_remote_objects();
-    parsers2 = [
-      new RemoteLineParser(/^remote:\s*(.+)$/, (result, [text]) => {
-        result.remoteMessages.all.push(text.trim());
-        return false;
-      }),
-      ...remoteMessagesObjectParsers,
-      new RemoteLineParser(
-        [/create a (?:pull|merge) request/i, /\s(https?:\/\/\S+)$/],
-        (result, [pullRequestUrl]) => {
-          result.remoteMessages.pullRequestUrl = pullRequestUrl;
-        }
-      ),
-      new RemoteLineParser(
-        [/found (\d+) vulnerabilities.+\(([^)]+)\)/i, /\s(https?:\/\/\S+)$/],
-        (result, [count, summary, url]) => {
-          result.remoteMessages.vulnerabilities = {
-            count: asNumber(count),
-            summary,
-            url
-          };
-        }
-      )
-    ];
-    RemoteMessageSummary = class {
-      constructor() {
-        this.all = [];
-      }
-    };
-  }
-});
-function parsePullErrorResult(stdOut, stdErr) {
-  const pullError = parseStringResponse(new PullFailedSummary(), errorParsers, [stdOut, stdErr]);
-  return pullError.message && pullError;
-}
-var FILE_UPDATE_REGEX;
-var SUMMARY_REGEX;
-var ACTION_REGEX;
-var parsers3;
-var errorParsers;
-var parsePullDetail;
-var parsePullResult;
-var init_parse_pull = __esm({
-  "src/lib/parsers/parse-pull.ts"() {
-    "use strict";
-    init_PullSummary();
-    init_utils();
-    init_parse_remote_messages();
-    FILE_UPDATE_REGEX = /^\s*(.+?)\s+\|\s+\d+\s*(\+*)(-*)/;
-    SUMMARY_REGEX = /(\d+)\D+((\d+)\D+\(\+\))?(\D+(\d+)\D+\(-\))?/;
-    ACTION_REGEX = /^(create|delete) mode \d+ (.+)/;
-    parsers3 = [
-      new LineParser(FILE_UPDATE_REGEX, (result, [file, insertions, deletions]) => {
-        result.files.push(file);
-        if (insertions) {
-          result.insertions[file] = insertions.length;
-        }
-        if (deletions) {
-          result.deletions[file] = deletions.length;
-        }
-      }),
-      new LineParser(SUMMARY_REGEX, (result, [changes, , insertions, , deletions]) => {
-        if (insertions !== void 0 || deletions !== void 0) {
-          result.summary.changes = +changes || 0;
-          result.summary.insertions = +insertions || 0;
-          result.summary.deletions = +deletions || 0;
-          return true;
-        }
-        return false;
-      }),
-      new LineParser(ACTION_REGEX, (result, [action, file]) => {
-        append(result.files, file);
-        append(action === "create" ? result.created : result.deleted, file);
-      })
-    ];
-    errorParsers = [
-      new LineParser(/^from\s(.+)$/i, (result, [remote]) => void (result.remote = remote)),
-      new LineParser(/^fatal:\s(.+)$/, (result, [message]) => void (result.message = message)),
-      new LineParser(
-        /([a-z0-9]+)\.\.([a-z0-9]+)\s+(\S+)\s+->\s+(\S+)$/,
-        (result, [hashLocal, hashRemote, branchLocal, branchRemote]) => {
-          result.branch.local = branchLocal;
-          result.hash.local = hashLocal;
-          result.branch.remote = branchRemote;
-          result.hash.remote = hashRemote;
-        }
-      )
-    ];
-    parsePullDetail = (stdOut, stdErr) => {
-      return parseStringResponse(new PullSummary(), parsers3, [stdOut, stdErr]);
-    };
-    parsePullResult = (stdOut, stdErr) => {
-      return Object.assign(
-        new PullSummary(),
-        parsePullDetail(stdOut, stdErr),
-        parseRemoteMessages(stdOut, stdErr)
-      );
-    };
-  }
-});
-var parsers4;
-var parseMergeResult;
-var parseMergeDetail;
-var init_parse_merge = __esm({
-  "src/lib/parsers/parse-merge.ts"() {
-    "use strict";
-    init_MergeSummary();
-    init_utils();
-    init_parse_pull();
-    parsers4 = [
-      new LineParser(/^Auto-merging\s+(.+)$/, (summary, [autoMerge]) => {
-        summary.merges.push(autoMerge);
-      }),
-      new LineParser(/^CONFLICT\s+\((.+)\): Merge conflict in (.+)$/, (summary, [reason, file]) => {
-        summary.conflicts.push(new MergeSummaryConflict(reason, file));
-      }),
-      new LineParser(
-        /^CONFLICT\s+\((.+\/delete)\): (.+) deleted in (.+) and/,
-        (summary, [reason, file, deleteRef]) => {
-          summary.conflicts.push(new MergeSummaryConflict(reason, file, { deleteRef }));
-        }
-      ),
-      new LineParser(/^CONFLICT\s+\((.+)\):/, (summary, [reason]) => {
-        summary.conflicts.push(new MergeSummaryConflict(reason, null));
-      }),
-      new LineParser(/^Automatic merge failed;\s+(.+)$/, (summary, [result]) => {
-        summary.result = result;
-      })
-    ];
-    parseMergeResult = (stdOut, stdErr) => {
-      return Object.assign(parseMergeDetail(stdOut, stdErr), parsePullResult(stdOut, stdErr));
-    };
-    parseMergeDetail = (stdOut) => {
-      return parseStringResponse(new MergeSummaryDetail(), parsers4, stdOut);
-    };
-  }
-});
-function mergeTask(customArgs) {
-  if (!customArgs.length) {
-    return configurationErrorTask("Git.merge requires at least one option");
-  }
-  return {
-    commands: ["merge", ...customArgs],
-    format: "utf-8",
-    parser(stdOut, stdErr) {
-      const merge2 = parseMergeResult(stdOut, stdErr);
-      if (merge2.failed) {
-        throw new GitResponseError(merge2);
-      }
-      return merge2;
+var yr = [
+  new x2(
+    /^remote:\s*(enumerating|counting|compressing) objects: (\d+),/i,
+    (t2, [e, n]) => {
+      const r2 = e.toLowerCase(), s = tt(t2.remoteMessages);
+      Object.assign(s, { [r2]: p(n) });
     }
-  };
-}
-var init_merge = __esm({
-  "src/lib/tasks/merge.ts"() {
-    "use strict";
-    init_git_response_error();
-    init_parse_merge();
-    init_task();
-  }
-});
-function pushResultPushedItem(local, remote, status) {
-  const deleted = status.includes("deleted");
-  const tag = status.includes("tag") || /^refs\/tags/.test(local);
-  const alreadyUpdated = !status.includes("new");
-  return {
-    deleted,
-    tag,
-    branch: !tag,
-    new: !alreadyUpdated,
-    alreadyUpdated,
-    local,
-    remote
-  };
-}
-var parsers5;
-var parsePushResult;
-var parsePushDetail;
-var init_parse_push = __esm({
-  "src/lib/parsers/parse-push.ts"() {
-    "use strict";
-    init_utils();
-    init_parse_remote_messages();
-    parsers5 = [
-      new LineParser(/^Pushing to (.+)$/, (result, [repo]) => {
-        result.repo = repo;
-      }),
-      new LineParser(/^updating local tracking ref '(.+)'/, (result, [local]) => {
-        result.ref = {
-          ...result.ref || {},
-          local
-        };
-      }),
-      new LineParser(/^[=*-]\s+([^:]+):(\S+)\s+\[(.+)]$/, (result, [local, remote, type]) => {
-        result.pushed.push(pushResultPushedItem(local, remote, type));
-      }),
-      new LineParser(
-        /^Branch '([^']+)' set up to track remote branch '([^']+)' from '([^']+)'/,
-        (result, [local, remote, remoteName]) => {
-          result.branch = {
-            ...result.branch || {},
-            local,
-            remote,
-            remoteName
-          };
-        }
-      ),
-      new LineParser(
-        /^([^:]+):(\S+)\s+([a-z0-9]+)\.\.([a-z0-9]+)$/,
-        (result, [local, remote, from, to]) => {
-          result.update = {
-            head: {
-              local,
-              remote
-            },
-            hash: {
-              from,
-              to
-            }
-          };
-        }
-      )
-    ];
-    parsePushResult = (stdOut, stdErr) => {
-      const pushDetail = parsePushDetail(stdOut, stdErr);
-      const responseDetail = parseRemoteMessages(stdOut, stdErr);
-      return {
-        ...pushDetail,
-        ...responseDetail
+  ),
+  new x2(
+    /^remote:\s*(enumerating|counting|compressing) objects: \d+% \(\d+\/(\d+)\),/i,
+    (t2, [e, n]) => {
+      const r2 = e.toLowerCase(), s = tt(t2.remoteMessages);
+      Object.assign(s, { [r2]: p(n) });
+    }
+  ),
+  new x2(
+    /total ([^,]+), reused ([^,]+), pack-reused (\d+)/i,
+    (t2, [e, n, r2]) => {
+      const s = tt(t2.remoteMessages);
+      s.total = Ct(e), s.reused = Ct(n), s.packReused = p(r2);
+    }
+  )
+];
+var wr = [
+  new x2(/^remote:\s*(.+)$/, (t2, [e]) => (t2.remoteMessages.all.push(e.trim()), false)),
+  ...yr,
+  new x2(
+    [/create a (?:pull|merge) request/i, /\s(https?:\/\/\S+)$/],
+    (t2, [e]) => {
+      t2.remoteMessages.pullRequestUrl = e;
+    }
+  ),
+  new x2(
+    [/found (\d+) vulnerabilities.+\(([^)]+)\)/i, /\s(https?:\/\/\S+)$/],
+    (t2, [e, n, r2]) => {
+      t2.remoteMessages.vulnerabilities = {
+        count: p(e),
+        summary: n,
+        url: r2
       };
-    };
-    parsePushDetail = (stdOut, stdErr) => {
-      return parseStringResponse({ pushed: [] }, parsers5, [stdOut, stdErr]);
-    };
-  }
-});
-var push_exports = {};
-__export2(push_exports, {
-  pushTagsTask: () => pushTagsTask,
-  pushTask: () => pushTask
-});
-function pushTagsTask(ref = {}, customArgs) {
-  append(customArgs, "--tags");
-  return pushTask(ref, customArgs);
+    }
+  )
+];
+function ae(t2, e) {
+  return E2({ remoteMessages: new br() }, wr, e);
 }
-function pushTask(ref = {}, customArgs) {
-  const commands = ["push", ...customArgs];
-  if (ref.branch) {
-    commands.splice(1, 0, ref.branch);
+var br = class {
+  constructor() {
+    this.all = [];
   }
-  if (ref.remote) {
-    commands.splice(1, 0, ref.remote);
-  }
-  remove(commands, "-v");
-  append(commands, "--verbose");
-  append(commands, "--porcelain");
-  return {
-    commands,
+};
+var Tr = /^\s*(.+?)\s+\|\s+\d+\s*(\+*)(-*)/;
+var kr = /(\d+)\D+((\d+)\D+\(\+\))?(\D+(\d+)\D+\(-\))?/;
+var _r = /^(create|delete) mode \d+ (.+)/;
+var vr = [
+  new l2(Tr, (t2, [e, n, r2]) => {
+    t2.files.push(e), n && (t2.insertions[e] = n.length), r2 && (t2.deletions[e] = r2.length);
+  }),
+  new l2(kr, (t2, [e, , n, , r2]) => n !== void 0 || r2 !== void 0 ? (t2.summary.changes = +e || 0, t2.summary.insertions = +n || 0, t2.summary.deletions = +r2 || 0, true) : false),
+  new l2(_r, (t2, [e, n]) => {
+    S2(t2.files, n), S2(e === "create" ? t2.created : t2.deleted, n);
+  })
+];
+var Er = [
+  new l2(/^from\s(.+)$/i, (t2, [e]) => {
+    t2.remote = e;
+  }),
+  new l2(/^fatal:\s(.+)$/, (t2, [e]) => {
+    t2.message = e;
+  }),
+  new l2(
+    /([a-z0-9]+)\.\.([a-z0-9]+)\s+(\S+)\s+->\s+(\S+)$/,
+    (t2, [e, n, r2, s]) => {
+      t2.branch.local = r2, t2.hash.local = e, t2.branch.remote = s, t2.hash.remote = n;
+    }
+  )
+];
+var Sr = (t2, e) => E2(new ie(), vr, [t2, e]);
+var ue = (t2, e) => Object.assign(
+  new ie(),
+  Sr(t2, e),
+  ae(t2, e)
+);
+function Rr(t2, e) {
+  const n = E2(new gr(), Er, [t2, e]);
+  return n.message && n;
+}
+var Or = [
+  new l2(/^Auto-merging\s+(.+)$/, (t2, [e]) => {
+    t2.merges.push(e);
+  }),
+  new l2(/^CONFLICT\s+\((.+)\): Merge conflict in (.+)$/, (t2, [e, n]) => {
+    t2.conflicts.push(new Z2(e, n));
+  }),
+  new l2(
+    /^CONFLICT\s+\((.+\/delete)\): (.+) deleted in (.+) and/,
+    (t2, [e, n, r2]) => {
+      t2.conflicts.push(new Z2(e, n, { deleteRef: r2 }));
+    }
+  ),
+  new l2(/^CONFLICT\s+\((.+)\):/, (t2, [e]) => {
+    t2.conflicts.push(new Z2(e, null));
+  }),
+  new l2(/^Automatic merge failed;\s+(.+)$/, (t2, [e]) => {
+    t2.result = e;
+  })
+];
+var Cr = (t2, e) => Object.assign(Ar(t2), ue(t2, e));
+var Ar = (t2) => E2(new dr(), Or, t2);
+function At(t2) {
+  return t2.length ? {
+    commands: ["merge", ...t2],
     format: "utf-8",
-    parser: parsePushResult
+    parser(e, n) {
+      const r2 = Cr(e, n);
+      if (r2.failed)
+        throw new at(r2);
+      return r2;
+    }
+  } : b2("Git.merge requires at least one option");
+}
+function xr(t2, e, n) {
+  const r2 = n.includes("deleted"), s = n.includes("tag") || /^refs\/tags/.test(t2), o2 = !n.includes("new");
+  return {
+    deleted: r2,
+    tag: s,
+    branch: !s,
+    new: !o2,
+    alreadyUpdated: o2,
+    local: t2,
+    remote: e
   };
 }
-var init_push = __esm({
-  "src/lib/tasks/push.ts"() {
-    "use strict";
-    init_parse_push();
-    init_utils();
-  }
-});
-function show_default() {
+var Nr = [
+  new l2(/^Pushing to (.+)$/, (t2, [e]) => {
+    t2.repo = e;
+  }),
+  new l2(/^updating local tracking ref '(.+)'/, (t2, [e]) => {
+    t2.ref = {
+      ...t2.ref || {},
+      local: e
+    };
+  }),
+  new l2(/^[=*-]\s+([^:]+):(\S+)\s+\[(.+)]$/, (t2, [e, n, r2]) => {
+    t2.pushed.push(xr(e, n, r2));
+  }),
+  new l2(
+    /^Branch '([^']+)' set up to track remote branch '([^']+)' from '([^']+)'/,
+    (t2, [e, n, r2]) => {
+      t2.branch = {
+        ...t2.branch || {},
+        local: e,
+        remote: n,
+        remoteName: r2
+      };
+    }
+  ),
+  new l2(
+    /^([^:]+):(\S+)\s+([a-z0-9]+)\.\.([a-z0-9]+)$/,
+    (t2, [e, n, r2, s]) => {
+      t2.update = {
+        head: {
+          local: e,
+          remote: n
+        },
+        hash: {
+          from: r2,
+          to: s
+        }
+      };
+    }
+  )
+];
+var $r = (t2, e) => {
+  const n = Pr(t2, e), r2 = ae(t2, e);
+  return {
+    ...n,
+    ...r2
+  };
+};
+var Pr = (t2, e) => E2({ pushed: [] }, Nr, [t2, e]);
+function Mr(t2 = {}, e) {
+  return S2(e, "--tags"), ce(t2, e);
+}
+function ce(t2 = {}, e) {
+  const n = ["push", ...e];
+  return t2.branch && n.splice(1, 0, t2.branch), t2.remote && n.splice(1, 0, t2.remote), ct(n, "-v"), S2(n, "--verbose"), S2(n, "--porcelain"), {
+    commands: n,
+    format: "utf-8",
+    parser: $r
+  };
+}
+function Dr() {
   return {
     showBuffer() {
-      const commands = ["show", ...getTrailingOptions(arguments, 1)];
-      if (!commands.includes("--binary")) {
-        commands.splice(1, 0, "--binary");
-      }
-      return this._runTask(
-        straightThroughBufferTask(commands),
-        trailingFunctionArgument(arguments)
+      const t2 = ["show", ...h2(arguments, 1)];
+      return t2.includes("--binary") || t2.splice(1, 0, "--binary"), this._runTask(
+        Gt(t2),
+        u(arguments)
       );
     },
     show() {
-      const commands = ["show", ...getTrailingOptions(arguments, 1)];
+      const t2 = ["show", ...h2(arguments, 1)];
       return this._runTask(
-        straightThroughStringTask(commands),
-        trailingFunctionArgument(arguments)
+        g(t2),
+        u(arguments)
       );
     }
   };
 }
-var init_show = __esm({
-  "src/lib/tasks/show.ts"() {
-    "use strict";
-    init_utils();
-    init_task();
+var Lr = /^(.+)\0(.+)$/;
+var jr = class {
+  constructor(e, n, r2) {
+    if (this.path = e, this.index = n, this.working_dir = r2, n === "R" || r2 === "R") {
+      const s = Lr.exec(e) || [null, e, e];
+      this.from = s[2] || "", this.path = s[1] || "";
+    }
   }
-});
-var fromPathRegex;
-var FileStatusSummary;
-var init_FileStatusSummary = __esm({
-  "src/lib/responses/FileStatusSummary.ts"() {
-    "use strict";
-    fromPathRegex = /^(.+)\0(.+)$/;
-    FileStatusSummary = class {
-      constructor(path3, index, working_dir) {
-        this.path = path3;
-        this.index = index;
-        this.working_dir = working_dir;
-        if (index === "R" || working_dir === "R") {
-          const detail = fromPathRegex.exec(path3) || [null, path3, path3];
-          this.from = detail[2] || "";
-          this.path = detail[1] || "";
-        }
-      }
-    };
+};
+var Br = class {
+  constructor() {
+    this.not_added = [], this.conflicted = [], this.created = [], this.deleted = [], this.ignored = void 0, this.modified = [], this.renamed = [], this.files = [], this.staged = [], this.ahead = 0, this.behind = 0, this.current = null, this.tracking = null, this.detached = false, this.isClean = () => !this.files.length;
   }
-});
-function renamedFile(line) {
-  const [to, from] = line.split(NULL);
+};
+function xt(t2) {
+  const [e, n] = t2.split(I2);
   return {
-    from: from || to,
-    to
+    from: n || e,
+    to: e
   };
 }
-function parser3(indexX, indexY, handler) {
-  return [`${indexX}${indexY}`, handler];
+function _2(t2, e, n) {
+  return [`${t2}${e}`, n];
 }
-function conflicts(indexX, ...indexY) {
-  return indexY.map((y2) => parser3(indexX, y2, (result, file) => result.conflicted.push(file)));
+function et(t2, ...e) {
+  return e.map((n) => _2(t2, n, (r2, s) => r2.conflicted.push(s)));
 }
-function splitLine(result, lineStr) {
-  const trimmed2 = lineStr.trim();
+var Ir = new Map([
+  _2(
+    " ",
+    "A",
+    (t2, e) => t2.created.push(e)
+  ),
+  _2(
+    " ",
+    "D",
+    (t2, e) => t2.deleted.push(e)
+  ),
+  _2(
+    " ",
+    "M",
+    (t2, e) => t2.modified.push(e)
+  ),
+  _2("A", " ", (t2, e) => {
+    t2.created.push(e), t2.staged.push(e);
+  }),
+  _2("A", "M", (t2, e) => {
+    t2.created.push(e), t2.staged.push(e), t2.modified.push(e);
+  }),
+  _2("D", " ", (t2, e) => {
+    t2.deleted.push(e), t2.staged.push(e);
+  }),
+  _2("M", " ", (t2, e) => {
+    t2.modified.push(e), t2.staged.push(e);
+  }),
+  _2("M", "M", (t2, e) => {
+    t2.modified.push(e), t2.staged.push(e);
+  }),
+  _2("R", " ", (t2, e) => {
+    t2.renamed.push(xt(e));
+  }),
+  _2("R", "M", (t2, e) => {
+    const n = xt(e);
+    t2.renamed.push(n), t2.modified.push(n.to);
+  }),
+  _2("!", "!", (t2, e) => {
+    (t2.ignored = t2.ignored || []).push(e);
+  }),
+  _2(
+    "?",
+    "?",
+    (t2, e) => t2.not_added.push(e)
+  ),
+  ...et(
+    "A",
+    "A",
+    "U"
+    /* UNMERGED */
+  ),
+  ...et(
+    "D",
+    "D",
+    "U"
+    /* UNMERGED */
+  ),
+  ...et(
+    "U",
+    "A",
+    "D",
+    "U"
+    /* UNMERGED */
+  ),
+  [
+    "##",
+    (t2, e) => {
+      const n = /ahead (\d+)/, r2 = /behind (\d+)/, s = /^(.+?(?=(?:\.{3}|\s|$)))/, o2 = /\.{3}(\S*)/, i = /\son\s(\S+?)(?=\.{3}|$)/;
+      let a = n.exec(e);
+      t2.ahead = a && +a[1] || 0, a = r2.exec(e), t2.behind = a && +a[1] || 0, a = s.exec(e), t2.current = d(a?.[1], m, null), a = o2.exec(e), t2.tracking = d(a?.[1], m, null), a = i.exec(e), a && (t2.current = d(a?.[1], m, t2.current)), t2.detached = /\(no branch\)/.test(e);
+    }
+  ]
+]);
+var Ur = function(t2) {
+  const e = t2.split(I2), n = new Br();
+  for (let r2 = 0, s = e.length; r2 < s; ) {
+    let o2 = e[r2++].trim();
+    o2 && (o2.charAt(0) === "R" && (o2 += I2 + (e[r2++] || "")), Fr(n, o2));
+  }
+  return n;
+};
+function Fr(t2, e) {
+  const n = e.trim();
   switch (" ") {
-    case trimmed2.charAt(2):
-      return data(trimmed2.charAt(0), trimmed2.charAt(1), trimmed2.slice(3));
-    case trimmed2.charAt(1):
-      return data(" ", trimmed2.charAt(0), trimmed2.slice(2));
+    case n.charAt(2):
+      return r2(n.charAt(0), n.charAt(1), n.slice(3));
+    case n.charAt(1):
+      return r2(" ", n.charAt(0), n.slice(2));
     default:
       return;
   }
-  function data(index, workingDir, path3) {
-    const raw = `${index}${workingDir}`;
-    const handler = parsers6.get(raw);
-    if (handler) {
-      handler(result, path3);
-    }
-    if (raw !== "##" && raw !== "!!") {
-      result.files.push(new FileStatusSummary(path3, index, workingDir));
-    }
+  function r2(s, o2, i) {
+    const a = `${s}${o2}`, c3 = Ir.get(a);
+    c3 && c3(t2, i), a !== "##" && a !== "!!" && t2.files.push(new jr(i, s, o2));
   }
 }
-var StatusSummary;
-var parsers6;
-var parseStatusSummary;
-var init_StatusSummary = __esm({
-  "src/lib/responses/StatusSummary.ts"() {
-    "use strict";
-    init_utils();
-    init_FileStatusSummary();
-    StatusSummary = class {
-      constructor() {
-        this.not_added = [];
-        this.conflicted = [];
-        this.created = [];
-        this.deleted = [];
-        this.ignored = void 0;
-        this.modified = [];
-        this.renamed = [];
-        this.files = [];
-        this.staged = [];
-        this.ahead = 0;
-        this.behind = 0;
-        this.current = null;
-        this.tracking = null;
-        this.detached = false;
-        this.isClean = () => {
-          return !this.files.length;
-        };
-      }
-    };
-    parsers6 = new Map([
-      parser3(
-        " ",
-        "A",
-        (result, file) => result.created.push(file)
-      ),
-      parser3(
-        " ",
-        "D",
-        (result, file) => result.deleted.push(file)
-      ),
-      parser3(
-        " ",
-        "M",
-        (result, file) => result.modified.push(file)
-      ),
-      parser3("A", " ", (result, file) => {
-        result.created.push(file);
-        result.staged.push(file);
-      }),
-      parser3("A", "M", (result, file) => {
-        result.created.push(file);
-        result.staged.push(file);
-        result.modified.push(file);
-      }),
-      parser3("D", " ", (result, file) => {
-        result.deleted.push(file);
-        result.staged.push(file);
-      }),
-      parser3("M", " ", (result, file) => {
-        result.modified.push(file);
-        result.staged.push(file);
-      }),
-      parser3("M", "M", (result, file) => {
-        result.modified.push(file);
-        result.staged.push(file);
-      }),
-      parser3("R", " ", (result, file) => {
-        result.renamed.push(renamedFile(file));
-      }),
-      parser3("R", "M", (result, file) => {
-        const renamed = renamedFile(file);
-        result.renamed.push(renamed);
-        result.modified.push(renamed.to);
-      }),
-      parser3("!", "!", (_result, _file2) => {
-        (_result.ignored = _result.ignored || []).push(_file2);
-      }),
-      parser3(
-        "?",
-        "?",
-        (result, file) => result.not_added.push(file)
-      ),
-      ...conflicts(
-        "A",
-        "A",
-        "U"
-        /* UNMERGED */
-      ),
-      ...conflicts(
-        "D",
-        "D",
-        "U"
-        /* UNMERGED */
-      ),
-      ...conflicts(
-        "U",
-        "A",
-        "D",
-        "U"
-        /* UNMERGED */
-      ),
-      [
-        "##",
-        (result, line) => {
-          const aheadReg = /ahead (\d+)/;
-          const behindReg = /behind (\d+)/;
-          const currentReg = /^(.+?(?=(?:\.{3}|\s|$)))/;
-          const trackingReg = /\.{3}(\S*)/;
-          const onEmptyBranchReg = /\son\s(\S+?)(?=\.{3}|$)/;
-          let regexResult = aheadReg.exec(line);
-          result.ahead = regexResult && +regexResult[1] || 0;
-          regexResult = behindReg.exec(line);
-          result.behind = regexResult && +regexResult[1] || 0;
-          regexResult = currentReg.exec(line);
-          result.current = filterType(regexResult?.[1], filterString, null);
-          regexResult = trackingReg.exec(line);
-          result.tracking = filterType(regexResult?.[1], filterString, null);
-          regexResult = onEmptyBranchReg.exec(line);
-          if (regexResult) {
-            result.current = filterType(regexResult?.[1], filterString, result.current);
-          }
-          result.detached = /\(no branch\)/.test(line);
-        }
-      ]
-    ]);
-    parseStatusSummary = function(text) {
-      const lines = text.split(NULL);
-      const status = new StatusSummary();
-      for (let i2 = 0, l = lines.length; i2 < l; ) {
-        let line = lines[i2++].trim();
-        if (!line) {
-          continue;
-        }
-        if (line.charAt(0) === "R") {
-          line += NULL + (lines[i2++] || "");
-        }
-        splitLine(status, line);
-      }
-      return status;
-    };
-  }
-});
-function statusTask(customArgs) {
-  const commands = [
-    "status",
-    "--porcelain",
-    "-b",
-    "-u",
-    "--null",
-    ...customArgs.filter((arg) => !ignoredOptions.includes(arg))
-  ];
+var Gr = ["--null", "-z"];
+function zr(t2) {
   return {
     format: "utf-8",
-    commands,
-    parser(text) {
-      return parseStatusSummary(text);
+    commands: [
+      "status",
+      "--porcelain",
+      "-b",
+      "-u",
+      "--null",
+      ...t2.filter((n) => !Gr.includes(n))
+    ],
+    parser(n) {
+      return Ur(n);
     }
   };
 }
-var ignoredOptions;
-var init_status = __esm({
-  "src/lib/tasks/status.ts"() {
-    "use strict";
-    init_StatusSummary();
-    ignoredOptions = ["--null", "-z"];
-  }
-});
-function versionResponse(major = 0, minor = 0, patch = 0, agent = "", installed = true) {
+var fe = "installed=false";
+function q2(t2 = 0, e = 0, n = 0, r2 = "", s = true) {
   return Object.defineProperty(
     {
-      major,
-      minor,
-      patch,
-      agent,
-      installed
+      major: t2,
+      minor: e,
+      patch: n,
+      agent: r2,
+      installed: s
     },
     "toString",
     {
@@ -25979,1673 +24991,1162 @@ function versionResponse(major = 0, minor = 0, patch = 0, agent = "", installed 
     }
   );
 }
-function notInstalledResponse() {
-  return versionResponse(0, 0, 0, "", false);
+function qr() {
+  return q2(0, 0, 0, "", false);
 }
-function version_default() {
+function Wr() {
   return {
     version() {
       return this._runTask({
         commands: ["--version"],
         format: "utf-8",
-        parser: versionParser,
-        onError(result, error2, done, fail) {
-          if (result.exitCode === -2) {
-            return done(Buffer.from(NOT_INSTALLED));
-          }
-          fail(error2);
+        parser: Kr,
+        onError(t2, e, n, r2) {
+          if (t2.exitCode === V2.NOT_FOUND)
+            return n(Buffer.from(fe));
+          r2(e);
         }
       });
     }
   };
 }
-function versionParser(stdOut) {
-  if (stdOut === NOT_INSTALLED) {
-    return notInstalledResponse();
-  }
-  return parseStringResponse(versionResponse(0, 0, 0, stdOut), parsers7, stdOut);
-}
-var NOT_INSTALLED;
-var parsers7;
-var init_version = __esm({
-  "src/lib/tasks/version.ts"() {
-    "use strict";
-    init_utils();
-    NOT_INSTALLED = "installed=false";
-    parsers7 = [
-      new LineParser(
-        /version (\d+)\.(\d+)\.(\d+)(?:\s*\((.+)\))?/,
-        (result, [major, minor, patch, agent = ""]) => {
-          Object.assign(
-            result,
-            versionResponse(asNumber(major), asNumber(minor), asNumber(patch), agent)
-          );
-        }
-      ),
-      new LineParser(
-        /version (\d+)\.(\d+)\.(\D+)(.+)?$/,
-        (result, [major, minor, patch, agent = ""]) => {
-          Object.assign(result, versionResponse(asNumber(major), asNumber(minor), patch, agent));
-        }
-      )
-    ];
-  }
-});
-function createCloneTask(api, task, repoPath, ...args) {
-  if (!filterString(repoPath)) {
-    return configurationErrorTask(`git.${api}() requires a string 'repoPath'`);
-  }
-  return task(repoPath, filterType(args[0], filterString), getTrailingOptions(arguments));
-}
-function clone_default() {
-  return {
-    clone(repo, ...rest) {
-      return this._runTask(
-        createCloneTask("clone", cloneTask, filterType(repo, filterString), ...rest),
-        trailingFunctionArgument(arguments)
-      );
-    },
-    mirror(repo, ...rest) {
-      return this._runTask(
-        createCloneTask("mirror", cloneMirrorTask, filterType(repo, filterString), ...rest),
-        trailingFunctionArgument(arguments)
+var Hr = [
+  new l2(
+    /version (\d+)\.(\d+)\.(\d+)(?:\s*\((.+)\))?/,
+    (t2, [e, n, r2, s = ""]) => {
+      Object.assign(
+        t2,
+        q2(p(e), p(n), p(r2), s)
       );
     }
-  };
+  ),
+  new l2(
+    /version (\d+)\.(\d+)\.(\D+)(.+)?$/,
+    (t2, [e, n, r2, s = ""]) => {
+      Object.assign(t2, q2(p(e), p(n), r2, s));
+    }
+  )
+];
+function Kr(t2) {
+  return t2 === fe ? qr() : E2(q2(0, 0, 0, t2), Hr, t2);
 }
-var cloneTask;
-var cloneMirrorTask;
-var init_clone = __esm({
-  "src/lib/tasks/clone.ts"() {
-    "use strict";
-    init_task();
-    init_utils();
-    cloneTask = (repo, directory, customArgs) => {
-      const commands = ["clone", ...customArgs];
-      filterString(repo) && commands.push(c(repo));
-      filterString(directory) && commands.push(c(directory));
-      return straightThroughStringTask(commands);
-    };
-    cloneMirrorTask = (repo, directory, customArgs) => {
-      append(customArgs, "--mirror");
-      return cloneTask(repo, directory, customArgs);
-    };
+var le = class {
+  constructor(e) {
+    this._executor = e;
   }
-});
-var simple_git_api_exports = {};
-__export2(simple_git_api_exports, {
-  SimpleGitApi: () => SimpleGitApi
-});
-var SimpleGitApi;
-var init_simple_git_api = __esm({
-  "src/lib/simple-git-api.ts"() {
-    "use strict";
-    init_task_callback();
-    init_change_working_directory();
-    init_checkout();
-    init_count_objects();
-    init_commit();
-    init_config();
-    init_first_commit();
-    init_grep();
-    init_hash_object();
-    init_init();
-    init_log();
-    init_merge();
-    init_push();
-    init_show();
-    init_status();
-    init_task();
-    init_version();
-    init_utils();
-    init_clone();
-    SimpleGitApi = class {
-      constructor(_executor) {
-        this._executor = _executor;
-      }
-      _runTask(task, then) {
-        const chain = this._executor.chain();
-        const promise = chain.push(task);
-        if (then) {
-          taskCallback(task, promise, then);
-        }
-        return Object.create(this, {
-          then: { value: promise.then.bind(promise) },
-          catch: { value: promise.catch.bind(promise) },
-          _executor: { value: chain }
-        });
-      }
-      add(files) {
-        return this._runTask(
-          straightThroughStringTask(["add", ...asArray(files)]),
-          trailingFunctionArgument(arguments)
-        );
-      }
-      cwd(directory) {
-        const next = trailingFunctionArgument(arguments);
-        if (typeof directory === "string") {
-          return this._runTask(changeWorkingDirectoryTask(directory, this._executor), next);
-        }
-        if (typeof directory?.path === "string") {
-          return this._runTask(
-            changeWorkingDirectoryTask(
-              directory.path,
-              directory.root && this._executor || void 0
-            ),
-            next
-          );
-        }
-        return this._runTask(
-          configurationErrorTask("Git.cwd: workingDirectory must be supplied as a string"),
-          next
-        );
-      }
-      hashObject(path3, write) {
-        return this._runTask(
-          hashObjectTask(path3, write === true),
-          trailingFunctionArgument(arguments)
-        );
-      }
-      init(bare) {
-        return this._runTask(
-          initTask(bare === true, this._executor.cwd, getTrailingOptions(arguments)),
-          trailingFunctionArgument(arguments)
-        );
-      }
-      merge() {
-        return this._runTask(
-          mergeTask(getTrailingOptions(arguments)),
-          trailingFunctionArgument(arguments)
-        );
-      }
-      mergeFromTo(remote, branch) {
-        if (!(filterString(remote) && filterString(branch))) {
-          return this._runTask(
-            configurationErrorTask(
-              `Git.mergeFromTo requires that the 'remote' and 'branch' arguments are supplied as strings`
-            )
-          );
-        }
-        return this._runTask(
-          mergeTask([remote, branch, ...getTrailingOptions(arguments)]),
-          trailingFunctionArgument(arguments, false)
-        );
-      }
-      outputHandler(handler) {
-        this._executor.outputHandler = handler;
-        return this;
-      }
-      push() {
-        const task = pushTask(
-          {
-            remote: filterType(arguments[0], filterString),
-            branch: filterType(arguments[1], filterString)
-          },
-          getTrailingOptions(arguments)
-        );
-        return this._runTask(task, trailingFunctionArgument(arguments));
-      }
-      stash() {
-        return this._runTask(
-          straightThroughStringTask(["stash", ...getTrailingOptions(arguments)]),
-          trailingFunctionArgument(arguments)
-        );
-      }
-      status() {
-        return this._runTask(
-          statusTask(getTrailingOptions(arguments)),
-          trailingFunctionArgument(arguments)
-        );
-      }
-    };
-    Object.assign(
-      SimpleGitApi.prototype,
-      checkout_default(),
-      clone_default(),
-      commit_default(),
-      config_default(),
-      count_objects_default(),
-      first_commit_default(),
-      grep_default(),
-      log_default(),
-      show_default(),
-      version_default()
+  _runTask(e, n) {
+    const r2 = this._executor.chain(), s = r2.push(e);
+    return n && Ln(e, s, n), Object.create(this, {
+      then: { value: s.then.bind(s) },
+      catch: { value: s.catch.bind(s) },
+      _executor: { value: r2 }
+    });
+  }
+  add(e) {
+    return this._runTask(
+      g(["add", ...v(e)]),
+      u(arguments)
     );
   }
-});
-var scheduler_exports = {};
-__export2(scheduler_exports, {
-  Scheduler: () => Scheduler
-});
-var createScheduledTask;
-var Scheduler;
-var init_scheduler = __esm({
-  "src/lib/runners/scheduler.ts"() {
-    "use strict";
-    init_utils();
-    init_git_logger();
-    createScheduledTask = /* @__PURE__ */ (() => {
-      let id = 0;
-      return () => {
-        id++;
-        const { promise, done } = (0, import_promise_deferred.createDeferred)();
-        return {
-          promise,
-          done,
-          id
-        };
-      };
-    })();
-    Scheduler = class {
-      constructor(concurrency = 2) {
-        this.concurrency = concurrency;
-        this.logger = createLogger("", "scheduler");
-        this.pending = [];
-        this.running = [];
-        this.logger(`Constructed, concurrency=%s`, concurrency);
-      }
-      schedule() {
-        if (!this.pending.length || this.running.length >= this.concurrency) {
-          this.logger(
-            `Schedule attempt ignored, pending=%s running=%s concurrency=%s`,
-            this.pending.length,
-            this.running.length,
-            this.concurrency
-          );
-          return;
-        }
-        const task = append(this.running, this.pending.shift());
-        this.logger(`Attempting id=%s`, task.id);
-        task.done(() => {
-          this.logger(`Completing id=`, task.id);
-          remove(this.running, task);
-          this.schedule();
-        });
-      }
-      next() {
-        const { promise, id } = append(this.pending, createScheduledTask());
-        this.logger(`Scheduling id=%s`, id);
-        this.schedule();
-        return promise;
-      }
+  cwd(e) {
+    const n = u(arguments);
+    return typeof e == "string" ? this._runTask(St(e, this._executor), n) : typeof e?.path == "string" ? this._runTask(
+      St(
+        e.path,
+        e.root && this._executor || void 0
+      ),
+      n
+    ) : this._runTask(
+      b2("Git.cwd: workingDirectory must be supplied as a string"),
+      n
+    );
+  }
+  hashObject(e, n) {
+    return this._runTask(
+      Vn(e, n === true),
+      u(arguments)
+    );
+  }
+  init(e) {
+    return this._runTask(
+      Zn(e === true, this._executor.cwd, h2(arguments)),
+      u(arguments)
+    );
+  }
+  merge() {
+    return this._runTask(
+      At(h2(arguments)),
+      u(arguments)
+    );
+  }
+  mergeFromTo(e, n) {
+    return m(e) && m(n) ? this._runTask(
+      At([e, n, ...h2(arguments)]),
+      u(arguments, false)
+    ) : this._runTask(
+      b2(
+        "Git.mergeFromTo requires that the 'remote' and 'branch' arguments are supplied as strings"
+      )
+    );
+  }
+  outputHandler(e) {
+    return this._executor.outputHandler = e, this;
+  }
+  push() {
+    const e = ce(
+      {
+        remote: d(arguments[0], m),
+        branch: d(arguments[1], m)
+      },
+      h2(arguments)
+    );
+    return this._runTask(e, u(arguments));
+  }
+  stash() {
+    return this._runTask(
+      g(["stash", ...h2(arguments)]),
+      u(arguments)
+    );
+  }
+  status() {
+    return this._runTask(
+      zr(h2(arguments)),
+      u(arguments)
+    );
+  }
+};
+Object.assign(
+  le.prototype,
+  jn(),
+  In(),
+  zn(),
+  Tn(),
+  Hn(),
+  Kn(),
+  On(),
+  er(),
+  pr(),
+  Dr(),
+  Wr()
+);
+var Vr = /* @__PURE__ */ (() => {
+  let t2 = 0;
+  return () => {
+    t2++;
+    const { promise: e, done: n } = (0, import_promise_deferred.createDeferred)();
+    return {
+      promise: e,
+      done: n,
+      id: t2
+    };
+  };
+})();
+var Xr = class {
+  constructor(e = 2) {
+    this.concurrency = e, this.logger = $2("", "scheduler"), this.pending = [], this.running = [], this.logger("Constructed, concurrency=%s", e);
+  }
+  schedule() {
+    if (!this.pending.length || this.running.length >= this.concurrency) {
+      this.logger(
+        "Schedule attempt ignored, pending=%s running=%s concurrency=%s",
+        this.pending.length,
+        this.running.length,
+        this.concurrency
+      );
+      return;
+    }
+    const e = S2(this.running, this.pending.shift());
+    this.logger("Attempting id=%s", e.id), e.done(() => {
+      this.logger("Completing id=", e.id), ct(this.running, e), this.schedule();
+    });
+  }
+  next() {
+    const { promise: e, id: n } = S2(this.pending, Vr());
+    return this.logger("Scheduling id=%s", n), this.schedule(), e;
+  }
+};
+function Yr(t2, e) {
+  return g(["apply", ...e, ...t2]);
+}
+var he = /* @__PURE__ */ ((t2) => (t2.CURRENT = "*", t2.LINKED = "+", t2))(he || {});
+var Qr = class {
+  constructor() {
+    this.all = [], this.branches = {}, this.current = "", this.detached = false;
+  }
+  push(e, n, r2, s, o2) {
+    e === "*" && (this.detached = n, this.current = r2), this.all.push(r2), this.branches[r2] = {
+      current: e === "*",
+      linkedWorkTree: e === "+",
+      name: r2,
+      commit: s,
+      label: o2
     };
   }
+};
+var Jr = [
+  new l2(
+    /^([*+]\s)?\((?:HEAD )?detached (?:from|at) (\S+)\)\s+([a-z0-9]+)\s(.*)$/,
+    (t2, [e, n, r2, s]) => {
+      t2.push(Nt(e), true, n, r2, s);
+    }
+  ),
+  new l2(
+    /^([*+]\s)?(\S+)\s+([a-z0-9]+)\s?(.*)$/s,
+    (t2, [e, n, r2, s]) => {
+      t2.push(Nt(e), false, n, r2, s);
+    }
+  )
+];
+var Zr = new l2(/^(\S+)$/s, (t2, [e]) => {
+  t2.push(he.CURRENT, false, e, "", "");
 });
-var apply_patch_exports = {};
-__export2(apply_patch_exports, {
-  applyPatchTask: () => applyPatchTask
-});
-function applyPatchTask(patches, customArgs) {
-  return straightThroughStringTask(["apply", ...customArgs, ...patches]);
+function Nt(t2) {
+  return t2 ? t2.charAt(0) : "";
 }
-var init_apply_patch = __esm({
-  "src/lib/tasks/apply-patch.ts"() {
-    "use strict";
-    init_task();
+function me(t2, e = false) {
+  return E2(
+    new Qr(),
+    e ? [Zr] : Jr,
+    t2
+  );
+}
+var ts = class {
+  constructor() {
+    this.all = [], this.branches = {}, this.errors = [];
   }
-});
-function branchDeletionSuccess(branch, hash) {
+  get success() {
+    return !this.errors.length;
+  }
+};
+function es(t2, e) {
   return {
-    branch,
-    hash,
+    branch: t2,
+    hash: e,
     success: true
   };
 }
-function branchDeletionFailure(branch) {
+function ns(t2) {
   return {
-    branch,
+    branch: t2,
     hash: null,
     success: false
   };
 }
-var BranchDeletionBatch;
-var init_BranchDeleteSummary = __esm({
-  "src/lib/responses/BranchDeleteSummary.ts"() {
-    "use strict";
-    BranchDeletionBatch = class {
-      constructor() {
-        this.all = [];
-        this.branches = {};
-        this.errors = [];
-      }
-      get success() {
-        return !this.errors.length;
-      }
-    };
-  }
-});
-function hasBranchDeletionError(data, processExitCode) {
-  return processExitCode === 1 && deleteErrorRegex.test(data);
+var rs = /(\S+)\s+\(\S+\s([^)]+)\)/;
+var pe = /^error[^']+'([^']+)'/m;
+var ss = [
+  new l2(rs, (t2, [e, n]) => {
+    const r2 = es(e, n);
+    t2.all.push(r2), t2.branches[e] = r2;
+  }),
+  new l2(pe, (t2, [e]) => {
+    const n = ns(e);
+    t2.errors.push(n), t2.all.push(n), t2.branches[e] = n;
+  })
+];
+var gt = (t2, e) => E2(new ts(), ss, [t2, e]);
+function de(t2, e) {
+  return e === V2.ERROR && pe.test(t2);
 }
-var deleteSuccessRegex;
-var deleteErrorRegex;
-var parsers8;
-var parseBranchDeletions;
-var init_parse_branch_delete = __esm({
-  "src/lib/parsers/parse-branch-delete.ts"() {
-    "use strict";
-    init_BranchDeleteSummary();
-    init_utils();
-    deleteSuccessRegex = /(\S+)\s+\(\S+\s([^)]+)\)/;
-    deleteErrorRegex = /^error[^']+'([^']+)'/m;
-    parsers8 = [
-      new LineParser(deleteSuccessRegex, (result, [branch, hash]) => {
-        const deletion = branchDeletionSuccess(branch, hash);
-        result.all.push(deletion);
-        result.branches[branch] = deletion;
-      }),
-      new LineParser(deleteErrorRegex, (result, [branch]) => {
-        const deletion = branchDeletionFailure(branch);
-        result.errors.push(deletion);
-        result.all.push(deletion);
-        result.branches[branch] = deletion;
-      })
-    ];
-    parseBranchDeletions = (stdOut, stdErr) => {
-      return parseStringResponse(new BranchDeletionBatch(), parsers8, [stdOut, stdErr]);
-    };
-  }
-});
-var BranchSummaryResult;
-var init_BranchSummary = __esm({
-  "src/lib/responses/BranchSummary.ts"() {
-    "use strict";
-    BranchSummaryResult = class {
-      constructor() {
-        this.all = [];
-        this.branches = {};
-        this.current = "";
-        this.detached = false;
-      }
-      push(status, detached, name, commit, label) {
-        if (status === "*") {
-          this.detached = detached;
-          this.current = name;
-        }
-        this.all.push(name);
-        this.branches[name] = {
-          current: status === "*",
-          linkedWorkTree: status === "+",
-          name,
-          commit,
-          label
-        };
-      }
-    };
-  }
-});
-function branchStatus(input) {
-  return input ? input.charAt(0) : "";
+function os2(t2) {
+  const e = ["-d", "-D", "--delete"];
+  return t2.some((n) => e.includes(n));
 }
-function parseBranchSummary(stdOut, currentOnly = false) {
-  return parseStringResponse(
-    new BranchSummaryResult(),
-    currentOnly ? [currentBranchParser] : parsers9,
-    stdOut
-  );
-}
-var parsers9;
-var currentBranchParser;
-var init_parse_branch = __esm({
-  "src/lib/parsers/parse-branch.ts"() {
-    "use strict";
-    init_BranchSummary();
-    init_utils();
-    parsers9 = [
-      new LineParser(
-        /^([*+]\s)?\((?:HEAD )?detached (?:from|at) (\S+)\)\s+([a-z0-9]+)\s(.*)$/,
-        (result, [current, name, commit, label]) => {
-          result.push(branchStatus(current), true, name, commit, label);
-        }
-      ),
-      new LineParser(
-        /^([*+]\s)?(\S+)\s+([a-z0-9]+)\s?(.*)$/s,
-        (result, [current, name, commit, label]) => {
-          result.push(branchStatus(current), false, name, commit, label);
-        }
-      )
-    ];
-    currentBranchParser = new LineParser(/^(\S+)$/s, (result, [name]) => {
-      result.push("*", false, name, "", "");
-    });
-  }
-});
-var branch_exports = {};
-__export2(branch_exports, {
-  branchLocalTask: () => branchLocalTask,
-  branchTask: () => branchTask,
-  containsDeleteBranchCommand: () => containsDeleteBranchCommand,
-  deleteBranchTask: () => deleteBranchTask,
-  deleteBranchesTask: () => deleteBranchesTask
-});
-function containsDeleteBranchCommand(commands) {
-  const deleteCommands = ["-d", "-D", "--delete"];
-  return commands.some((command) => deleteCommands.includes(command));
-}
-function branchTask(customArgs) {
-  const isDelete = containsDeleteBranchCommand(customArgs);
-  const isCurrentOnly = customArgs.includes("--show-current");
-  const commands = ["branch", ...customArgs];
-  if (commands.length === 1) {
-    commands.push("-a");
-  }
-  if (!commands.includes("-v")) {
-    commands.splice(1, 0, "-v");
-  }
-  return {
+function is(t2) {
+  const e = os2(t2), n = t2.includes("--show-current"), r2 = ["branch", ...t2];
+  return r2.length === 1 && r2.push("-a"), r2.includes("-v") || r2.splice(1, 0, "-v"), {
     format: "utf-8",
-    commands,
-    parser(stdOut, stdErr) {
-      if (isDelete) {
-        return parseBranchDeletions(stdOut, stdErr).all[0];
-      }
-      return parseBranchSummary(stdOut, isCurrentOnly);
+    commands: r2,
+    parser(s, o2) {
+      return e ? gt(s, o2).all[0] : me(s, n);
     }
   };
 }
-function branchLocalTask() {
+function as() {
   return {
     format: "utf-8",
     commands: ["branch", "-v"],
-    parser(stdOut) {
-      return parseBranchSummary(stdOut);
+    parser(t2) {
+      return me(t2);
     }
   };
 }
-function deleteBranchesTask(branches, forceDelete = false) {
+function us(t2, e = false) {
   return {
     format: "utf-8",
-    commands: ["branch", "-v", forceDelete ? "-D" : "-d", ...branches],
-    parser(stdOut, stdErr) {
-      return parseBranchDeletions(stdOut, stdErr);
+    commands: ["branch", "-v", e ? "-D" : "-d", ...t2],
+    parser(n, r2) {
+      return gt(n, r2);
     },
-    onError({ exitCode, stdOut }, error2, done, fail) {
-      if (!hasBranchDeletionError(String(error2), exitCode)) {
-        return fail(error2);
-      }
-      done(stdOut);
+    onError({ exitCode: n, stdOut: r2 }, s, o2, i) {
+      if (!de(String(s), n))
+        return i(s);
+      o2(r2);
     }
   };
 }
-function deleteBranchTask(branch, forceDelete = false) {
-  const task = {
+function cs(t2, e = false) {
+  const n = {
     format: "utf-8",
-    commands: ["branch", "-v", forceDelete ? "-D" : "-d", branch],
-    parser(stdOut, stdErr) {
-      return parseBranchDeletions(stdOut, stdErr).branches[branch];
+    commands: ["branch", "-v", e ? "-D" : "-d", t2],
+    parser(r2, s) {
+      return gt(r2, s).branches[t2];
     },
-    onError({ exitCode, stdErr, stdOut }, error2, _2, fail) {
-      if (!hasBranchDeletionError(String(error2), exitCode)) {
-        return fail(error2);
-      }
-      throw new GitResponseError(
-        task.parser(bufferToString(stdOut), bufferToString(stdErr)),
-        String(error2)
+    onError({ exitCode: r2, stdErr: s, stdOut: o2 }, i, a, c3) {
+      if (!de(String(i), r2))
+        return c3(i);
+      throw new at(
+        n.parser(F2(o2), F2(s)),
+        String(i)
       );
     }
   };
-  return task;
+  return n;
 }
-var init_branch = __esm({
-  "src/lib/tasks/branch.ts"() {
-    "use strict";
-    init_git_response_error();
-    init_parse_branch_delete();
-    init_parse_branch();
-    init_utils();
-  }
-});
-function toPath(input) {
-  const path3 = input.trim().replace(/^["']|["']$/g, "");
-  return path3 && (0, import_node_path.normalize)(path3);
-}
-var parseCheckIgnore;
-var init_CheckIgnore = __esm({
-  "src/lib/responses/CheckIgnore.ts"() {
-    "use strict";
-    parseCheckIgnore = (text) => {
-      return text.split(/\n/g).map(toPath).filter(Boolean);
-    };
-  }
-});
-var check_ignore_exports = {};
-__export2(check_ignore_exports, {
-  checkIgnoreTask: () => checkIgnoreTask
-});
-function checkIgnoreTask(paths) {
+function fs2(t2) {
   return {
-    commands: ["check-ignore", ...paths],
+    commands: ["check-ignore", ...t2],
     format: "utf-8",
-    parser: parseCheckIgnore
+    parser: ls
   };
 }
-var init_check_ignore = __esm({
-  "src/lib/tasks/check-ignore.ts"() {
-    "use strict";
-    init_CheckIgnore();
-  }
-});
-function parseFetchResult(stdOut, stdErr) {
-  const result = {
-    raw: stdOut,
+function ls(t2) {
+  return t2.split(/\n/g).map(hs).filter(Boolean);
+}
+function hs(t2) {
+  const e = t2.trim().replace(/^["']|["']$/g, "");
+  return e && (0, import_node_path2.normalize)(e);
+}
+var ms = [
+  new l2(/From (.+)$/, (t2, [e]) => {
+    t2.remote = e;
+  }),
+  new l2(/\* \[new branch]\s+(\S+)\s*-> (.+)$/, (t2, [e, n]) => {
+    t2.branches.push({
+      name: e,
+      tracking: n
+    });
+  }),
+  new l2(/\* \[new tag]\s+(\S+)\s*-> (.+)$/, (t2, [e, n]) => {
+    t2.tags.push({
+      name: e,
+      tracking: n
+    });
+  }),
+  new l2(/- \[deleted]\s+\S+\s*-> (.+)$/, (t2, [e]) => {
+    t2.deleted.push({
+      tracking: e
+    });
+  }),
+  new l2(
+    /\s*([^.]+)\.\.(\S+)\s+(\S+)\s*-> (.+)$/,
+    (t2, [e, n, r2, s]) => {
+      t2.updated.push({
+        name: r2,
+        tracking: s,
+        to: n,
+        from: e
+      });
+    }
+  )
+];
+function ps(t2, e) {
+  return E2({
+    raw: t2,
     remote: null,
     branches: [],
     tags: [],
     updated: [],
     deleted: []
-  };
-  return parseStringResponse(result, parsers10, [stdOut, stdErr]);
+  }, ms, [t2, e]);
 }
-var parsers10;
-var init_parse_fetch = __esm({
-  "src/lib/parsers/parse-fetch.ts"() {
-    "use strict";
-    init_utils();
-    parsers10 = [
-      new LineParser(/From (.+)$/, (result, [remote]) => {
-        result.remote = remote;
-      }),
-      new LineParser(/\* \[new branch]\s+(\S+)\s*-> (.+)$/, (result, [name, tracking]) => {
-        result.branches.push({
-          name,
-          tracking
-        });
-      }),
-      new LineParser(/\* \[new tag]\s+(\S+)\s*-> (.+)$/, (result, [name, tracking]) => {
-        result.tags.push({
-          name,
-          tracking
-        });
-      }),
-      new LineParser(/- \[deleted]\s+\S+\s*-> (.+)$/, (result, [tracking]) => {
-        result.deleted.push({
-          tracking
-        });
-      }),
-      new LineParser(
-        /\s*([^.]+)\.\.(\S+)\s+(\S+)\s*-> (.+)$/,
-        (result, [from, to, name, tracking]) => {
-          result.updated.push({
-            name,
-            tracking,
-            to,
-            from
-          });
-        }
-      )
-    ];
-  }
-});
-var fetch_exports = {};
-__export2(fetch_exports, {
-  fetchTask: () => fetchTask
-});
-function disallowedCommand(command) {
-  return /^--upload-pack(=|$)/.test(command);
+function ds(t2) {
+  return /^--upload-pack(=|$)/.test(t2);
 }
-function fetchTask(remote, branch, customArgs) {
-  const commands = ["fetch", ...customArgs];
-  if (remote && branch) {
-    commands.push(remote, branch);
-  }
-  const banned = commands.find(disallowedCommand);
-  if (banned) {
-    return configurationErrorTask(`git.fetch: potential exploit argument blocked.`);
-  }
-  return {
-    commands,
+function gs(t2, e, n) {
+  const r2 = ["fetch", ...n];
+  return t2 && e && r2.push(t2, e), r2.find(ds) ? b2("git.fetch: potential exploit argument blocked.") : {
+    commands: r2,
     format: "utf-8",
-    parser: parseFetchResult
+    parser: ps
   };
 }
-var init_fetch = __esm({
-  "src/lib/tasks/fetch.ts"() {
-    "use strict";
-    init_parse_fetch();
-    init_task();
-  }
-});
-function parseMoveResult(stdOut) {
-  return parseStringResponse({ moves: [] }, parsers11, stdOut);
+var ys = [
+  new l2(/^Renaming (.+) to (.+)$/, (t2, [e, n]) => {
+    t2.moves.push({ from: e, to: n });
+  })
+];
+function ws(t2) {
+  return E2({ moves: [] }, ys, t2);
 }
-var parsers11;
-var init_parse_move = __esm({
-  "src/lib/parsers/parse-move.ts"() {
-    "use strict";
-    init_utils();
-    parsers11 = [
-      new LineParser(/^Renaming (.+) to (.+)$/, (result, [from, to]) => {
-        result.moves.push({ from, to });
-      })
-    ];
-  }
-});
-var move_exports = {};
-__export2(move_exports, {
-  moveTask: () => moveTask
-});
-function moveTask(from, to) {
+function bs(t2, e) {
   return {
-    commands: ["mv", "-v", ...asArray(from), to],
+    commands: ["mv", "-v", ...v(t2), e],
     format: "utf-8",
-    parser: parseMoveResult
+    parser: ws
   };
 }
-var init_move = __esm({
-  "src/lib/tasks/move.ts"() {
-    "use strict";
-    init_parse_move();
-    init_utils();
-  }
-});
-var pull_exports = {};
-__export2(pull_exports, {
-  pullTask: () => pullTask
-});
-function pullTask(remote, branch, customArgs) {
-  const commands = ["pull", ...customArgs];
-  if (remote && branch) {
-    commands.splice(1, 0, remote, branch);
-  }
-  return {
-    commands,
+function Ts(t2, e, n) {
+  const r2 = ["pull", ...n];
+  return t2 && e && r2.splice(1, 0, t2, e), {
+    commands: r2,
     format: "utf-8",
-    parser(stdOut, stdErr) {
-      return parsePullResult(stdOut, stdErr);
+    parser(s, o2) {
+      return ue(s, o2);
     },
-    onError(result, _error, _done, fail) {
-      const pullError = parsePullErrorResult(
-        bufferToString(result.stdOut),
-        bufferToString(result.stdErr)
+    onError(s, o2, i, a) {
+      const c3 = Rr(
+        F2(s.stdOut),
+        F2(s.stdErr)
       );
-      if (pullError) {
-        return fail(new GitResponseError(pullError));
-      }
-      fail(_error);
+      if (c3)
+        return a(new at(c3));
+      a(o2);
     }
   };
 }
-var init_pull = __esm({
-  "src/lib/tasks/pull.ts"() {
-    "use strict";
-    init_git_response_error();
-    init_parse_pull();
-    init_utils();
-  }
-});
-function parseGetRemotes(text) {
-  const remotes = {};
-  forEach(text, ([name]) => remotes[name] = { name });
-  return Object.values(remotes);
+function ks(t2) {
+  const e = {};
+  return ge(t2, ([n]) => e[n] = { name: n }), Object.values(e);
 }
-function parseGetRemotesVerbose(text) {
-  const remotes = {};
-  forEach(text, ([name, url, purpose]) => {
-    if (!Object.hasOwn(remotes, name)) {
-      remotes[name] = {
-        name,
-        refs: { fetch: "", push: "" }
-      };
-    }
-    if (purpose && url) {
-      remotes[name].refs[purpose.replace(/[^a-z]/g, "")] = url;
-    }
-  });
-  return Object.values(remotes);
+function _s(t2) {
+  const e = {};
+  return ge(t2, ([n, r2, s]) => {
+    Object.hasOwn(e, n) || (e[n] = {
+      name: n,
+      refs: { fetch: "", push: "" }
+    }), s && r2 && (e[n].refs[s.replace(/[^a-z]/g, "")] = r2);
+  }), Object.values(e);
 }
-function forEach(text, handler) {
-  forEachLineWithContent(text, (line) => handler(line.split(/\s+/)));
+function ge(t2, e) {
+  ut(t2, (n) => e(n.split(/\s+/)));
 }
-var init_GetRemoteSummary = __esm({
-  "src/lib/responses/GetRemoteSummary.ts"() {
-    "use strict";
-    init_utils();
-  }
-});
-var remote_exports = {};
-__export2(remote_exports, {
-  addRemoteTask: () => addRemoteTask,
-  getRemotesTask: () => getRemotesTask,
-  listRemotesTask: () => listRemotesTask,
-  remoteTask: () => remoteTask,
-  removeRemoteTask: () => removeRemoteTask
-});
-function addRemoteTask(remoteName, remoteRepo, customArgs) {
-  return straightThroughStringTask(["remote", "add", ...customArgs, remoteName, remoteRepo]);
+function vs(t2, e, n) {
+  return g(["remote", "add", ...n, t2, e]);
 }
-function getRemotesTask(verbose) {
-  const commands = ["remote"];
-  if (verbose) {
-    commands.push("-v");
-  }
-  return {
-    commands,
+function Es(t2) {
+  const e = ["remote"];
+  return t2 && e.push("-v"), {
+    commands: e,
     format: "utf-8",
-    parser: verbose ? parseGetRemotesVerbose : parseGetRemotes
+    parser: t2 ? _s : ks
   };
 }
-function listRemotesTask(customArgs) {
-  const commands = [...customArgs];
-  if (commands[0] !== "ls-remote") {
-    commands.unshift("ls-remote");
-  }
-  return straightThroughStringTask(commands);
+function Ss(t2) {
+  const e = [...t2];
+  return e[0] !== "ls-remote" && e.unshift("ls-remote"), g(e);
 }
-function remoteTask(customArgs) {
-  const commands = [...customArgs];
-  if (commands[0] !== "remote") {
-    commands.unshift("remote");
-  }
-  return straightThroughStringTask(commands);
+function Rs(t2) {
+  const e = [...t2];
+  return e[0] !== "remote" && e.unshift("remote"), g(e);
 }
-function removeRemoteTask(remoteName) {
-  return straightThroughStringTask(["remote", "remove", remoteName]);
+function Os(t2) {
+  return g(["remote", "remove", t2]);
 }
-var init_remote = __esm({
-  "src/lib/tasks/remote.ts"() {
-    "use strict";
-    init_GetRemoteSummary();
-    init_task();
-  }
-});
-var stash_list_exports = {};
-__export2(stash_list_exports, {
-  stashListTask: () => stashListTask
-});
-function stashListTask(opt = {}, customArgs) {
-  const options = parseLogOptions(opt);
-  const commands = ["stash", "list", ...options.commands, ...customArgs];
-  const parser4 = createListLogSummaryParser(
-    options.splitter,
-    options.fields,
-    logFormatFromCommand(commands)
+function Cs(t2 = {}, e) {
+  const n = oe2(t2), r2 = ["stash", "list", ...n.commands, ...e], s = re(
+    n.splitter,
+    n.fields,
+    pt(r2)
   );
-  return validateLogFormatConfig(commands) || {
-    commands,
+  return dt(r2) || {
+    commands: r2,
     format: "utf-8",
-    parser: parser4
+    parser: s
   };
 }
-var init_stash_list = __esm({
-  "src/lib/tasks/stash-list.ts"() {
-    "use strict";
-    init_log_format();
-    init_parse_list_log_summary();
-    init_diff();
-    init_log();
-  }
-});
-var sub_module_exports = {};
-__export2(sub_module_exports, {
-  addSubModuleTask: () => addSubModuleTask,
-  initSubModuleTask: () => initSubModuleTask,
-  subModuleTask: () => subModuleTask,
-  updateSubModuleTask: () => updateSubModuleTask
-});
-function addSubModuleTask(repo, path3) {
-  return subModuleTask(["add", repo, path3]);
+function As(t2, e) {
+  return X2(["add", t2, e]);
 }
-function initSubModuleTask(customArgs) {
-  return subModuleTask(["init", ...customArgs]);
+function xs(t2) {
+  return X2(["init", ...t2]);
 }
-function subModuleTask(customArgs) {
-  const commands = [...customArgs];
-  if (commands[0] !== "submodule") {
-    commands.unshift("submodule");
-  }
-  return straightThroughStringTask(commands);
+function X2(t2) {
+  const e = [...t2];
+  return e[0] !== "submodule" && e.unshift("submodule"), g(e);
 }
-function updateSubModuleTask(customArgs) {
-  return subModuleTask(["update", ...customArgs]);
+function Ns(t2) {
+  return X2(["update", ...t2]);
 }
-var init_sub_module = __esm({
-  "src/lib/tasks/sub-module.ts"() {
-    "use strict";
-    init_task();
-  }
-});
-function singleSorted(a, b2) {
-  const aIsNum = Number.isNaN(a);
-  const bIsNum = Number.isNaN(b2);
-  if (aIsNum !== bIsNum) {
-    return aIsNum ? 1 : -1;
-  }
-  return aIsNum ? sorted(a, b2) : 0;
-}
-function sorted(a, b2) {
-  return a === b2 ? 0 : a > b2 ? 1 : -1;
-}
-function trimmed(input) {
-  return input.trim();
-}
-function toNumber(input) {
-  if (typeof input === "string") {
-    return parseInt(input.replace(/^\D+/g, ""), 10) || 0;
-  }
-  return 0;
-}
-var TagList;
-var parseTagList;
-var init_TagList = __esm({
-  "src/lib/responses/TagList.ts"() {
-    "use strict";
-    TagList = class {
-      constructor(all, latest) {
-        this.all = all;
-        this.latest = latest;
-      }
-    };
-    parseTagList = function(data, customSort = false) {
-      const tags = data.split("\n").map(trimmed).filter(Boolean);
-      if (!customSort) {
-        tags.sort(function(tagA, tagB) {
-          const partsA = tagA.split(".");
-          const partsB = tagB.split(".");
-          if (partsA.length === 1 || partsB.length === 1) {
-            return singleSorted(toNumber(partsA[0]), toNumber(partsB[0]));
-          }
-          for (let i2 = 0, l = Math.max(partsA.length, partsB.length); i2 < l; i2++) {
-            const diff = sorted(toNumber(partsA[i2]), toNumber(partsB[i2]));
-            if (diff) {
-              return diff;
-            }
-          }
-          return 0;
-        });
-      }
-      const latest = customSort ? tags[0] : [...tags].reverse().find((tag) => tag.indexOf(".") >= 0);
-      return new TagList(tags, latest);
-    };
-  }
-});
-var tag_exports = {};
-__export2(tag_exports, {
-  addAnnotatedTagTask: () => addAnnotatedTagTask,
-  addTagTask: () => addTagTask,
-  tagListTask: () => tagListTask
-});
-function tagListTask(customArgs = []) {
-  const hasCustomSort = customArgs.some((option) => /^--sort=/.test(option));
-  return {
-    format: "utf-8",
-    commands: ["tag", "-l", ...customArgs],
-    parser(text) {
-      return parseTagList(text, hasCustomSort);
-    }
-  };
-}
-function addTagTask(name) {
-  return {
-    format: "utf-8",
-    commands: ["tag", name],
-    parser() {
-      return { name };
-    }
-  };
-}
-function addAnnotatedTagTask(name, tagMessage) {
-  return {
-    format: "utf-8",
-    commands: ["tag", "-a", "-m", tagMessage, name],
-    parser() {
-      return { name };
-    }
-  };
-}
-var init_tag = __esm({
-  "src/lib/tasks/tag.ts"() {
-    "use strict";
-    init_TagList();
-  }
-});
-var require_git = __commonJS2({
-  "src/git.js"(exports2, module2) {
-    "use strict";
-    var { GitExecutor: GitExecutor2 } = (init_git_executor(), __toCommonJS2(git_executor_exports));
-    var { SimpleGitApi: SimpleGitApi2 } = (init_simple_git_api(), __toCommonJS2(simple_git_api_exports));
-    var { Scheduler: Scheduler2 } = (init_scheduler(), __toCommonJS2(scheduler_exports));
-    var { adhocExecTask: adhocExecTask2, configurationErrorTask: configurationErrorTask2 } = (init_task(), __toCommonJS2(task_exports));
-    var {
-      asArray: asArray2,
-      filterArray: filterArray2,
-      filterPrimitives: filterPrimitives2,
-      filterString: filterString2,
-      filterStringOrStringArray: filterStringOrStringArray2,
-      filterType: filterType2,
-      getTrailingOptions: getTrailingOptions2,
-      trailingFunctionArgument: trailingFunctionArgument2,
-      trailingOptionsArgument: trailingOptionsArgument2
-    } = (init_utils(), __toCommonJS2(utils_exports));
-    var { applyPatchTask: applyPatchTask2 } = (init_apply_patch(), __toCommonJS2(apply_patch_exports));
-    var {
-      branchTask: branchTask2,
-      branchLocalTask: branchLocalTask2,
-      deleteBranchesTask: deleteBranchesTask2,
-      deleteBranchTask: deleteBranchTask2
-    } = (init_branch(), __toCommonJS2(branch_exports));
-    var { checkIgnoreTask: checkIgnoreTask2 } = (init_check_ignore(), __toCommonJS2(check_ignore_exports));
-    var { checkIsRepoTask: checkIsRepoTask2 } = (init_check_is_repo(), __toCommonJS2(check_is_repo_exports));
-    var { cleanWithOptionsTask: cleanWithOptionsTask2, isCleanOptionsArray: isCleanOptionsArray2 } = (init_clean(), __toCommonJS2(clean_exports));
-    var { diffSummaryTask: diffSummaryTask2 } = (init_diff(), __toCommonJS2(diff_exports));
-    var { fetchTask: fetchTask2 } = (init_fetch(), __toCommonJS2(fetch_exports));
-    var { moveTask: moveTask2 } = (init_move(), __toCommonJS2(move_exports));
-    var { pullTask: pullTask2 } = (init_pull(), __toCommonJS2(pull_exports));
-    var { pushTagsTask: pushTagsTask2 } = (init_push(), __toCommonJS2(push_exports));
-    var {
-      addRemoteTask: addRemoteTask2,
-      getRemotesTask: getRemotesTask2,
-      listRemotesTask: listRemotesTask2,
-      remoteTask: remoteTask2,
-      removeRemoteTask: removeRemoteTask2
-    } = (init_remote(), __toCommonJS2(remote_exports));
-    var { getResetMode: getResetMode2, resetTask: resetTask2 } = (init_reset(), __toCommonJS2(reset_exports));
-    var { stashListTask: stashListTask2 } = (init_stash_list(), __toCommonJS2(stash_list_exports));
-    var {
-      addSubModuleTask: addSubModuleTask2,
-      initSubModuleTask: initSubModuleTask2,
-      subModuleTask: subModuleTask2,
-      updateSubModuleTask: updateSubModuleTask2
-    } = (init_sub_module(), __toCommonJS2(sub_module_exports));
-    var { addAnnotatedTagTask: addAnnotatedTagTask2, addTagTask: addTagTask2, tagListTask: tagListTask2 } = (init_tag(), __toCommonJS2(tag_exports));
-    var { straightThroughBufferTask: straightThroughBufferTask2, straightThroughStringTask: straightThroughStringTask2 } = (init_task(), __toCommonJS2(task_exports));
-    function Git2(options, plugins) {
-      this._plugins = plugins;
-      this._executor = new GitExecutor2(
-        options.baseDir,
-        new Scheduler2(options.maxConcurrentProcesses),
-        plugins
-      );
-      this._trimmed = options.trimmed;
-    }
-    (Git2.prototype = Object.create(SimpleGitApi2.prototype)).constructor = Git2;
-    Git2.prototype.customBinary = function(command) {
-      this._plugins.reconfigure("binary", command);
-      return this;
-    };
-    Git2.prototype.env = function(name, value) {
-      if (arguments.length === 1 && typeof name === "object") {
-        this._executor.env = name;
-      } else {
-        (this._executor.env = this._executor.env || {})[name] = value;
-      }
-      return this;
-    };
-    Git2.prototype.stashList = function(options) {
-      return this._runTask(
-        stashListTask2(
-          trailingOptionsArgument2(arguments) || {},
-          filterArray2(options) && options || []
-        ),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.mv = function(from, to) {
-      return this._runTask(moveTask2(from, to), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.checkoutLatestTag = function(then) {
-      var git = this;
-      return this.pull(function() {
-        git.tags(function(err, tags) {
-          git.checkout(tags.latest, then);
-        });
-      });
-    };
-    Git2.prototype.pull = function(remote, branch, options, then) {
-      return this._runTask(
-        pullTask2(
-          filterType2(remote, filterString2),
-          filterType2(branch, filterString2),
-          getTrailingOptions2(arguments)
-        ),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.fetch = function(remote, branch) {
-      return this._runTask(
-        fetchTask2(
-          filterType2(remote, filterString2),
-          filterType2(branch, filterString2),
-          getTrailingOptions2(arguments)
-        ),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.silent = function(silence) {
-      return this._runTask(
-        adhocExecTask2(
-          () => console.warn(
-            "simple-git deprecation notice: git.silent: logging should be configured using the `debug` library / `DEBUG` environment variable, this method will be removed."
-          )
-        )
-      );
-    };
-    Git2.prototype.tags = function(options, then) {
-      return this._runTask(
-        tagListTask2(getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.rebase = function() {
-      return this._runTask(
-        straightThroughStringTask2(["rebase", ...getTrailingOptions2(arguments)]),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.reset = function(mode) {
-      return this._runTask(
-        resetTask2(getResetMode2(mode), getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.revert = function(commit) {
-      const next = trailingFunctionArgument2(arguments);
-      if (typeof commit !== "string") {
-        return this._runTask(configurationErrorTask2("Commit must be a string"), next);
-      }
-      return this._runTask(
-        straightThroughStringTask2(["revert", ...getTrailingOptions2(arguments, 0, true), commit]),
-        next
-      );
-    };
-    Git2.prototype.addTag = function(name) {
-      const task = typeof name === "string" ? addTagTask2(name) : configurationErrorTask2("Git.addTag requires a tag name");
-      return this._runTask(task, trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.addAnnotatedTag = function(tagName, tagMessage) {
-      return this._runTask(
-        addAnnotatedTagTask2(tagName, tagMessage),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.deleteLocalBranch = function(branchName, forceDelete, then) {
-      return this._runTask(
-        deleteBranchTask2(branchName, typeof forceDelete === "boolean" ? forceDelete : false),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.deleteLocalBranches = function(branchNames, forceDelete, then) {
-      return this._runTask(
-        deleteBranchesTask2(branchNames, typeof forceDelete === "boolean" ? forceDelete : false),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.branch = function(options, then) {
-      return this._runTask(
-        branchTask2(getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.branchLocal = function(then) {
-      return this._runTask(branchLocalTask2(), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.raw = function(commands) {
-      const createRestCommands = !Array.isArray(commands);
-      const command = [].slice.call(createRestCommands ? arguments : commands, 0);
-      for (let i2 = 0; i2 < command.length && createRestCommands; i2++) {
-        if (!filterPrimitives2(command[i2])) {
-          command.splice(i2, command.length - i2);
-          break;
-        }
-      }
-      command.push(...getTrailingOptions2(arguments, 0, true));
-      var next = trailingFunctionArgument2(arguments);
-      if (!command.length) {
-        return this._runTask(
-          configurationErrorTask2("Raw: must supply one or more command to execute"),
-          next
-        );
-      }
-      return this._runTask(straightThroughStringTask2(command, this._trimmed), next);
-    };
-    Git2.prototype.submoduleAdd = function(repo, path3, then) {
-      return this._runTask(addSubModuleTask2(repo, path3), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.submoduleUpdate = function(args, then) {
-      return this._runTask(
-        updateSubModuleTask2(getTrailingOptions2(arguments, true)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.submoduleInit = function(args, then) {
-      return this._runTask(
-        initSubModuleTask2(getTrailingOptions2(arguments, true)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.subModule = function(options, then) {
-      return this._runTask(
-        subModuleTask2(getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.listRemote = function() {
-      return this._runTask(
-        listRemotesTask2(getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.addRemote = function(remoteName, remoteRepo, then) {
-      return this._runTask(
-        addRemoteTask2(remoteName, remoteRepo, getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.removeRemote = function(remoteName, then) {
-      return this._runTask(removeRemoteTask2(remoteName), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.getRemotes = function(verbose, then) {
-      return this._runTask(getRemotesTask2(verbose === true), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.remote = function(options, then) {
-      return this._runTask(
-        remoteTask2(getTrailingOptions2(arguments)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.tag = function(options, then) {
-      const command = getTrailingOptions2(arguments);
-      if (command[0] !== "tag") {
-        command.unshift("tag");
-      }
-      return this._runTask(straightThroughStringTask2(command), trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.updateServerInfo = function(then) {
-      return this._runTask(
-        straightThroughStringTask2(["update-server-info"]),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.pushTags = function(remote, then) {
-      const task = pushTagsTask2(
-        { remote: filterType2(remote, filterString2) },
-        getTrailingOptions2(arguments)
-      );
-      return this._runTask(task, trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.rm = function(files) {
-      return this._runTask(
-        straightThroughStringTask2(["rm", "-f", ...asArray2(files)]),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.rmKeepLocal = function(files) {
-      return this._runTask(
-        straightThroughStringTask2(["rm", "--cached", ...asArray2(files)]),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.catFile = function(options, then) {
-      return this._catFile("utf-8", arguments);
-    };
-    Git2.prototype.binaryCatFile = function() {
-      return this._catFile("buffer", arguments);
-    };
-    Git2.prototype._catFile = function(format, args) {
-      var handler = trailingFunctionArgument2(args);
-      var command = ["cat-file"];
-      var options = args[0];
-      if (typeof options === "string") {
-        return this._runTask(
-          configurationErrorTask2("Git.catFile: options must be supplied as an array of strings"),
-          handler
-        );
-      }
-      if (Array.isArray(options)) {
-        command.push.apply(command, options);
-      }
-      const task = format === "buffer" ? straightThroughBufferTask2(command) : straightThroughStringTask2(command);
-      return this._runTask(task, handler);
-    };
-    Git2.prototype.diff = function(options, then) {
-      const task = filterString2(options) ? configurationErrorTask2(
-        "git.diff: supplying options as a single string is no longer supported, switch to an array of strings"
-      ) : straightThroughStringTask2(["diff", ...getTrailingOptions2(arguments)]);
-      return this._runTask(task, trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.diffSummary = function() {
-      return this._runTask(
-        diffSummaryTask2(getTrailingOptions2(arguments, 1)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.applyPatch = function(patches) {
-      const task = !filterStringOrStringArray2(patches) ? configurationErrorTask2(
-        `git.applyPatch requires one or more string patches as the first argument`
-      ) : applyPatchTask2(asArray2(patches), getTrailingOptions2([].slice.call(arguments, 1)));
-      return this._runTask(task, trailingFunctionArgument2(arguments));
-    };
-    Git2.prototype.revparse = function() {
-      const commands = ["rev-parse", ...getTrailingOptions2(arguments, true)];
-      return this._runTask(
-        straightThroughStringTask2(commands, true),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.clean = function(mode, options, then) {
-      const usingCleanOptionsArray = isCleanOptionsArray2(mode);
-      const cleanMode = usingCleanOptionsArray && mode.join("") || filterType2(mode, filterString2) || "";
-      const customArgs = getTrailingOptions2([].slice.call(arguments, usingCleanOptionsArray ? 1 : 0));
-      return this._runTask(
-        cleanWithOptionsTask2(cleanMode, customArgs),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.exec = function(then) {
-      const task = {
-        commands: [],
-        format: "utf-8",
-        parser() {
-          if (typeof then === "function") {
-            then();
-          }
-        }
-      };
-      return this._runTask(task);
-    };
-    Git2.prototype.clearQueue = function() {
-      return this._runTask(
-        adhocExecTask2(
-          () => console.warn(
-            "simple-git deprecation notice: clearQueue() is deprecated and will be removed, switch to using the abortPlugin instead."
-          )
-        )
-      );
-    };
-    Git2.prototype.checkIgnore = function(pathnames, then) {
-      return this._runTask(
-        checkIgnoreTask2(asArray2(filterType2(pathnames, filterStringOrStringArray2, []))),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    Git2.prototype.checkIsRepo = function(checkType, then) {
-      return this._runTask(
-        checkIsRepoTask2(filterType2(checkType, filterString2)),
-        trailingFunctionArgument2(arguments)
-      );
-    };
-    module2.exports = Git2;
-  }
-});
-init_git_error();
-var GitConstructError = class extends GitError {
-  constructor(config2, message) {
-    super(void 0, message);
-    this.config = config2;
+var $s = class {
+  constructor(e, n) {
+    this.all = e, this.latest = n;
   }
 };
-init_git_error();
-init_git_error();
-var GitPluginError = class extends GitError {
-  constructor(task, plugin, message) {
-    super(task, message);
-    this.task = task;
-    this.plugin = plugin;
-    Object.setPrototypeOf(this, new.target.prototype);
-  }
+var Ps = function(t2, e = false) {
+  const n = t2.split(`
+`).map(Ds).filter(Boolean);
+  e || n.sort(function(s, o2) {
+    const i = s.split("."), a = o2.split(".");
+    if (i.length === 1 || a.length === 1)
+      return Ms(B2(i[0]), B2(a[0]));
+    for (let c3 = 0, y2 = Math.max(i.length, a.length); c3 < y2; c3++) {
+      const w2 = ye(B2(i[c3]), B2(a[c3]));
+      if (w2)
+        return w2;
+    }
+    return 0;
+  });
+  const r2 = e ? n[0] : [...n].reverse().find((s) => s.indexOf(".") >= 0);
+  return new $s(n, r2);
 };
-init_git_response_error();
-init_task_configuration_error();
-init_check_is_repo();
-init_clean();
-init_config();
-init_diff_name_status();
-init_grep();
-init_reset();
-function abortPlugin(signal) {
-  if (!signal) {
-    return;
-  }
-  const onSpawnAfter = {
-    type: "spawn.after",
-    action(_data, context) {
-      function kill() {
-        context.kill(new GitPluginError(void 0, "abort", "Abort signal received"));
-      }
-      signal.addEventListener("abort", kill);
-      context.spawned.on("close", () => signal.removeEventListener("abort", kill));
+function Ms(t2, e) {
+  const n = Number.isNaN(t2), r2 = Number.isNaN(e);
+  return n !== r2 ? n ? 1 : -1 : n ? ye(t2, e) : 0;
+}
+function ye(t2, e) {
+  return t2 === e ? 0 : t2 > e ? 1 : -1;
+}
+function Ds(t2) {
+  return t2.trim();
+}
+function B2(t2) {
+  return typeof t2 == "string" && parseInt(t2.replace(/^\D+/g, ""), 10) || 0;
+}
+function Ls(t2 = []) {
+  const e = t2.some((n) => /^--sort=/.test(n));
+  return {
+    format: "utf-8",
+    commands: ["tag", "-l", ...t2],
+    parser(n) {
+      return Ps(n, e);
     }
   };
-  const onSpawnBefore = {
+}
+function js(t2) {
+  return {
+    format: "utf-8",
+    commands: ["tag", t2],
+    parser() {
+      return { name: t2 };
+    }
+  };
+}
+function Bs(t2, e) {
+  return {
+    format: "utf-8",
+    commands: ["tag", "-a", "-m", e, t2],
+    parser() {
+      return { name: t2 };
+    }
+  };
+}
+function f2(t2, e) {
+  this._plugins = e, this._executor = new Dn(
+    t2.baseDir,
+    new Xr(t2.maxConcurrentProcesses),
+    e
+  ), this._trimmed = t2.trimmed;
+}
+(f2.prototype = Object.create(le.prototype)).constructor = f2;
+f2.prototype.customBinary = function(t2) {
+  return this._plugins.reconfigure("binary", t2), this;
+};
+f2.prototype.env = function(t2, e) {
+  return arguments.length === 1 && typeof t2 == "object" ? this._executor.env = t2 : (this._executor.env = this._executor.env || {})[t2] = e, this;
+};
+f2.prototype.stashList = function(t2) {
+  return this._runTask(
+    Cs(
+      ht(arguments) || {},
+      K2(t2) && t2 || []
+    ),
+    u(arguments)
+  );
+};
+f2.prototype.mv = function(t2, e) {
+  return this._runTask(bs(t2, e), u(arguments));
+};
+f2.prototype.checkoutLatestTag = function(t2) {
+  var e = this;
+  return this.pull(function() {
+    e.tags(function(n, r2) {
+      e.checkout(r2.latest, t2);
+    });
+  });
+};
+f2.prototype.pull = function(t2, e, n, r2) {
+  return this._runTask(
+    Ts(
+      d(t2, m),
+      d(e, m),
+      h2(arguments)
+    ),
+    u(arguments)
+  );
+};
+f2.prototype.fetch = function(t2, e) {
+  return this._runTask(
+    gs(
+      d(t2, m),
+      d(e, m),
+      h2(arguments)
+    ),
+    u(arguments)
+  );
+};
+f2.prototype.tags = function(t2, e) {
+  return this._runTask(
+    Ls(h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.rebase = function() {
+  return this._runTask(
+    g(["rebase", ...h2(arguments)]),
+    u(arguments)
+  );
+};
+f2.prototype.reset = function(t2) {
+  return this._runTask(
+    An(xn(t2), h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.revert = function(t2) {
+  const e = u(arguments);
+  return typeof t2 != "string" ? this._runTask(b2("Commit must be a string"), e) : this._runTask(
+    g(["revert", ...h2(arguments, 0, true), t2]),
+    e
+  );
+};
+f2.prototype.addTag = function(t2) {
+  const e = typeof t2 == "string" ? js(t2) : b2("Git.addTag requires a tag name");
+  return this._runTask(e, u(arguments));
+};
+f2.prototype.addAnnotatedTag = function(t2, e) {
+  return this._runTask(
+    Bs(t2, e),
+    u(arguments)
+  );
+};
+f2.prototype.deleteLocalBranch = function(t2, e, n) {
+  return this._runTask(
+    cs(t2, typeof e == "boolean" ? e : false),
+    u(arguments)
+  );
+};
+f2.prototype.deleteLocalBranches = function(t2, e, n) {
+  return this._runTask(
+    us(t2, typeof e == "boolean" ? e : false),
+    u(arguments)
+  );
+};
+f2.prototype.branch = function(t2, e) {
+  return this._runTask(
+    is(h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.branchLocal = function(t2) {
+  return this._runTask(as(), u(arguments));
+};
+f2.prototype.raw = function(t2) {
+  const e = !Array.isArray(t2), n = [].slice.call(e ? arguments : t2, 0);
+  for (let s = 0; s < n.length && e; s++)
+    if (!st(n[s])) {
+      n.splice(s, n.length - s);
+      break;
+    }
+  n.push(...h2(arguments, 0, true));
+  var r2 = u(arguments);
+  return n.length ? this._runTask(g(n, this._trimmed), r2) : this._runTask(
+    b2("Raw: must supply one or more command to execute"),
+    r2
+  );
+};
+f2.prototype.submoduleAdd = function(t2, e, n) {
+  return this._runTask(As(t2, e), u(arguments));
+};
+f2.prototype.submoduleUpdate = function(t2, e) {
+  return this._runTask(
+    Ns(h2(arguments, true)),
+    u(arguments)
+  );
+};
+f2.prototype.submoduleInit = function(t2, e) {
+  return this._runTask(
+    xs(h2(arguments, true)),
+    u(arguments)
+  );
+};
+f2.prototype.subModule = function(t2, e) {
+  return this._runTask(
+    X2(h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.listRemote = function() {
+  return this._runTask(
+    Ss(h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.addRemote = function(t2, e, n) {
+  return this._runTask(
+    vs(t2, e, h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.removeRemote = function(t2, e) {
+  return this._runTask(Os(t2), u(arguments));
+};
+f2.prototype.getRemotes = function(t2, e) {
+  return this._runTask(Es(t2 === true), u(arguments));
+};
+f2.prototype.remote = function(t2, e) {
+  return this._runTask(
+    Rs(h2(arguments)),
+    u(arguments)
+  );
+};
+f2.prototype.tag = function(t2, e) {
+  const n = h2(arguments);
+  return n[0] !== "tag" && n.unshift("tag"), this._runTask(g(n), u(arguments));
+};
+f2.prototype.updateServerInfo = function(t2) {
+  return this._runTask(
+    g(["update-server-info"]),
+    u(arguments)
+  );
+};
+f2.prototype.pushTags = function(t2, e) {
+  const n = Mr(
+    { remote: d(t2, m) },
+    h2(arguments)
+  );
+  return this._runTask(n, u(arguments));
+};
+f2.prototype.rm = function(t2) {
+  return this._runTask(
+    g(["rm", "-f", ...v(t2)]),
+    u(arguments)
+  );
+};
+f2.prototype.rmKeepLocal = function(t2) {
+  return this._runTask(
+    g(["rm", "--cached", ...v(t2)]),
+    u(arguments)
+  );
+};
+f2.prototype.catFile = function(t2, e) {
+  return this._catFile("utf-8", arguments);
+};
+f2.prototype.binaryCatFile = function() {
+  return this._catFile("buffer", arguments);
+};
+f2.prototype._catFile = function(t2, e) {
+  var n = u(e), r2 = ["cat-file"], s = e[0];
+  if (typeof s == "string")
+    return this._runTask(
+      b2("Git.catFile: options must be supplied as an array of strings"),
+      n
+    );
+  Array.isArray(s) && r2.push.apply(r2, s);
+  const o2 = t2 === "buffer" ? Gt(r2) : g(r2);
+  return this._runTask(o2, n);
+};
+f2.prototype.diff = function(t2, e) {
+  const n = m(t2) ? b2(
+    "git.diff: supplying options as a single string is no longer supported, switch to an array of strings"
+  ) : g(["diff", ...h2(arguments)]);
+  return this._runTask(n, u(arguments));
+};
+f2.prototype.diffSummary = function() {
+  return this._runTask(
+    fr(h2(arguments, 1)),
+    u(arguments)
+  );
+};
+f2.prototype.applyPatch = function(t2) {
+  const e = G2(t2) ? Yr(v(t2), h2([].slice.call(arguments, 1))) : b2(
+    "git.applyPatch requires one or more string patches as the first argument"
+  );
+  return this._runTask(e, u(arguments));
+};
+f2.prototype.revparse = function() {
+  const t2 = ["rev-parse", ...h2(arguments, true)];
+  return this._runTask(
+    g(t2, true),
+    u(arguments)
+  );
+};
+f2.prototype.clean = function(t2, e, n) {
+  const r2 = un(t2), s = r2 && t2.join("") || d(t2, m) || "", o2 = h2([].slice.call(arguments, r2 ? 1 : 0));
+  return this._runTask(
+    on(s, o2),
+    u(arguments)
+  );
+};
+f2.prototype.exec = function(t2) {
+  const e = {
+    commands: [],
+    format: "utf-8",
+    parser() {
+      typeof t2 == "function" && t2();
+    }
+  };
+  return this._runTask(e);
+};
+f2.prototype.checkIgnore = function(t2, e) {
+  return this._runTask(
+    fs2(v(d(t2, G2, []))),
+    u(arguments)
+  );
+};
+f2.prototype.checkIsRepo = function(t2, e) {
+  return this._runTask(
+    We(d(t2, m)),
+    u(arguments)
+  );
+};
+function Is(t2) {
+  return t2 ? [{
     type: "spawn.before",
-    action(_data, context) {
-      if (signal.aborted) {
-        context.kill(new GitPluginError(void 0, "abort", "Abort already signaled"));
-      }
+    action(r2, s) {
+      t2.aborted && s.kill(new A2(void 0, "abort", "Abort already signaled"));
     }
-  };
-  return [onSpawnBefore, onSpawnAfter];
-}
-function blockUnsafeOperationsPlugin(options = {}) {
-  return {
-    type: "spawn.args",
-    action(args, { env }) {
-      for (const vulnerability of ne(args, env)) {
-        if (options[vulnerability.category] !== true) {
-          throw new GitPluginError(void 0, "unsafe", vulnerability.message);
-        }
-      }
-      return args;
-    }
-  };
-}
-init_utils();
-function commandConfigPrefixingPlugin(configuration) {
-  const prefix = prefixedArray(configuration, "-c");
-  return {
-    type: "spawn.args",
-    action(data) {
-      return [...prefix, ...data];
-    }
-  };
-}
-init_utils();
-var never2 = (0, import_promise_deferred2.deferred)().promise;
-function completionDetectionPlugin({
-  onClose = true,
-  onExit = 50
-} = {}) {
-  function createEvents() {
-    let exitCode = -1;
-    const events = {
-      close: (0, import_promise_deferred2.deferred)(),
-      closeTimeout: (0, import_promise_deferred2.deferred)(),
-      exit: (0, import_promise_deferred2.deferred)(),
-      exitTimeout: (0, import_promise_deferred2.deferred)()
-    };
-    const result = Promise.race([
-      onClose === false ? never2 : events.closeTimeout.promise,
-      onExit === false ? never2 : events.exitTimeout.promise
-    ]);
-    configureTimeout(onClose, events.close, events.closeTimeout);
-    configureTimeout(onExit, events.exit, events.exitTimeout);
-    return {
-      close(code) {
-        exitCode = code;
-        events.close.done();
-      },
-      exit(code) {
-        exitCode = code;
-        events.exit.done();
-      },
-      get exitCode() {
-        return exitCode;
-      },
-      result
-    };
-  }
-  function configureTimeout(flag, event, timeout) {
-    if (flag === false) {
-      return;
-    }
-    (flag === true ? event.promise : event.promise.then(() => delay(flag))).then(timeout.done);
-  }
-  return {
+  }, {
     type: "spawn.after",
-    async action(_data, { spawned, close }) {
-      const events = createEvents();
-      let deferClose = true;
-      let quickClose = () => void (deferClose = false);
-      spawned.stdout?.on("data", quickClose);
-      spawned.stderr?.on("data", quickClose);
-      spawned.on("error", quickClose);
-      spawned.on("close", (code) => events.close(code));
-      spawned.on("exit", (code) => events.exit(code));
-      try {
-        await events.result;
-        if (deferClose) {
-          await delay(50);
-        }
-        close(events.exitCode);
-      } catch (err) {
-        close(events.exitCode, err);
+    action(r2, s) {
+      function o2() {
+        s.kill(new A2(void 0, "abort", "Abort signal received"));
       }
+      t2.addEventListener("abort", o2), s.spawned.on("close", () => t2.removeEventListener("abort", o2));
     }
-  };
+  }] : void 0;
 }
-init_utils();
-var WRONG_NUMBER_ERR = `Invalid value supplied for custom binary, requires a single string or an array containing either one or two strings`;
-var WRONG_CHARS_ERR = `Invalid value supplied for custom binary, restricted characters must be removed or supply the unsafe.allowUnsafeCustomBinary option`;
-function isBadArgument(arg) {
-  return !arg || !/^([a-z]:)?([a-z0-9/.\\_~-]+)$/i.test(arg);
-}
-function toBinaryConfig(input, allowUnsafe) {
-  if (input.length < 1 || input.length > 2) {
-    throw new GitPluginError(void 0, "binary", WRONG_NUMBER_ERR);
-  }
-  const isBad = input.some(isBadArgument);
-  if (isBad) {
-    if (allowUnsafe) {
-      console.warn(WRONG_CHARS_ERR);
-    } else {
-      throw new GitPluginError(void 0, "binary", WRONG_CHARS_ERR);
-    }
-  }
-  const [binary, prefix] = input;
-  return {
-    binary,
-    prefix
-  };
-}
-function customBinaryPlugin(plugins, input = ["git"], allowUnsafe = false) {
-  let config2 = toBinaryConfig(asArray(input), allowUnsafe);
-  plugins.on("binary", (input2) => {
-    config2 = toBinaryConfig(asArray(input2), allowUnsafe);
-  });
-  plugins.append("spawn.binary", () => {
-    return config2.binary;
-  });
-  plugins.append("spawn.args", (data) => {
-    return config2.prefix ? [config2.prefix, ...data] : data;
-  });
-}
-init_git_error();
-function isTaskError(result) {
-  return !!(result.exitCode && result.stdErr.length);
-}
-function getErrorMessage(result) {
-  return Buffer.concat([...result.stdOut, ...result.stdErr]);
-}
-function errorDetectionHandler(overwrite = false, isError = isTaskError, errorMessage = getErrorMessage) {
-  return (error2, result) => {
-    if (!overwrite && error2 || !isError(result)) {
-      return error2;
-    }
-    return errorMessage(result);
-  };
-}
-function errorDetectionPlugin(config2) {
-  return {
-    type: "task.error",
-    action(data, context) {
-      const error2 = config2(data.error, {
-        stdErr: context.stdErr,
-        stdOut: context.stdOut,
-        exitCode: context.exitCode
-      });
-      if (Buffer.isBuffer(error2)) {
-        return { error: new GitError(void 0, error2.toString("utf-8")) };
-      }
-      return {
-        error: error2
-      };
-    }
-  };
-}
-init_utils();
-var PluginStore = class {
-  constructor() {
-    this.plugins = /* @__PURE__ */ new Set();
-    this.events = new import_node_events.EventEmitter();
-  }
-  on(type, listener) {
-    this.events.on(type, listener);
-  }
-  reconfigure(type, data) {
-    this.events.emit(type, data);
-  }
-  append(type, action) {
-    const plugin = append(this.plugins, { type, action });
-    return () => this.plugins.delete(plugin);
-  }
-  add(plugin) {
-    const plugins = [];
-    asArray(plugin).forEach((plugin2) => plugin2 && this.plugins.add(append(plugins, plugin2)));
-    return () => {
-      plugins.forEach((plugin2) => this.plugins.delete(plugin2));
-    };
-  }
-  exec(type, data, context) {
-    let output = data;
-    const contextual = Object.freeze(Object.create(context));
-    for (const plugin of this.plugins) {
-      if (plugin.type === type) {
-        output = plugin.action(output, contextual);
-      }
-    }
-    return output;
-  }
-};
-init_utils();
-function progressMonitorPlugin(progress) {
-  const progressCommand = "--progress";
-  const progressMethods = ["checkout", "clone", "fetch", "pull", "push"];
-  const onProgress = {
-    type: "spawn.after",
-    action(_data, context) {
-      if (!context.commands.includes(progressCommand)) {
-        return;
-      }
-      context.spawned.stderr?.on("data", (chunk) => {
-        const message = /^([\s\S]+?):\s*(\d+)% \((\d+)\/(\d+)\)/.exec(chunk.toString("utf8"));
-        if (!message) {
-          return;
-        }
-        progress({
-          method: context.method,
-          stage: progressEventStage(message[1]),
-          progress: asNumber(message[2]),
-          processed: asNumber(message[3]),
-          total: asNumber(message[4])
-        });
-      });
-    }
-  };
-  const onArgs = {
-    type: "spawn.args",
-    action(args, context) {
-      if (!progressMethods.includes(context.method)) {
-        return args;
-      }
-      return including(args, progressCommand);
-    }
-  };
-  return [onArgs, onProgress];
-}
-function progressEventStage(input) {
-  return String(input.toLowerCase().split(" ", 1)) || "unknown";
-}
-init_utils();
-function spawnOptionsPlugin(spawnOptions) {
-  const options = pick2(spawnOptions, ["uid", "gid"]);
+var Us = $2("", "plugin:allowEnvironment");
+function Fs(t2, e = false) {
+  const n = new Set(t2.map((r2) => r2.toLowerCase().trim()));
   return {
     type: "spawn.options",
-    action(data) {
-      return { ...options, ...data };
+    action(r2, s) {
+      const o2 = { ...r2.env ?? process.env }, i = new Set(
+        Object.keys(s.env).map((a) => a.toLowerCase().trim())
+      );
+      for (const a of Object.keys(o2)) {
+        const c3 = a.toLowerCase().trim();
+        if (!(!Gs(c3) || n.has(c3))) {
+          if (i.has(c3))
+            throw new A2(
+              void 0,
+              "allowEnvironment",
+              `Use of "${a}" is blocked by the environment guard - add it to the allowEnvironment option to permit it`
+            );
+          Us("removing ambient guarded environment variable %s", a), delete o2[a];
+        }
+      }
+      return {
+        ...r2,
+        env: {
+          ...o2,
+          GIT_TEST_DISALLOW_ABBREVIATED_OPTIONS: String(!e)
+        }
+      };
     }
   };
 }
-function timeoutPlugin({
-  block,
-  stdErr = true,
-  stdOut = true
-}) {
-  if (block > 0) {
-    return {
-      type: "spawn.after",
-      action(_data, context) {
-        let timeout;
-        function wait() {
-          timeout && clearTimeout(timeout);
-          timeout = setTimeout(kill, block);
-        }
-        function stop() {
-          context.spawned.stdout?.off("data", wait);
-          context.spawned.stderr?.off("data", wait);
-          context.spawned.off("exit", stop);
-          context.spawned.off("close", stop);
-          timeout && clearTimeout(timeout);
-        }
-        function kill() {
-          stop();
-          context.kill(new GitPluginError(void 0, "timeout", `block timeout reached`));
-        }
-        stdOut && context.spawned.stdout?.on("data", wait);
-        stdErr && context.spawned.stderr?.on("data", wait);
-        context.spawned.on("exit", stop);
-        context.spawned.on("close", stop);
-        wait();
-      }
-    };
-  }
+function Gs(t2) {
+  const e = t2.toLowerCase().trim();
+  return e.startsWith("git_") || _(e);
 }
-function suffixPathsPlugin() {
+function zs(t2 = {}) {
   return {
     type: "spawn.args",
-    action(data) {
-      const prefix = [];
-      let suffix;
-      function append2(args) {
-        (suffix = suffix || []).push(...args);
+    action(e, { env: n }) {
+      for (const r2 of oe(e, n))
+        if (t2[r2.category] !== true)
+          throw new A2(void 0, "unsafe", r2.message);
+      return e;
+    }
+  };
+}
+function qs(t2) {
+  const e = U(t2, "-c");
+  return {
+    type: "spawn.args",
+    action(n) {
+      return [...e, ...n];
+    }
+  };
+}
+var $t = (0, import_promise_deferred.deferred)().promise;
+function Ws({
+  onClose: t2 = true,
+  onExit: e = 50
+} = {}) {
+  function n() {
+    let s = -1;
+    const o2 = {
+      close: (0, import_promise_deferred.deferred)(),
+      closeTimeout: (0, import_promise_deferred.deferred)(),
+      exit: (0, import_promise_deferred.deferred)(),
+      exitTimeout: (0, import_promise_deferred.deferred)()
+    }, i = Promise.race([
+      t2 === false ? $t : o2.closeTimeout.promise,
+      e === false ? $t : o2.exitTimeout.promise
+    ]);
+    return r2(t2, o2.close, o2.closeTimeout), r2(e, o2.exit, o2.exitTimeout), {
+      close(a) {
+        s = a, o2.close.done();
+      },
+      exit(a) {
+        s = a, o2.exit.done();
+      },
+      get exitCode() {
+        return s;
+      },
+      result: i
+    };
+  }
+  function r2(s, o2, i) {
+    s !== false && (s === true ? o2.promise : o2.promise.then(() => wt(s))).then(i.done);
+  }
+  return {
+    type: "spawn.after",
+    async action(s, { spawned: o2, close: i }) {
+      const a = n();
+      let c3 = true, y2 = () => {
+        c3 = false;
+      };
+      o2.stdout?.on("data", y2), o2.stderr?.on("data", y2), o2.on("error", y2), o2.on("close", (w2) => a.close(w2)), o2.on("exit", (w2) => a.exit(w2));
+      try {
+        await a.result, c3 && await wt(50), i(a.exitCode);
+      } catch (w2) {
+        i(a.exitCode, w2);
       }
-      for (let i2 = 0; i2 < data.length; i2++) {
-        const param = data[i2];
-        if (r(param)) {
-          append2(o(param));
+    }
+  };
+}
+var we = $2("", "plugin:binary");
+var Hs = "Invalid value supplied for custom binary, requires a single string or an array containing either one or two strings";
+var Ks = "Invalid value supplied for custom binary, restricted characters must be removed or supply the unsafe.allowUnsafeCustomBinary option";
+function Vs(t2) {
+  return !t2 || !/^([a-z]:)?([a-z0-9/.\\_~-]+)$/i.test(t2);
+}
+function Pt(t2, e) {
+  if (t2.length < 1 || t2.length > 2)
+    throw new A2(void 0, "binary", Hs);
+  if (t2.some(Vs))
+    if (e)
+      we("permitted unsafe binary %o", t2);
+    else
+      throw new A2(void 0, "binary", Ks);
+  const [r2, s] = t2;
+  return {
+    binary: r2,
+    prefix: s
+  };
+}
+function Xs(t2, e = ["git"], n = false) {
+  let r2 = Pt(v(e), n);
+  t2.on("binary", (s) => {
+    r2 = Pt(v(s), n), we.info("reconfiguring %o", r2);
+  }), t2.append("spawn.binary", () => r2.binary), t2.append("spawn.args", (s) => r2.prefix ? [r2.prefix, ...s] : s);
+}
+var be = {
+  DISALLOWED_ABBREVIATED: {
+    text: "disallowed abbreviated or ambiguous option",
+    solution: "Unambiguous abbreviated options blocked with unsafe.allowAbbreviatedOptions setting: {message}"
+  },
+  UNKNOWN: {
+    text: "~ unknown ~",
+    solution: void 0
+  }
+};
+function Ys(t2) {
+  if (!t2)
+    return "UNKNOWN";
+  for (const [e, { text: n }] of Object.entries(be))
+    if (t2.startsWith(`fatal: ${n}`))
+      return e;
+  return "UNKNOWN";
+}
+var Qs = class extends O2 {
+  constructor(e = "") {
+    const n = Ys(e);
+    super(void 0, be[n].solution?.replace("{message}", e) ?? e), this.reason = n;
+  }
+};
+function Js(t2) {
+  return !!(t2.exitCode && t2.stdErr.length);
+}
+function Zs(t2) {
+  return Buffer.concat([...t2.stdOut, ...t2.stdErr]);
+}
+function to(t2 = false, e = Js, n = Zs) {
+  return (r2, s) => !t2 && r2 || !e(s) ? r2 : n(s);
+}
+function eo(t2, e) {
+  return t2 === 128 && e.startsWith("fatal:") ? new Qs(e) : new O2(void 0, e);
+}
+function Mt(t2) {
+  return {
+    type: "task.error",
+    action(e, n) {
+      const r2 = t2(e.error, {
+        stdErr: n.stdErr,
+        stdOut: n.stdOut,
+        exitCode: n.exitCode
+      });
+      return Buffer.isBuffer(r2) ? {
+        error: eo(n.exitCode, r2.toString("utf-8"))
+      } : {
+        error: r2
+      };
+    }
+  };
+}
+var nt = $2("", "plugin:input");
+function no(t2) {
+  return {
+    type: "spawn.after",
+    action(e, { commands: n, input: r2, spawned: { stdin: s } }) {
+      if (!s)
+        return;
+      const o2 = t2?.([...n]) ?? r2;
+      if (!o2)
+        return nt("generated zero length content, not writing to stdin");
+      nt("writing %s bytes to stdin", Le(o2)), s.on("error", (i) => {
+        i.code !== "EPIPE" && nt("[ERROR] stdin error %o", i);
+      }), s.end(o2);
+    }
+  };
+}
+var ro = class {
+  constructor() {
+    this.plugins = /* @__PURE__ */ new Set(), this.events = new import_node_events.EventEmitter();
+  }
+  on(e, n) {
+    this.events.on(e, n);
+  }
+  reconfigure(e, n) {
+    this.events.emit(e, n);
+  }
+  append(e, n) {
+    const r2 = S2(this.plugins, { type: e, action: n });
+    return () => this.plugins.delete(r2);
+  }
+  add(e) {
+    const n = [];
+    return v(e).forEach(
+      (r2) => {
+        r2 && this.plugins.add(S2(n, r2));
+      }
+    ), () => {
+      n.forEach((r2) => {
+        this.plugins.delete(r2);
+      });
+    };
+  }
+  exec(e, n, r2) {
+    let s = n;
+    const o2 = Object.freeze(Object.create(r2));
+    for (const i of this.plugins)
+      i.type === e && (s = i.action(s, o2));
+    return s;
+  }
+};
+function so(t2) {
+  const e = "--progress", n = ["checkout", "clone", "fetch", "pull", "push"];
+  return [{
+    type: "spawn.args",
+    action(o2, i) {
+      return n.includes(i.method) ? De(o2, e) : o2;
+    }
+  }, {
+    type: "spawn.after",
+    action(o2, i) {
+      i.commands.includes(e) && i.spawned.stderr?.on("data", (a) => {
+        const c3 = /^([\s\S]+?):\s*(\d+)% \((\d+)\/(\d+)\)/.exec(a.toString("utf8"));
+        c3 && t2({
+          method: i.method,
+          stage: oo(c3[1]),
+          progress: p(c3[2]),
+          processed: p(c3[3]),
+          total: p(c3[4])
+        });
+      });
+    }
+  }];
+}
+function oo(t2) {
+  return String(t2.toLowerCase().split(" ", 1)) || "unknown";
+}
+function io(t2) {
+  const e = je(t2, ["uid", "gid"]);
+  return {
+    type: "spawn.options",
+    action(n) {
+      return { ...e, ...n };
+    }
+  };
+}
+function ao() {
+  return {
+    type: "spawn.args",
+    action(t2) {
+      const e = [];
+      let n;
+      function r2(s) {
+        (n = n || []).push(...s);
+      }
+      for (let s = 0; s < t2.length; s++) {
+        const o2 = t2[s];
+        if (r(o2)) {
+          r2(o(o2));
           continue;
         }
-        if (param === "--") {
-          append2(
-            data.slice(i2 + 1).flatMap((item) => r(item) && o(item) || item)
+        if (o2 === "--") {
+          r2(
+            t2.slice(s + 1).flatMap((i) => r(i) && o(i) || i)
           );
           break;
         }
-        prefix.push(param);
+        e.push(o2);
       }
-      return !suffix ? prefix : [...prefix, "--", ...suffix.map(String)];
+      return n ? [...e, "--", ...n.map(String)] : e;
     }
   };
 }
-init_utils();
-var Git = require_git();
-function gitInstanceFactory(baseDir, options) {
-  const plugins = new PluginStore();
-  const config2 = createInstanceConfig(
-    baseDir && (typeof baseDir === "string" ? { baseDir } : baseDir) || {},
-    options
-  );
-  if (!folderExists(config2.baseDir)) {
-    throw new GitConstructError(
-      config2,
-      `Cannot use simple-git on a directory that does not exist`
-    );
-  }
-  if (Array.isArray(config2.config)) {
-    plugins.add(commandConfigPrefixingPlugin(config2.config));
-  }
-  plugins.add(blockUnsafeOperationsPlugin(config2.unsafe));
-  plugins.add(completionDetectionPlugin(config2.completion));
-  config2.abort && plugins.add(abortPlugin(config2.abort));
-  config2.progress && plugins.add(progressMonitorPlugin(config2.progress));
-  config2.timeout && plugins.add(timeoutPlugin(config2.timeout));
-  config2.spawnOptions && plugins.add(spawnOptionsPlugin(config2.spawnOptions));
-  plugins.add(suffixPathsPlugin());
-  plugins.add(errorDetectionPlugin(errorDetectionHandler(true)));
-  config2.errors && plugins.add(errorDetectionPlugin(config2.errors));
-  customBinaryPlugin(plugins, config2.binary, config2.unsafe?.allowUnsafeCustomBinary);
-  return new Git(config2, plugins);
+function uo({
+  block: t2,
+  stdErr: e = true,
+  stdOut: n = true
+}) {
+  if (t2 > 0)
+    return {
+      type: "spawn.after",
+      action(r2, s) {
+        let o2;
+        function i() {
+          o2 && clearTimeout(o2), o2 = setTimeout(c3, t2);
+        }
+        function a() {
+          s.spawned.stdout?.off("data", i), s.spawned.stderr?.off("data", i), s.spawned.off("exit", a), s.spawned.off("close", a), o2 && clearTimeout(o2);
+        }
+        function c3() {
+          a(), s.kill(new A2(void 0, "timeout", "block timeout reached"));
+        }
+        n && s.spawned.stdout?.on("data", i), e && s.spawned.stderr?.on("data", i), s.spawned.on("exit", a), s.spawned.on("close", a), i();
+      }
+    };
 }
-init_git_response_error();
-var simpleGit = gitInstanceFactory;
+var wo = (t2, e) => {
+  const n = new ro(), r2 = Ge(
+    t2 && (typeof t2 == "string" ? { baseDir: t2 } : t2) || {},
+    e
+  );
+  if (!Lt(r2.baseDir))
+    throw new Ae(
+      r2,
+      "Cannot use simple-git on a directory that does not exist"
+    );
+  return Array.isArray(r2.config) && n.add(qs(r2.config)), n.add(zs(r2.unsafe)), n.add(Ws(r2.completion)), r2.abort && n.add(Is(r2.abort)), r2.progress && n.add(so(r2.progress)), r2.timeout && n.add(uo(r2.timeout)), r2.spawnOptions && n.add(io(r2.spawnOptions)), n.add(ao()), n.add(no(r2.input)), n.add(Mt(to(true))), r2.errors && n.add(Mt(r2.errors)), Xs(n, r2.binary, r2.unsafe?.allowUnsafeCustomBinary), n.add(
+    Fs(r2.allowEnvironment ?? [], r2.unsafe?.allowAbbreviatedOptions)
+  ), new f2(r2, n);
+};
 
 // packages/cowork-mcp/src/git.ts
 var isInternalGitLocked = false;
@@ -27654,16 +26155,21 @@ function isGitBusy(repoPath) {
     return true;
   }
   if (repoPath) {
-    const gitDir = import_node_path2.default.resolve(repoPath, ".git");
-    if (import_node_fs.default.existsSync(gitDir)) {
+    let gitDir;
+    try {
+      gitDir = (0, import_node_child_process2.execFileSync)("git", ["rev-parse", "--absolute-git-dir"], { cwd: repoPath, encoding: "utf8", timeout: 3e3, stdio: ["ignore", "pipe", "ignore"] }).trim();
+    } catch {
+      return false;
+    }
+    if (import_node_fs2.default.existsSync(gitDir)) {
       const lockFiles = [
-        import_node_path2.default.join(gitDir, "index.lock"),
-        import_node_path2.default.join(gitDir, "rebase-merge"),
-        import_node_path2.default.join(gitDir, "rebase-apply"),
-        import_node_path2.default.join(gitDir, "MERGE_HEAD")
+        import_node_path3.default.join(gitDir, "index.lock"),
+        import_node_path3.default.join(gitDir, "rebase-merge"),
+        import_node_path3.default.join(gitDir, "rebase-apply"),
+        import_node_path3.default.join(gitDir, "MERGE_HEAD")
       ];
       for (const file of lockFiles) {
-        if (import_node_fs.default.existsSync(file)) {
+        if (import_node_fs2.default.existsSync(file)) {
           return true;
         }
       }
@@ -27672,7 +26178,7 @@ function isGitBusy(repoPath) {
   return false;
 }
 function getGit(repoPath) {
-  return simpleGit(repoPath);
+  return wo(repoPath);
 }
 async function safePullRebase(repoPath, branch = "main", remote = "origin") {
   if (isGitBusy(repoPath)) {
@@ -27689,7 +26195,9 @@ async function safePullRebase(repoPath, branch = "main", remote = "origin") {
     if (!isRepo) {
       return { success: false, output: `Not a git repository: ${repoPath}` };
     }
-    const res = await git.pull(remote, branch, ["--rebase", "--autostash"]);
+    if ((await git.branchLocal()).current !== branch) return { success: false, output: `Refusing pull: checkout must be ${branch}` };
+    if (!(await git.status()).isClean()) return { success: false, skipped: true, output: "Pull deferred: working tree is dirty" };
+    const res = await git.pull(remote, branch, ["--rebase"]);
     return {
       success: true,
       output: `Pulled from ${remote}/${branch} successfully (files changed: ${res.files.length})`
@@ -27703,7 +26211,7 @@ async function safePullRebase(repoPath, branch = "main", remote = "origin") {
     isInternalGitLocked = false;
   }
 }
-async function safeCommitAndPush(repoPath, commitMessage, branch = "main", remote = "origin") {
+async function safeCommitAndPush(repoPath, commitMessage, branch = "main", remote = "origin", files) {
   if (isGitBusy(repoPath)) {
     return {
       success: false,
@@ -27713,15 +26221,36 @@ async function safeCommitAndPush(repoPath, commitMessage, branch = "main", remot
   isInternalGitLocked = true;
   try {
     const git = getGit(repoPath);
-    try {
-      await git.pull(remote, branch, ["--rebase", "--autostash"]);
-    } catch (pullErr) {
-      console.warn("[Git Push] Pre-pull warning (remote may be empty or unset):", pullErr.message);
+    if ((await git.branchLocal()).current !== branch) {
+      throw new Error(`Refusing sync: checked-out branch must be ${branch}`);
     }
-    await git.add("-A");
-    const commitRes = await git.commit(commitMessage);
-    const hash = commitRes.commit || (await git.revparse(["HEAD"])).trim();
-    await git.push(remote, branch);
+    if (!Array.isArray(files) || !files.length || files.length > 100) throw new Error("Explicit files are required");
+    const selected = [...new Set(files.map((file) => {
+      if (typeof file !== "string" || !file.trim()) throw new Error("Invalid file");
+      const f3 = import_node_path3.default.posix.normalize(file.replace(/\\/g, "/"));
+      if (f3 === "." || f3.startsWith("/") || f3.startsWith("../") || f3 === ".." || /^[A-Za-z]:/.test(f3) || f3.includes("\0")) throw new Error("Files must be repository-relative");
+      return f3;
+    }))];
+    const status = await git.status();
+    if (status.conflicted.length) throw new Error("Resolve existing conflicts first");
+    const staged = (await git.diff(["--cached", "--name-only", "-z"])).split("\0").filter(Boolean);
+    if (staged.some((file) => !selected.includes(file))) throw new Error("Unrelated staged files exist; unstage them before syncing");
+    await git.fetch(remote, branch);
+    const head = (await git.revparse(["HEAD"])).trim();
+    const remoteHead = (await git.revparse(["FETCH_HEAD"])).trim();
+    const base = (await git.raw(["merge-base", "HEAD", "FETCH_HEAD"])).trim();
+    if (base !== remoteHead) {
+      if (!status.isClean() || base !== head) throw new Error("Remote changed; resolve/sync manually before committing");
+      await git.merge(["--ff-only", "FETCH_HEAD"]);
+    }
+    await git.raw(["--literal-pathspecs", "add", "--", ...selected]);
+    const stagedAfter = await git.diff(["--cached", "--name-only"]);
+    if (!stagedAfter.trim()) throw new Error("No selected changes to commit");
+    const actualStaged = (await git.diff(["--cached", "--name-only", "-z"])).split("\0").filter(Boolean);
+    if (actualStaged.some((file) => !selected.includes(file))) throw new Error("Selection must list individual files, not directories. Review staged changes before retrying.");
+    await git.commit(commitMessage);
+    const hash = (await git.revparse(["HEAD"])).trim();
+    await git.push(remote, `HEAD:refs/heads/${branch}`);
     return {
       success: true,
       hash,
@@ -27742,6 +26271,11 @@ var CoWorkPoller = class {
   config;
   timer = null;
   isPolling = false;
+  acknowledgements = [];
+  seen = /* @__PURE__ */ new Set();
+  needsPull = false;
+  pulling = false;
+  stopped = false;
   currentStatus = "Idle / Connected";
   pendingInbox = [];
   fileLocks = {};
@@ -27755,8 +26289,23 @@ var CoWorkPoller = class {
       relayUrl: config2.relayUrl.replace(/\/+$/, ""),
       roomCode: config2.roomCode.toUpperCase(),
       harness: config2.harness || "AI Agent",
-      model: config2.model
+      model: config2.model,
+      participantToken: config2.participantToken || (0, import_node_crypto2.randomBytes)(32).toString("hex"),
+      branch: config2.branch || "main",
+      remote: config2.remote || "origin"
     };
+  }
+  getHeaders() {
+    return { "Content-Type": "application/json", "X-Cowork-Client-Token": this.config.participantToken };
+  }
+  getBranch() {
+    return this.config.branch;
+  }
+  getRemote() {
+    return this.config.remote;
+  }
+  getParticipantToken() {
+    return this.config.participantToken;
   }
   getRoomCode() {
     return this.config.roomCode;
@@ -27777,63 +26326,77 @@ var CoWorkPoller = class {
     return this.config.relayUrl;
   }
   setStatus(status) {
-    this.currentStatus = status;
+    this.currentStatus = status.slice(0, 2048);
   }
   start() {
     if (this.timer) return;
-    this.poll();
+    this.stopped = false;
+    void this.poll();
     this.timer = setInterval(() => this.poll(), 2e3);
   }
   stop() {
+    this.stopped = true;
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
     }
   }
   async poll() {
-    if (this.isPolling) return;
+    if (this.isPolling || this.stopped) return false;
     this.isPolling = true;
     try {
-      const url = new URL(`${this.config.relayUrl}/api/presence`);
-      url.searchParams.set("action", "inbox");
-      url.searchParams.set("roomCode", this.config.roomCode);
-      url.searchParams.set("clientId", this.config.agentId);
-      url.searchParams.set("role", "agent");
-      url.searchParams.set("status", this.currentStatus);
-      if (this.config.harness) url.searchParams.set("harness", this.config.harness);
-      if (this.config.model) url.searchParams.set("model", this.config.model);
-      const res = await fetch(url.toString(), {
-        headers: { "Accept": "application/json" }
+      const res = await fetch(`${this.config.relayUrl}/api/presence`, {
+        method: "POST",
+        headers: this.getHeaders(),
+        signal: AbortSignal.timeout(1e4),
+        body: JSON.stringify({
+          action: "inbox",
+          roomCode: this.config.roomCode,
+          clientId: this.config.agentId,
+          role: "agent",
+          status: this.currentStatus,
+          harness: this.config.harness,
+          model: this.config.model,
+          ack: this.acknowledgements
+        })
       });
-      if (!res.ok) {
-        return;
-      }
+      if (!res.ok) throw new Error(`Presence failed (${res.status})`);
       const data = await res.json();
+      if (!data.ok) throw new Error("Presence rejected");
+      if (this.stopped) return false;
+      this.acknowledgements = (data.messages || []).map((m2) => m2.messageId);
       this.fileLocks = data.fileLocks || {};
       this.participants = data.participants || {};
       this.latestCommit = data.latestCommit || null;
       this.recentHistory = data.recentHistory || [];
       if (data.messages && data.messages.length > 0) {
         for (const msg of data.messages) {
+          if (this.seen.has(msg.messageId)) continue;
+          this.seen.add(msg.messageId);
+          if (this.seen.size > 2e3) this.seen.delete(this.seen.values().next().value);
           this.pendingInbox.push(msg);
           for (const listener of this.messageListeners) {
             listener(msg);
           }
-          if (msg.contentType === "GIT_PUSH" && msg.senderId !== this.config.agentId) {
-            console.error(`[CoWork MCP] Peer @${msg.senderId} pushed commit (${msg.commitHash || "latest"}). Auto-pulling...`);
-            const pullRes = await safePullRebase(this.config.repoPath);
-            if (pullRes.success) {
-              console.error(`[CoWork MCP] Auto-pull succeeded: ${pullRes.output}`);
-            } else if (pullRes.skipped) {
-              console.error(`[CoWork MCP] Auto-pull deferred: ${pullRes.output}`);
-            } else {
-              console.error(`[CoWork MCP] Auto-pull failed: ${pullRes.output}`);
-            }
+          if (this.config.autoPull && msg.contentType === "GIT_PUSH" && msg.senderId !== this.config.agentId) {
+            this.needsPull = true;
           }
         }
       }
+      if (this.needsPull && !this.pulling && !this.stopped) {
+        this.pulling = true;
+        this.needsPull = false;
+        void safePullRebase(this.config.repoPath, this.config.branch, this.config.remote).then((result) => {
+          if (result.skipped) this.needsPull = true;
+          if (!result.success) console.error(`[CoWork MCP] ${result.output}`);
+        }).finally(() => {
+          this.pulling = false;
+        });
+      }
+      return true;
     } catch (err) {
       console.error(`[CoWork MCP Poller] Error: ${err.message || String(err)}`);
+      return false;
     } finally {
       this.isPolling = false;
     }
@@ -27867,7 +26430,7 @@ var CoWorkPoller = class {
       const timeout = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          this.messageListeners = this.messageListeners.filter((l) => l !== onMsg);
+          this.messageListeners = this.messageListeners.filter((l3) => l3 !== onMsg);
           resolve(null);
         }
       }, timeoutSeconds * 1e3);
@@ -27875,7 +26438,7 @@ var CoWorkPoller = class {
         if (!resolved) {
           resolved = true;
           clearTimeout(timeout);
-          this.messageListeners = this.messageListeners.filter((l) => l !== onMsg);
+          this.messageListeners = this.messageListeners.filter((l3) => l3 !== onMsg);
           const idx = this.pendingInbox.indexOf(msg);
           if (idx !== -1) this.pendingInbox.splice(idx, 1);
           resolve(msg);
@@ -27893,7 +26456,7 @@ function detectSmartModelAndHarness(customModel, customHarness) {
   let model = customModel;
   if (!harness) {
     if (process.env.ANTIGRAVITY_APP_DATA_DIR || process.env.ANTIGRAVITY_SOURCE_METADATA || process.env.GEMINI_CLI) {
-      harness = "Antigravity";
+      harness = process.env.GEMINI_CLI ? "Gemini CLI" : "Antigravity";
     } else if (process.env.CLAUDE_CODE || process.env.CLAUDE_PROJECT_DIR || process.env.ANTHROPIC_MODEL || process.env.CLAUDE_SESSION_ID) {
       harness = "Claude Code";
     } else if (process.env.CURSOR_PROJECT_DIR || process.env.CURSOR_AGENT) {
@@ -27906,13 +26469,13 @@ function detectSmartModelAndHarness(customModel, customHarness) {
   }
   if (!model) {
     if (harness === "Antigravity") {
-      model = process.env.MODEL || process.env.ANTIGRAVITY_MODEL || "Gemini 3.8 Flash";
+      model = process.env.MODEL || process.env.ANTIGRAVITY_MODEL || "Unknown model";
     } else if (harness === "Claude Code") {
-      model = process.env.ANTHROPIC_MODEL || "Claude 3.7 Sonnet";
+      model = process.env.ANTHROPIC_MODEL || "Unknown model";
     } else if (harness === "Cursor") {
-      model = process.env.CURSOR_MODEL || "Claude 3.7 / GPT-4o";
+      model = process.env.CURSOR_MODEL || "Unknown model";
     } else if (harness === "Windsurf") {
-      model = "Cascade AI";
+      model = process.env.AI_MODEL || "Unknown model";
     } else {
       model = process.env.AI_MODEL || "Autonomous AI";
     }
@@ -27930,6 +26493,10 @@ var server = new Server(
     }
   }
 );
+server.onclose = () => {
+  activePoller?.stop();
+  activePoller = null;
+};
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -27941,8 +26508,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             roomCode: {
               type: "string",
-              description: "Optional 6-char room code (e.g. SED-409). If omitted, a fresh code is generated."
+              description: "Optional room invite code. If omitted, a cryptographically random room code is reserved."
             },
+            participantToken: { type: "string", description: "Private persistent identity token (32\u2013128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts." },
+            autoPull: { type: "boolean", description: "Opt in to automatic Git pulls on peer pushes. Default false." },
+            branch: { type: "string", description: "Expected checked-out Git branch (default main)." },
+            remote: { type: "string", description: "Git remote (default origin)." },
             agentId: {
               type: "string",
               description: 'Unique agent identifier, e.g. "loid-ai" or "peer-ai".'
@@ -27957,7 +26528,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             model: {
               type: "string",
-              description: 'Optional AI model name (auto-detected if omitted, e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet").'
+              description: "Optional actual AI model name. Uses environment metadata or an unknown-model label if omitted."
             },
             harness: {
               type: "string",
@@ -28011,16 +26582,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "cowork_sync_main",
-        description: "Safely runs git pull --rebase --autostash, commits all changes, pushes to origin main, and notifies the relay to release your file locks and trigger auto-pull on the peer laptop.",
+        description: "Safely validates the branch and remote state, commits only explicitly selected files, pushes to the configured branch, and notifies the relay to release your file locks and trigger auto-pull on the peer laptop.",
         inputSchema: {
           type: "object",
           properties: {
+            files: { type: "array", items: { type: "string" }, minItems: 1, description: "Explicit repository-relative files to stage and commit. Unrelated staged changes cause refusal." },
             commitMessage: {
               type: "string",
               description: "Git commit message describing your completed changes."
             }
           },
-          required: ["commitMessage"]
+          required: ["commitMessage", "files"]
         }
       },
       {
@@ -28063,34 +26635,41 @@ async function getAsciiQr(url) {
     }
   });
 }
+async function sendToRelay(poller, init, expectedStatuses = [200]) {
+  const response = await fetch(`${poller.getRelayUrl()}/api/send`, { ...init, signal: AbortSignal.timeout(1e4) });
+  let data = {};
+  try {
+    data = await response.clone().json();
+  } catch {
+  }
+  if (!expectedStatuses.includes(response.status)) {
+    throw new Error(data.error || `Relay rejected request (${response.status})`);
+  }
+  if (response.status === 200 && !data.ok) throw new Error(data.error || "Relay did not accept request");
+  return response;
+}
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   try {
     switch (name) {
       case "cowork_connect": {
         const agentId = String(args?.agentId || "agent-ai");
-        const repoPath = import_node_path3.default.resolve(String(args?.repoPath || process.cwd()));
+        const repoPath = import_node_path4.default.resolve(String(args?.repoPath || process.cwd()));
         const relayUrl = String(
           args?.relayUrl || process.env.COWORK_RELAY_URL || "https://cowork.sednium.com"
         );
         let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : "";
         if (!roomCode) {
           try {
-            const codeRes = await fetch(`${relayUrl.replace(/\/+$/, "")}/api/presence?action=new-room`);
+            const codeRes = await fetch(`${relayUrl.replace(/\/+$/, "")}/api/presence?action=new-room`, { signal: AbortSignal.timeout(1e4) });
             if (codeRes.ok) {
               const codeData = await codeRes.json();
               if (codeData.roomCode) roomCode = codeData.roomCode;
             }
           } catch {
+            throw new Error("Cannot reserve a room: relay unavailable.");
           }
-          if (!roomCode) {
-            const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-            let suffix = "";
-            for (let i2 = 0; i2 < 4; i2++) {
-              suffix += chars[Math.floor(Math.random() * chars.length)];
-            }
-            roomCode = `SED-${suffix}`;
-          }
+          if (!roomCode) throw new Error("Relay did not allocate a room.");
         }
         const { harness, model } = detectSmartModelAndHarness(
           args?.model ? String(args.model) : void 0,
@@ -28105,8 +26684,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           repoPath,
           relayUrl,
           harness,
-          model
+          model,
+          participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
+          autoPull: args?.autoPull === true,
+          branch: String(args?.branch || "main"),
+          remote: String(args?.remote || "origin")
         });
+        if (!await activePoller.poll()) {
+          activePoller.stop();
+          activePoller = null;
+          throw new Error("Connection failed. Check relay availability and participant credentials.");
+        }
         activePoller.start();
         const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}`;
         const asciiQr = await getAsciiQr(joinUrl);
@@ -28123,7 +26711,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 ${asciiQr}
 
 \u{1F4C1} Repository Path: ${repoPath}
-\u{1F504} Background Polling: Active (2000ms loop with Auto-Git Pull on peer pushes enabled)`
+\u{1F504} Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`
             }
           ]
         };
@@ -28134,9 +26722,9 @@ ${asciiQr}
         }
         const files = args?.files || [];
         const taskDescription = String(args?.taskDescription || "Editing files");
-        const res = await fetch(`${activePoller.getRelayUrl()}/api/send`, {
+        const res = await sendToRelay(activePoller, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: activePoller.getHeaders(),
           body: JSON.stringify({
             roomCode: activePoller.getRoomCode(),
             senderId: activePoller.getAgentId(),
@@ -28145,16 +26733,16 @@ ${asciiQr}
             text: taskDescription,
             files
           })
-        });
+        }, [200, 409]);
         const data = await res.json();
-        if (res.status === 409 || !data.ok) {
+        if (res.status === 409 || data.ok === false) {
           return {
             isError: true,
             content: [
               {
                 type: "text",
                 text: `\u274C FILE LOCK CONFLICT: The following file(s) are currently locked by @${data.lockedBy || "peer agent"}:
-${(data.conflictingFiles || []).map((f) => `  - ${f}`).join("\n")}
+${(data.conflictingFiles || []).map((f3) => `  - ${f3}`).join("\n")}
 
 Recommendation: Please coordinate with @${data.lockedBy} using cowork_message_peer or choose non-overlapping files.`
               }
@@ -28167,7 +26755,7 @@ Recommendation: Please coordinate with @${data.lockedBy} using cowork_message_pe
             {
               type: "text",
               text: `\u{1F512} Successfully claimed file lock on:
-${files.map((f) => `  - ${f}`).join("\n")}
+${files.map((f3) => `  - ${f3}`).join("\n")}
 
 Task: ${taskDescription}
 Locks will automatically expire if idle for 90s.`
@@ -28182,9 +26770,9 @@ Locks will automatically expire if idle for 90s.`
         const targetId = String(args?.targetId || "all");
         const message = String(args?.message || "");
         const contentType = args?.contentType || "AGENT_SYNC";
-        await fetch(`${activePoller.getRelayUrl()}/api/send`, {
+        await sendToRelay(activePoller, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: activePoller.getHeaders(),
           body: JSON.stringify({
             roomCode: activePoller.getRoomCode(),
             senderId: activePoller.getAgentId(),
@@ -28203,7 +26791,7 @@ Locks will automatically expire if idle for 90s.`
               text: `\u2709\uFE0F Sent ${contentType} message to @${targetId}: "${message}"
 
 ` + (pending.length > 0 ? `\u{1F4EC} Unread incoming messages from inbox (${pending.length}):
-` + pending.map((m) => `[@${m.senderId} -> @${m.targetId}][${m.contentType}]: ${m.text}`).join("\n") : `\u{1F4EC} No other pending unread messages in inbox.`)
+` + pending.map((m2) => `[@${m2.senderId} -> @${m2.targetId}][${m2.contentType}]: ${m2.text}`).join("\n") : `\u{1F4EC} No other pending unread messages in inbox.`)
             }
           ]
         };
@@ -28213,8 +26801,8 @@ Locks will automatically expire if idle for 90s.`
           throw new Error("Not connected to a CoWork room. Run cowork_connect first.");
         }
         const commitMessage = String(args?.commitMessage || "feat: cowork sync");
-        activePoller.setStatus("Syncing git to main");
-        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage);
+        activePoller.setStatus(`Syncing git to ${activePoller.getBranch()}`);
+        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage, activePoller.getBranch(), activePoller.getRemote(), args?.files);
         if (!gitRes.success) {
           activePoller.setStatus("Git sync failed");
           return {
@@ -28222,36 +26810,41 @@ Locks will automatically expire if idle for 90s.`
             content: [
               {
                 type: "text",
-                text: `\u274C Git push to origin main failed: ${gitRes.output}`
+                text: `\u274C Git sync failed: ${gitRes.output}`
               }
             ]
           };
         }
-        await fetch(`${activePoller.getRelayUrl()}/api/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            roomCode: activePoller.getRoomCode(),
-            senderId: activePoller.getAgentId(),
-            targetId: "all",
-            contentType: "GIT_PUSH",
-            text: commitMessage,
-            commitHash: gitRes.hash,
-            senderModel: activePoller.getModel(),
-            senderHarness: activePoller.getHarness()
-          })
-        });
-        activePoller.setStatus("Idle / Synced with main");
+        try {
+          await sendToRelay(activePoller, {
+            method: "POST",
+            headers: activePoller.getHeaders(),
+            body: JSON.stringify({
+              roomCode: activePoller.getRoomCode(),
+              senderId: activePoller.getAgentId(),
+              targetId: "all",
+              contentType: "GIT_PUSH",
+              text: commitMessage,
+              commitHash: gitRes.hash,
+              senderModel: activePoller.getModel(),
+              senderHarness: activePoller.getHarness()
+            })
+          });
+        } catch {
+          activePoller.setStatus("Git pushed; relay notification failed");
+          throw new Error(`Git commit ${gitRes.hash} was pushed, but relay notification failed. Locks may remain held and peers were not notified. Do not blindly repeat the commit.`);
+        }
+        activePoller.setStatus("Idle / Synced");
         return {
           content: [
             {
               type: "text",
-              text: `\u{1F680} Successfully committed and pushed to main:
+              text: `\u{1F680} Successfully committed and pushed to ${activePoller.getRemote()}/${activePoller.getBranch()}:
   Hash: ${gitRes.hash || "HEAD"}
   Message: "${commitMessage}"
 
 \u{1F513} All file locks held by @${activePoller.getAgentId()} have been liberated.
-\u{1F4E1} Peer laptop MCPs have been notified and are auto-rebasing origin main.`
+\u{1F4E1} Peers have been notified; only peers with autoPull enabled will pull.`
             }
           ]
         };
@@ -28278,10 +26871,10 @@ Locks will automatically expire if idle for 90s.`
 
 Unread Messages (${messages.length}):
 ` + (messages.length === 0 ? `  (No new unread messages)
-` : messages.map((m) => `  - [@${m.senderId} \u2192 @${m.targetId}][${m.contentType}]: ${m.text}`).join("\n") + "\n") + `
+` : messages.map((m2) => `  - [@${m2.senderId} \u2192 @${m2.targetId}][${m2.contentType}]: ${m2.text}`).join("\n") + "\n") + `
 Active File Locks (${Object.keys(locks).length}):
 ` + (Object.keys(locks).length === 0 ? `  (No files locked)
-` : Object.entries(locks).map(([f, l]) => `  - ${f} (locked by @${l.lockedBy}: "${l.task}")`).join("\n") + "\n") + (latestCommit ? `
+` : Object.entries(locks).map(([f3, l3]) => `  - ${f3} (locked by @${l3.lockedBy}: "${l3.task}")`).join("\n") + "\n") + (latestCommit ? `
 Latest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${latestCommit.author}` : "")
             }
           ]

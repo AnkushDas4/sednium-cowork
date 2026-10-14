@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { getParticipantToken } from './identity.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -30,7 +31,7 @@ export function detectSmartModelAndHarness(
       process.env.ANTIGRAVITY_SOURCE_METADATA ||
       process.env.GEMINI_CLI
     ) {
-      harness = 'Antigravity';
+      harness = process.env.GEMINI_CLI ? 'Gemini CLI' : 'Antigravity';
     } else if (
       process.env.CLAUDE_CODE ||
       process.env.CLAUDE_PROJECT_DIR ||
@@ -49,13 +50,13 @@ export function detectSmartModelAndHarness(
 
   if (!model) {
     if (harness === 'Antigravity') {
-      model = process.env.MODEL || process.env.ANTIGRAVITY_MODEL || 'Gemini 3.8 Flash';
+      model = process.env.MODEL || process.env.ANTIGRAVITY_MODEL || 'Unknown model';
     } else if (harness === 'Claude Code') {
-      model = process.env.ANTHROPIC_MODEL || 'Claude 3.7 Sonnet';
+      model = process.env.ANTHROPIC_MODEL || 'Unknown model';
     } else if (harness === 'Cursor') {
-      model = process.env.CURSOR_MODEL || 'Claude 3.7 / GPT-4o';
+      model = process.env.CURSOR_MODEL || 'Unknown model';
     } else if (harness === 'Windsurf') {
-      model = 'Cascade AI';
+      model = process.env.AI_MODEL || 'Unknown model';
     } else {
       model = process.env.AI_MODEL || 'Autonomous AI';
     }
@@ -76,6 +77,8 @@ const server = new Server(
   }
 );
 
+server.onclose = () => { activePoller?.stop(); activePoller = null; };
+
 // Register Available Tools
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
@@ -89,8 +92,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             roomCode: {
               type: 'string',
-              description: 'Optional 6-char room code (e.g. SED-409). If omitted, a fresh code is generated.',
+              description: 'Optional room invite code. If omitted, a cryptographically random room code is reserved.',
             },
+            participantToken: { type: 'string', description: 'Private persistent identity token (32–128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts.' },
+            autoPull: { type: 'boolean', description: 'Opt in to automatic Git pulls on peer pushes. Default false.' },
+            branch: { type: 'string', description: 'Expected checked-out Git branch (default main).' },
+            remote: { type: 'string', description: 'Git remote (default origin).' },
             agentId: {
               type: 'string',
               description: 'Unique agent identifier, e.g. "loid-ai" or "peer-ai".',
@@ -105,7 +112,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             model: {
               type: 'string',
-              description: 'Optional AI model name (auto-detected if omitted, e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet").',
+              description: 'Optional actual AI model name. Uses environment metadata or an unknown-model label if omitted.',
             },
             harness: {
               type: 'string',
@@ -162,16 +169,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'cowork_sync_main',
         description:
-          'Safely runs git pull --rebase --autostash, commits all changes, pushes to origin main, and notifies the relay to release your file locks and trigger auto-pull on the peer laptop.',
+          'Safely validates the branch and remote state, commits only explicitly selected files, pushes to the configured branch, and notifies the relay to release your file locks and trigger auto-pull on the peer laptop.',
         inputSchema: {
           type: 'object',
           properties: {
+            files: { type: 'array', items: { type: 'string' }, minItems: 1, description: 'Explicit repository-relative files to stage and commit. Unrelated staged changes cause refusal.' },
             commitMessage: {
               type: 'string',
               description: 'Git commit message describing your completed changes.',
             },
           },
-          required: ['commitMessage'],
+          required: ['commitMessage', 'files'],
         },
       },
       {
@@ -219,6 +227,21 @@ async function getAsciiQr(url: string): Promise<string> {
   });
 }
 
+/**
+ * Posts to the relay and fails loudly unless the response is a usable outcome:
+ * HTTP 200 with ok:true, or HTTP 409 for a FILE_LOCK claim (a real conflict, not a bug).
+ */
+async function sendToRelay(poller: CoWorkPoller, init: RequestInit, expectedStatuses: number[] = [200]): Promise<Response> {
+  const response = await fetch(`${poller.getRelayUrl()}/api/send`, { ...init, signal: AbortSignal.timeout(10_000) });
+  let data: { ok?: boolean; error?: string } = {};
+  try { data = await response.clone().json() as typeof data; } catch { /* non-JSON relay/proxy response */ }
+  if (!expectedStatuses.includes(response.status)) {
+    throw new Error(data.error || `Relay rejected request (${response.status})`);
+  }
+  if (response.status === 200 && !data.ok) throw new Error(data.error || 'Relay did not accept request');
+  return response;
+}
+
 // Tool Execution Handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
@@ -235,22 +258,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : '';
         if (!roomCode) {
           try {
-            const codeRes = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/presence?action=new-room`);
+            const codeRes = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/presence?action=new-room`, { signal: AbortSignal.timeout(10_000) });
             if (codeRes.ok) {
               const codeData: any = await codeRes.json();
               if (codeData.roomCode) roomCode = codeData.roomCode;
             }
           } catch {
-            // fallback
+            throw new Error('Cannot reserve a room: relay unavailable.');
           }
-          if (!roomCode) {
-            const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-            let suffix = '';
-            for (let i = 0; i < 4; i++) {
-              suffix += chars[Math.floor(Math.random() * chars.length)];
-            }
-            roomCode = `SED-${suffix}`;
-          }
+          if (!roomCode) throw new Error('Relay did not allocate a room.');
         }
 
         const { harness, model } = detectSmartModelAndHarness(
@@ -269,8 +285,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           relayUrl,
           harness,
           model,
+          participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
+          autoPull: args?.autoPull === true,
+          branch: String(args?.branch || 'main'), remote: String(args?.remote || 'origin'),
         });
 
+        if (!await activePoller.poll()) {
+          activePoller.stop();
+          activePoller = null;
+          throw new Error('Connection failed. Check relay availability and participant credentials.');
+        }
         activePoller.start();
 
         const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}`;
@@ -285,7 +309,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +
-                    `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull on peer pushes enabled)`,
+                    `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`,
             },
           ],
         };
@@ -299,9 +323,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const files = (args?.files as string[]) || [];
         const taskDescription = String(args?.taskDescription || 'Editing files');
 
-        const res = await fetch(`${activePoller.getRelayUrl()}/api/send`, {
+        const res = await sendToRelay(activePoller, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: activePoller.getHeaders(),
           body: JSON.stringify({
             roomCode: activePoller.getRoomCode(),
             senderId: activePoller.getAgentId(),
@@ -310,11 +334,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: taskDescription,
             files,
           }),
-        });
+        }, [200, 409]);
 
         const data: any = await res.json();
 
-        if (res.status === 409 || !data.ok) {
+        if (res.status === 409 || data.ok === false) {
           return {
             isError: true,
             content: [
@@ -350,9 +374,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const message = String(args?.message || '');
         const contentType = (args?.contentType as ContentType) || 'AGENT_SYNC';
 
-        await fetch(`${activePoller.getRelayUrl()}/api/send`, {
+        await sendToRelay(activePoller, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: activePoller.getHeaders(),
           body: JSON.stringify({
             roomCode: activePoller.getRoomCode(),
             senderId: activePoller.getAgentId(),
@@ -386,9 +410,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const commitMessage = String(args?.commitMessage || 'feat: cowork sync');
-        activePoller.setStatus('Syncing git to main');
+        activePoller.setStatus(`Syncing git to ${activePoller.getBranch()}`);
 
-        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage);
+        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage, activePoller.getBranch(), activePoller.getRemote(), args?.files as string[]);
 
         if (!gitRes.success) {
           activePoller.setStatus('Git sync failed');
@@ -397,16 +421,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             content: [
               {
                 type: 'text',
-                text: `❌ Git push to origin main failed: ${gitRes.output}`,
+                text: `❌ Git sync failed: ${gitRes.output}`,
               },
             ],
           };
         }
 
-        // Notify relay of push -> releases all locks and triggers peer auto-pull
-        await fetch(`${activePoller.getRelayUrl()}/api/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        // A notification failure must not be reported as a successful sync.
+        try {
+          await sendToRelay(activePoller, {
+            method: 'POST',
+            headers: activePoller.getHeaders(),
           body: JSON.stringify({
             roomCode: activePoller.getRoomCode(),
             senderId: activePoller.getAgentId(),
@@ -419,17 +444,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }),
         });
 
-        activePoller.setStatus('Idle / Synced with main');
+        } catch {
+          activePoller.setStatus('Git pushed; relay notification failed');
+          throw new Error(`Git commit ${gitRes.hash} was pushed, but relay notification failed. Locks may remain held and peers were not notified. Do not blindly repeat the commit.`);
+        }
+        activePoller.setStatus('Idle / Synced');
 
         return {
           content: [
             {
               type: 'text',
-              text: `🚀 Successfully committed and pushed to main:\n` +
+              text: `🚀 Successfully committed and pushed to ${activePoller.getRemote()}/${activePoller.getBranch()}:\n` +
                     `  Hash: ${gitRes.hash || 'HEAD'}\n` +
                     `  Message: "${commitMessage}"\n\n` +
                     `🔓 All file locks held by @${activePoller.getAgentId()} have been liberated.\n` +
-                    `📡 Peer laptop MCPs have been notified and are auto-rebasing origin main.`,
+                    `📡 Peers have been notified; only peers with autoPull enabled will pull.`,
             },
           ],
         };

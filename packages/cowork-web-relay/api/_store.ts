@@ -1,79 +1,64 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import type { RoomState, FileLockInfo, CoWorkMessage } from './_types.js';
+import { randomBytes, randomUUID } from 'node:crypto';
+import { Pool } from 'pg';
+import type { RoomState, CoWorkMessage } from './_types.js';
+import { ApiError, id } from './_validation.js';
 
-export const LOCK_TTL_MS = 90_000; // 90 seconds
-const STORAGE_FILE = process.env.COWORK_STORAGE_PATH || '/tmp/cowork_state.json';
-
-// In-Memory Singleton Store
+export const LOCK_TTL_MS = 90_000;
 const memoryStore = new Map<string, RoomState>();
-let isPostgresInitialized = false;
-let pgClient: any = null;
+let pool: Pool | undefined;
+let initialized: Promise<void> | undefined;
+let memoryTail: Promise<unknown> = Promise.resolve();
 
-// Helper: initialize PostgreSQL pool/client if DATABASE_URL is provided
-async function getPostgresPool() {
-  if (!process.env.DATABASE_URL) return null;
-  if (pgClient) return pgClient;
-
-  try {
-    const { Pool } = await import('pg');
-    pgClient = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false }
-    });
-
-    // Create table if not exists
-    await pgClient.query(`
-      CREATE TABLE IF NOT EXISTS cowork_rooms (
-        room_code VARCHAR(64) PRIMARY KEY,
-        state JSONB NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-      );
-    `);
-    isPostgresInitialized = true;
-    return pgClient;
-  } catch (err) {
-    console.warn('[CoWork Store] PostgreSQL connection failed, falling back to local file store:', err);
+// Tests ALWAYS use isolated process memory, even if DATABASE_URL is inherited.
+function database(): Pool | null {
+  if (process.env.NODE_ENV === 'test') return null;
+  if (!process.env.DATABASE_URL) {
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      throw new Error('DATABASE_URL is required in production');
+    }
     return null;
   }
-}
-
-// Helper: Load initial state from disk cache into memory
-function loadDiskStore(): void {
-  try {
-    if (fs.existsSync(STORAGE_FILE)) {
-      const data = fs.readFileSync(STORAGE_FILE, 'utf-8');
-      const parsed = JSON.parse(data) as Record<string, RoomState>;
-      for (const [code, state] of Object.entries(parsed)) {
-        memoryStore.set(code, state);
-      }
+  if (!pool) {
+    const url = new URL(process.env.DATABASE_URL);
+    if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && !url.searchParams.has('sslmode')) {
+      url.searchParams.set('sslmode', 'verify-full');
     }
-  } catch (err) {
-    console.warn('[CoWork Store] Warning reading disk cache:', err);
+    pool = new Pool({
+      connectionString: url.toString(), max: 3, idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 3_000, statement_timeout: 8_000,
+    });
+    pool.on('error', () => console.error('[CoWork] Idle database connection failed; reconnecting on next request.'));
   }
+  return pool;
+}
+async function initialize(p: Pool): Promise<void> {
+  initialized ??= (async () => {
+    const c = await p.connect();
+    try {
+      await c.query('BEGIN');
+      await c.query('SELECT pg_advisory_xact_lock(73180421)');
+      await c.query(`CREATE TABLE IF NOT EXISTS public.cowork_rooms (
+        room_code VARCHAR(64) PRIMARY KEY, state JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+      await c.query('ALTER TABLE public.cowork_rooms ENABLE ROW LEVEL SECURITY');
+      await c.query('REVOKE ALL ON public.cowork_rooms FROM PUBLIC');
+      // Supabase API roles must not bypass the relay via the public Data API.
+      await c.query(`DO $$ BEGIN
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN
+          REVOKE ALL ON public.cowork_rooms FROM anon;
+        END IF;
+        IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN
+          REVOKE ALL ON public.cowork_rooms FROM authenticated;
+        END IF;
+      END $$`);
+      await c.query('COMMIT');
+    } catch (e) { await c.query('ROLLBACK'); throw e; }
+    finally { c.release(); }
+  })().catch(e => { initialized = undefined; throw e; });
+  return initialized;
 }
 
-// Helper: Persist memory state to disk cache
-function persistDiskStore(): void {
-  try {
-    const obj: Record<string, RoomState> = {};
-    for (const [code, state] of memoryStore.entries()) {
-      obj[code] = state;
-    }
-    fs.writeFileSync(STORAGE_FILE, JSON.stringify(obj, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn('[CoWork Store] Warning writing disk cache:', err);
-  }
-}
-
-// Initial sync on module load
-loadDiskStore();
-
-/**
- * Sweeps and removes file locks that have expired:
- * 1. Lock age > LOCK_TTL_MS (90s)
- * 2. Holding participant lastSeen heartbeat > LOCK_TTL_MS (90s ago)
- */
 export function cleanExpiredLocks(room: RoomState): boolean {
   const now = Date.now();
   let modified = false;
@@ -92,7 +77,7 @@ export function cleanExpiredLocks(room: RoomState): boolean {
         : `[SYSTEM] Auto-released expired file lock on "${file}" after exceeding 90s TTL.`;
 
       const auditMsg: CoWorkMessage = {
-        messageId: `sys_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        messageId: `sys_${randomUUID()}`,
         timestamp: now,
         roomCode: room.roomCode,
         senderId: 'SYSTEM',
@@ -109,7 +94,7 @@ export function cleanExpiredLocks(room: RoomState): boolean {
 
       // Also notify any connected participants
       for (const [clientId, inbox] of Object.entries(room.inboxes)) {
-        inbox.push(auditMsg);
+        if (inbox.length < 1000) inbox.push(auditMsg);
       }
     }
   }
@@ -117,147 +102,78 @@ export function cleanExpiredLocks(room: RoomState): boolean {
   return modified;
 }
 
-/**
- * Creates default empty room state
- */
 export function createDefaultRoom(roomCode: string): RoomState {
-  return {
-    roomCode,
-    createdAt: Date.now(),
-    latestCommit: null,
-    participants: {},
-    fileLocks: {},
-    inboxes: {},
-    history: []
-  };
+  return { roomCode, createdAt: Date.now(), latestCommit: null,
+    participants: {}, fileLocks: {}, inboxes: {}, history: [], participantKeys: {} };
 }
 
-/**
- * Gets or initializes a room state.
- */
-export async function getRoom(rawCode: string): Promise<RoomState> {
-  const roomCode = rawCode.trim().toUpperCase();
-  const pool = await getPostgresPool();
-
-  if (pool) {
-    try {
-      const res = await pool.query('SELECT state FROM cowork_rooms WHERE room_code = $1', [roomCode]);
-      if (res.rows.length > 0) {
-        const state: RoomState = res.rows[0].state;
-        const modified = cleanExpiredLocks(state);
-        if (modified) {
-          await saveRoom(state);
-        }
-        memoryStore.set(roomCode, state);
-        return state;
-      }
-    } catch (err) {
-      console.warn('[CoWork Store] Postgres read error:', err);
-    }
+/** All API read/modify/write operations execute under one room row lock. */
+export async function mutateRoom<T>(rawCode: string, fn: (room: RoomState) => T | Promise<T>): Promise<T> {
+  const code = id(rawCode, 'roomCode').toUpperCase();
+  const p = database();
+  if (!p) {
+    const job = memoryTail.then(async () => {
+      const state = structuredClone(memoryStore.get(code) ?? createDefaultRoom(code));
+      cleanExpiredLocks(state);
+      const result = await fn(state);
+      memoryStore.set(code, state);
+      return structuredClone(result);
+    });
+    memoryTail = job.catch(() => {});
+    return job;
   }
-
-  // Memory/Disk Fallback
-  let room = memoryStore.get(roomCode);
-  if (!room) {
-    room = createDefaultRoom(roomCode);
-    memoryStore.set(roomCode, room);
-    persistDiskStore();
-  } else {
-    const modified = cleanExpiredLocks(room);
-    if (modified) {
-      persistDiskStore();
-    }
-  }
-
-  return room;
-}
-
-/**
- * Persists room state to storage.
- */
-export async function saveRoom(state: RoomState): Promise<void> {
-  const roomCode = state.roomCode.trim().toUpperCase();
-  cleanExpiredLocks(state);
-
-  memoryStore.set(roomCode, state);
-  persistDiskStore();
-
-  const pool = await getPostgresPool();
-  if (pool) {
-    try {
-      await pool.query(
-        `INSERT INTO cowork_rooms (room_code, state, updated_at) 
-         VALUES ($1, $2, NOW()) 
-         ON CONFLICT (room_code) 
-         DO UPDATE SET state = $2, updated_at = NOW()`,
-        [roomCode, JSON.stringify(state)]
-      );
-    } catch (err) {
-      console.warn('[CoWork Store] Postgres save error:', err);
-    }
-  }
-}
-
-/**
- * Checks if a room already exists in memory or persistent store
- */
-export async function hasRoom(rawCode: string): Promise<boolean> {
-  const roomCode = rawCode.trim().toUpperCase();
-  if (memoryStore.has(roomCode)) {
-    return true;
-  }
-
-  const pool = await getPostgresPool();
-  if (pool) {
-    try {
-      const res = await pool.query('SELECT 1 FROM cowork_rooms WHERE room_code = $1', [roomCode]);
-      return res.rows.length > 0;
-    } catch {
-      return false;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Generates a unique, collision-free 6-8 char room code (e.g. SED-7K9P).
- * Checks the storage engine to guarantee it has never been allocated.
- */
-export async function generateUniqueRoomCode(): Promise<string> {
-  const CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // 32 unambiguous chars
-  let attempts = 0;
-
-  while (attempts < 100) {
-    attempts++;
-    // Generate 4-char suffix (32^4 = 1,048,576 combinations)
-    let suffix = '';
-    for (let i = 0; i < 4; i++) {
-      suffix += CHARSET[Math.floor(Math.random() * CHARSET.length)];
-    }
-    const candidate = `SED-${suffix}`;
-
-    const exists = await hasRoom(candidate);
-    if (!exists) {
-      return candidate;
-    }
-  }
-
-  // Fallback for astronomical scale: add timestamp entropy (guaranteed collision-free)
-  const timeSuffix = Date.now().toString(36).toUpperCase().slice(-4);
-  return `SED-${timeSuffix}`;
-}
-
-/**
- * Resets store state (used for tests)
- */
-export async function resetStore(): Promise<void> {
-  memoryStore.clear();
+  await initialize(p);
+  const c = await p.connect();
   try {
-    if (fs.existsSync(STORAGE_FILE)) {
-      fs.unlinkSync(STORAGE_FILE);
+    await c.query('BEGIN');
+    await c.query("SET LOCAL lock_timeout = '4s'");
+    await c.query(`INSERT INTO public.cowork_rooms(room_code, state) VALUES ($1, $2)
+      ON CONFLICT (room_code) DO NOTHING`, [code, JSON.stringify(createDefaultRoom(code))]);
+    const { rows } = await c.query('SELECT state FROM public.cowork_rooms WHERE room_code=$1 FOR UPDATE', [code]);
+    const state: RoomState = rows[0].state;
+    cleanExpiredLocks(state);
+    const result = await fn(state);
+    await c.query('UPDATE public.cowork_rooms SET state=$2, updated_at=NOW() WHERE room_code=$1', [code, JSON.stringify(state)]);
+    await c.query('COMMIT');
+    return result;
+  } catch (e) { await c.query('ROLLBACK'); throw e; }
+  finally { c.release(); }
+}
+
+// Snapshot helpers for tests/inspection; API writes must use mutateRoom.
+export async function getRoom(code: string): Promise<RoomState> {
+  return mutateRoom(code, room => structuredClone(room));
+}
+export async function saveRoom(state: RoomState): Promise<void> {
+  if (process.env.NODE_ENV !== 'test') throw new Error('Use mutateRoom for writes');
+  await mutateRoom(state.roomCode, room => { Object.assign(room, structuredClone(state)); });
+}
+export async function generateUniqueRoomCode(): Promise<string> {
+  const p = database();
+  if (p) await initialize(p);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    // The room code is an unguessable invite capability; share it only with teammates.
+    const code = `SED-${randomBytes(16).toString('hex').toUpperCase()}`;
+    const state = createDefaultRoom(code);
+    if (p) {
+      const res = await p.query(`INSERT INTO public.cowork_rooms(room_code,state) VALUES($1,$2)
+        ON CONFLICT DO NOTHING RETURNING room_code`, [code, JSON.stringify(state)]);
+      if (res.rowCount) return code;
+    } else if (!memoryStore.has(code)) {
+      memoryStore.set(code, state);
+      return code;
     }
-  } catch (err) {
-    // ignore
   }
+  throw new Error('Unable to reserve room');
+}
+export async function resetStore(): Promise<void> {
+  if (process.env.NODE_ENV !== 'test') throw new Error('resetStore is test-only');
+  await memoryTail;
+  memoryStore.clear();
+}
+export function enqueue(room: RoomState, clientId: string, message: CoWorkMessage): void {
+  if (!room.inboxes[clientId] && Object.keys(room.inboxes).length >= 100) throw new ApiError(429, 'Room inbox limit reached');
+  const inbox = room.inboxes[clientId] ??= [];
+  if (inbox.length >= 1000) throw new ApiError(429, 'Recipient inbox full; recipient must acknowledge messages');
+  inbox.push(message);
 }

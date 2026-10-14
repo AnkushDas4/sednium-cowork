@@ -1,5 +1,6 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
-import { getRoom, saveRoom } from './_store.js';
+import { randomUUID } from 'node:crypto';
+import { mutateRoom, enqueue } from './_store.js';
+import { ApiError, id, text as validateText, files as validateFiles, authorize, errorResponse } from './_validation.js';
 import type { CoWorkMessage, SendMessageResponse, ContentType } from './_types.js';
 
 export interface SendPayload {
@@ -17,186 +18,188 @@ export interface SendPayload {
 /**
  * Pure business logic for POST /api/send
  */
-export async function handleSend(payload: SendPayload): Promise<{ status: number; body: SendMessageResponse }> {
-  const roomCode = (payload.roomCode || 'DEFAULT').trim().toUpperCase();
-  const senderId = (payload.senderId || 'anonymous').trim();
-  let targetId = (payload.targetId || 'all').trim();
-  let contentType: ContentType = payload.contentType || 'CHAT';
-  const text = payload.text || '';
-  const files = payload.files || [];
-  const commitHash = payload.commitHash;
-  const senderModel = payload.senderModel;
-  const senderHarness = payload.senderHarness;
+export async function handleSend(payload: SendPayload, token?: unknown): Promise<{ status: number; body: SendMessageResponse }> {
+  if (!payload || typeof payload !== 'object') throw new ApiError(400, 'Invalid payload');
+  const roomCode = id(payload.roomCode, 'roomCode').toUpperCase();
+  const senderId = id(payload.senderId, 'senderId');
+  let targetId = id(payload.targetId ?? 'all', 'targetId');
+  let contentType: ContentType = payload.contentType ?? 'CHAT';
+  if (!['CHAT','CROSS_PROMPT','AGENT_SYNC','FILE_LOCK','FILE_UNLOCK','GIT_PUSH','STATUS'].includes(contentType)) throw new ApiError(400, 'Invalid contentType');
+  const text = payload.text === undefined || payload.text === '' ? '' : validateText(payload.text, 'text', 16000);
+  const files = validateFiles(payload.files);
+  if (contentType === 'FILE_LOCK' && !files.length) throw new ApiError(400, 'At least one file is required');
+  const commitHash = payload.commitHash === undefined ? undefined : validateText(payload.commitHash, 'commitHash', 64);
+  if (commitHash && !/^[a-fA-F0-9]{7,64}$/.test(commitHash)) throw new ApiError(400, 'Invalid commitHash');
+  const senderModel = payload.senderModel === undefined ? undefined : validateText(payload.senderModel, 'model');
+  const senderHarness = payload.senderHarness === undefined ? undefined : validateText(payload.senderHarness, 'harness');
 
   // 1. Mentions Parsing: e.g., "@peer-ai build navbar"
   const mentionMatch = text.match(/@([a-zA-Z0-9_-]+)/);
-  if (mentionMatch) {
+  if (mentionMatch && contentType === 'CHAT') {
     const mentionedId = mentionMatch[1];
     // If target was default 'all', route specifically to the mentioned entity
     if (targetId === 'all') {
-      targetId = mentionedId;
+      targetId = id(mentionedId, 'mention');
       if (contentType === 'CHAT') {
         contentType = 'CROSS_PROMPT';
       }
     }
   }
 
-  const room = await getRoom(roomCode);
+  return mutateRoom(roomCode, room => {
+    authorize(room, senderId, token);
+    if (!room.participants[senderId] && Object.keys(room.participants).length >= 100) throw new ApiError(429, 'Room participant limit reached');
 
-  // Update sender presence timestamp & model recognition
-  if (!room.participants[senderId]) {
-    room.participants[senderId] = {
-      clientId: senderId,
-      role: senderId.includes('ai') ? 'agent' : 'human',
-      status: contentType === 'FILE_LOCK' ? 'Locked files' : 'Active',
-      lastSeen: Date.now(),
-      model: senderModel,
-      harness: senderHarness,
-    };
-  } else {
-    room.participants[senderId].lastSeen = Date.now();
-    if (contentType === 'FILE_LOCK') {
-      room.participants[senderId].status = 'Working on files';
+    // Update sender presence timestamp & model recognition
+    if (!room.participants[senderId]) {
+      room.participants[senderId] = {
+        clientId: senderId,
+        role: senderId.includes('ai') ? 'agent' : 'human',
+        status: contentType === 'FILE_LOCK' ? 'Locked files' : 'Active',
+        lastSeen: Date.now(),
+        model: senderModel,
+        harness: senderHarness,
+      };
+    } else {
+      room.participants[senderId].lastSeen = Date.now();
+      if (contentType === 'FILE_LOCK') {
+        room.participants[senderId].status = 'Working on files';
+      }
+      if (senderModel) room.participants[senderId].model = senderModel;
+      if (senderHarness) room.participants[senderId].harness = senderHarness;
     }
-    if (senderModel) room.participants[senderId].model = senderModel;
-    if (senderHarness) room.participants[senderId].harness = senderHarness;
-  }
 
-  // 2. Handle FILE_LOCK
-  if (contentType === 'FILE_LOCK') {
-    const conflictingFiles: string[] = [];
-    let lockedByAgent = '';
+    // 2. Handle FILE_LOCK
+    if (contentType === 'FILE_LOCK') {
+      const conflictingFiles: string[] = [];
+      let lockedByAgent = '';
 
-    for (const file of files) {
-      const existing = room.fileLocks[file];
-      if (existing && existing.lockedBy !== senderId) {
-        conflictingFiles.push(file);
-        lockedByAgent = existing.lockedBy;
+      for (const file of files) {
+        const existing = room.fileLocks[file];
+        if (existing && existing.lockedBy !== senderId) {
+          conflictingFiles.push(file);
+          lockedByAgent = existing.lockedBy;
+        }
+      }
+
+      if (conflictingFiles.length > 0) {
+        return {
+          status: 409,
+          body: {
+            ok: false,
+            error: 'FILE_LOCKED',
+            lockedBy: lockedByAgent,
+            conflictingFiles,
+            roomStateSummary: {
+              roomCode: room.roomCode,
+              activeFileLocks: Object.keys(room.fileLocks).length,
+              participantCount: Object.keys(room.participants).length,
+              latestCommit: room.latestCommit,
+            }
+          }
+        };
+      }
+
+      // Acquire locks
+      const now = Date.now();
+      for (const file of files) {
+        room.fileLocks[file] = {
+          lockedBy: senderId,
+          task: text || 'Locked for editing',
+          timestamp: now,
+        };
       }
     }
 
-    if (conflictingFiles.length > 0) {
-      return {
-        status: 409,
-        body: {
-          ok: false,
-          error: 'FILE_LOCKED',
-          lockedBy: lockedByAgent,
-          conflictingFiles,
-          roomStateSummary: {
-            roomCode: room.roomCode,
-            activeFileLocks: Object.keys(room.fileLocks).length,
-            participantCount: Object.keys(room.participants).length,
-            latestCommit: room.latestCommit,
+    // 3. Handle FILE_UNLOCK
+    if (contentType === 'FILE_UNLOCK') {
+      if (files.length > 0) {
+        for (const file of files) {
+          if (room.fileLocks[file]?.lockedBy === senderId) {
+            delete room.fileLocks[file];
           }
         }
-      };
-    }
-
-    // Acquire locks
-    const now = Date.now();
-    for (const file of files) {
-      room.fileLocks[file] = {
-        lockedBy: senderId,
-        task: text || 'Locked for editing',
-        timestamp: now,
-      };
-    }
-  }
-
-  // 3. Handle FILE_UNLOCK
-  if (contentType === 'FILE_UNLOCK') {
-    if (files.length > 0) {
-      for (const file of files) {
-        if (room.fileLocks[file]?.lockedBy === senderId) {
-          delete room.fileLocks[file];
+      } else {
+        for (const [file, lock] of Object.entries(room.fileLocks)) {
+          if (lock.lockedBy === senderId) {
+            delete room.fileLocks[file];
+          }
         }
       }
-    } else {
+    }
+
+    // 4. Handle GIT_PUSH: automatically unlock files held by sender & record commit
+    if (contentType === 'GIT_PUSH') {
       for (const [file, lock] of Object.entries(room.fileLocks)) {
         if (lock.lockedBy === senderId) {
           delete room.fileLocks[file];
         }
       }
-    }
-  }
-
-  // 4. Handle GIT_PUSH: automatically unlock files held by sender & record commit
-  if (contentType === 'GIT_PUSH') {
-    for (const [file, lock] of Object.entries(room.fileLocks)) {
-      if (lock.lockedBy === senderId) {
-        delete room.fileLocks[file];
+      if (commitHash) {
+        room.latestCommit = {
+          hash: commitHash,
+          message: text || 'Git commit pushed to main',
+          author: senderId,
+          timestamp: Date.now(),
+        };
       }
     }
-    if (commitHash) {
-      room.latestCommit = {
-        hash: commitHash,
-        message: text || 'Git commit pushed to main',
-        author: senderId,
-        timestamp: Date.now(),
-      };
-    }
-  }
 
-  // 5. Construct CoWorkMessage
-  const messageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const message: CoWorkMessage = {
-    messageId,
-    timestamp: Date.now(),
-    roomCode: room.roomCode,
-    senderId,
-    targetId,
-    contentType,
-    text,
-    files: files.length > 0 ? files : undefined,
-    commitHash,
-    senderModel,
-    senderHarness,
-  };
-
-  // Add to Room History (capped at 100)
-  room.history.push(message);
-  if (room.history.length > 100) {
-    room.history.shift();
-  }
-
-  // 6. Multicast Queueing into inboxes
-  if (targetId === 'all') {
-    for (const participantId of Object.keys(room.participants)) {
-      if (participantId !== senderId) {
-        if (!room.inboxes[participantId]) room.inboxes[participantId] = [];
-        room.inboxes[participantId].push(message);
-      }
-    }
-  } else {
-    // Specific target
-    if (!room.inboxes[targetId]) room.inboxes[targetId] = [];
-    room.inboxes[targetId].push(message);
-
-    // Also mirror to human dashboard participants so phone/web UI observes cross-agent interactions
-    for (const [pId, p] of Object.entries(room.participants)) {
-      if (p.role === 'human' && pId !== senderId && pId !== targetId) {
-        if (!room.inboxes[pId]) room.inboxes[pId] = [];
-        room.inboxes[pId].push(message);
-      }
-    }
-  }
-
-  await saveRoom(room);
-
-  return {
-    status: 200,
-    body: {
-      ok: true,
+    // 5. Construct CoWorkMessage
+    const messageId = `msg_${randomUUID()}`;
+    const message: CoWorkMessage = {
       messageId,
-      roomStateSummary: {
-        roomCode: room.roomCode,
-        activeFileLocks: Object.keys(room.fileLocks).length,
-        participantCount: Object.keys(room.participants).length,
-        latestCommit: room.latestCommit,
+      timestamp: Date.now(),
+      roomCode: room.roomCode,
+      senderId,
+      targetId,
+      contentType,
+      text,
+      files: files.length > 0 ? files : undefined,
+      commitHash,
+      senderModel,
+      senderHarness,
+    };
+
+    // Add to room history (capped at 100)
+    room.history.push(message);
+    if (room.history.length > 100) {
+      room.history.shift();
+    }
+
+    // 6. Multicast Queueing into inboxes
+    if (targetId === 'all') {
+      for (const participantId of Object.keys(room.participants)) {
+        if (participantId !== senderId) {
+          enqueue(room, participantId, message);
+        }
+      }
+    } else {
+      // Specific target
+      enqueue(room, targetId, message);
+
+      // Also mirror to human dashboard participants so phone/web UI observes cross-agent interactions
+      for (const [pId, p] of Object.entries(room.participants)) {
+        if (p.role === 'human' && pId !== senderId && pId !== targetId) {
+          enqueue(room, pId, message);
+        }
       }
     }
-  };
+
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        messageId,
+        roomStateSummary: {
+          roomCode: room.roomCode,
+          activeFileLocks: Object.keys(room.fileLocks).length,
+          participantCount: Object.keys(room.participants).length,
+          latestCommit: room.latestCommit,
+        }
+      }
+    };
+  });
 }
 
 /**
@@ -205,7 +208,7 @@ export async function handleSend(payload: SendPayload): Promise<{ status: number
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cowork-Client-Token');
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -219,12 +222,13 @@ export default async function handler(req: any, res: any) {
 
   try {
     const payload = req.body || {};
-    const result = await handleSend(payload);
+    const result = await handleSend(payload, req.headers?.['x-cowork-client-token']);
     res.statusCode = result.status;
     return res.json(result.body);
   } catch (err: any) {
-    console.error('[API Send Error]', err);
-    res.statusCode = 500;
-    return res.json({ ok: false, error: err.message || 'Internal Server Error' });
+    if (!(err instanceof ApiError)) console.error('[API Send]', err?.message || String(err));
+    const failure = errorResponse(err);
+    res.statusCode = failure.status;
+    return res.json(failure.body);
   }
 }

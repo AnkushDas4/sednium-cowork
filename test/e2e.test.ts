@@ -37,6 +37,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
       agentId: 'loid-ai',
       repoPath: process.cwd(),
       relayUrl: RELAY_URL,
+      participantToken: 'a'.repeat(64),
     });
     await loidPoller.poll();
 
@@ -46,12 +47,13 @@ describe('Sednium CoWork End-to-End Simulation', () => {
       agentId: 'peer-ai',
       repoPath: process.cwd(),
       relayUrl: RELAY_URL,
+      participantToken: 'a'.repeat(64),
     });
     await peerPoller.poll();
 
     // 3. Human joins via Web Dashboard (polls presence)
     const humanPresenceRes = await fetch(
-      `${RELAY_URL}/api/presence?action=inbox&roomCode=${ROOM}&clientId=loid&role=human&status=Online`
+      `${RELAY_URL}/api/presence?action=inbox&roomCode=${ROOM}&clientId=loid&role=human&status=Online`, { headers: { 'X-Cowork-Client-Token': 'a'.repeat(64) } }
     );
     const humanData = await humanPresenceRes.json();
     expect(humanData.participants['loid-ai']).toBeDefined();
@@ -61,7 +63,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
     // 4. Loid AI locks src/App.tsx
     const lockRes = await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'a'.repeat(64) },
       body: JSON.stringify({
         roomCode: ROOM,
         senderId: 'loid-ai',
@@ -78,7 +80,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
     // 5. Peer AI tries to lock src/App.tsx -> 409 Conflict
     const conflictRes = await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'a'.repeat(64) },
       body: JSON.stringify({
         roomCode: ROOM,
         senderId: 'peer-ai',
@@ -97,7 +99,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
     // 6. Human uses dashboard to send @peer-ai instruction
     const promptRes = await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'a'.repeat(64) },
       body: JSON.stringify({
         roomCode: ROOM,
         senderId: 'loid',
@@ -120,7 +122,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
     // 8. Loid AI finishes work and pushes to git (GIT_PUSH)
     const gitPushRes = await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'a'.repeat(64) },
       body: JSON.stringify({
         roomCode: ROOM,
         senderId: 'loid-ai',
@@ -138,7 +140,7 @@ describe('Sednium CoWork End-to-End Simulation', () => {
     // 9. Peer AI can now lock src/App.tsx without conflict
     const peerLockRes = await fetch(`${RELAY_URL}/api/send`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'a'.repeat(64) },
       body: JSON.stringify({
         roomCode: ROOM,
         senderId: 'peer-ai',

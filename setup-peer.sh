@@ -138,6 +138,6 @@ echo -e "Compatible AI Harnesses: Google Antigravity, Claude Code / Desktop, Cur
 echo -e "\nTo start pair programming:"
 echo -e "  1. Open Antigravity, Claude, Cursor, or Windsurf."
 echo -e "  2. Tell your agent:"
-echo -e "     ${CYAN}\"Connect to CoWork room SED-409 as peer-ai in this repo.\"${RESET}"
-echo -e "  3. Scan the terminal ASCII QR or visit ${CYAN}https://cowork.sednium.com/?room=SED-409${RESET} on your phone!"
+echo -e "     ${CYAN}\"Create a new CoWork room as peer-ai in this repo.\"${RESET}"
+echo -e "  3. Scan the terminal ASCII QR or visit ${CYAN}${RELAY_URL}${RESET} on your phone!"
 echo -e "\nHappy Co-Coding! 🚀\n"

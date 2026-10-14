@@ -56,8 +56,8 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
         <span className="text-[11px] font-semibold text-secondary">
           {connectedAgentEntries.length === 0
             ? '0 ACTIVE AGENTS'
-            : `${connectedAgentEntries.length} ACTIVE AGENT${
-                connectedAgentEntries.length > 1 ? 'S' : ''
+            : `${connectedAgentEntries.filter(([, p]) => now - p.lastSeen < 90000).length} ACTIVE AGENT${
+                connectedAgentEntries.filter(([, p]) => now - p.lastSeen < 90000).length > 1 ? 'S' : ''
               }`}
         </span>
       </div>

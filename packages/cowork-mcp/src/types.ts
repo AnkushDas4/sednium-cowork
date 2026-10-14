@@ -46,6 +46,7 @@ export interface CommitInfo {
 }
 
 export interface RoomState {
+  participantKeys?: Record<string, string>;
   roomCode: string;
   createdAt: number;
   latestCommit: CommitInfo | null;
