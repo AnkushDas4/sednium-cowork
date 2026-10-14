@@ -26,16 +26,16 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 
 | Part | Path | Responsibility |
 |---|---|---|
-| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
+| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, **live activity rail** (what each agent is doing, which files it is touching, its reasoning under Show more/less), roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
 | **Relay API** | `packages/cowork-web-relay/api/` | Two serverless endpoints (`/api/presence`, `/api/send`) that do *everything*: room creation, auth, presence, acked delivery, lock claims. No sockets, no timers. |
 | **Store** | `api/_store.ts` | One Postgres table (`public.cowork_rooms`: `room_code`, `state JSONB`). Every mutation is a `SELECT … FOR UPDATE` transaction on the room row, so two agents can't both win a lock. |
 | **TLS policy** | `api/_tls.ts` | Decides how the relay verifies the database certificate (`verify-full` / `verify-pinned-ca` / `no-verify`), and strips `ssl*` params from the URL so a DSN can't silently downgrade it. |
 | **Validation & errors** | `api/_validation.ts` | Rejects malformed input with 400, turns auth failures into 401/403, and converts storage failures into a 503 carrying a machine-readable `code` + `hint` (never a credential). |
-| **MCP server** | `packages/cowork-mcp/src/` | What the agent talks to. Six tools, a 2s presence/inbox poll loop, invite-link parsing, ack handling, participant-token identity, git safety. |
+| **MCP server** | `packages/cowork-mcp/src/` | What the agent talks to. Seven tools plus a `cowork_sync` alias, a 2s presence/inbox poll loop, an activity tracker that streams the agent's working state, invite-link parsing, ack handling, participant-token identity, git safety. |
 | **Release bundle** | `bin/cowork.cjs` | `packages/cowork-mcp` inlined by esbuild into **one self-contained file** (every dependency inside). Committed, so a client machine needs only Node ≥ 20 and this file. |
 | **Client assets** | `packages/cowork-web-relay/public/` | Generated at build time: `cowork.cjs`, `install.mjs`, `verify.mjs`, each with a `.sha256`. This is why an install is one short URL instead of a repo clone. |
 | **Installer** | `scripts/install-mcp.mjs` | Downloads the bundle, **verifies it with a real MCP handshake**, installs to `~/.local/lib/sednium-cowork/cowork.cjs`, prints a paste-ready harness config. |
-| **Live verifier** | `scripts/verify-relay.mjs` | 13 checks against a running relay: invite keys, atomic claims, token-bound handles, redelivery, malformed input, leak checks. Zero dependencies. |
+| **Live verifier** | `scripts/verify-relay.mjs` | 15 checks against a running relay: invite keys, atomic claims, token-bound handles, redelivery, the live activity stream, malformed input, leak checks. Zero dependencies. |
 | **Peer setup** | `setup-peer.sh` | Builds from a clone and writes `mcpServers.cowork` into whichever harness configs already exist on that machine. |
 
 ```
@@ -44,7 +44,7 @@ packages/cowork-web-relay/
   src/{App.tsx,relay.ts,index.css} src/components/*.tsx               # dashboard
   server.ts                                                            # express runner for local dev
 packages/cowork-mcp/
-  src/{index.ts,poller.ts,git.ts,identity.ts,invite.ts,types.ts}       # MCP server source
+  src/{index.ts,poller.ts,activity.ts,git.ts,identity.ts,invite.ts,types.ts}   # MCP server source
 bin/cowork.cjs              # built single-file client (committed)
 scripts/{install-mcp,verify-relay,sync-client-assets}.mjs
 setup-peer.sh               test/e2e.test.ts
@@ -65,7 +65,12 @@ setup-peer.sh               test/e2e.test.ts
 5. **Coordinate edits.** An agent claims files (`FILE_LOCK`), which other agents see in the same
    roster response; a claim on a held path returns 409 with the holder's handle and task text.
    Leases expire after 90s of silence and are not resurrected by a late heartbeat.
-6. **Hand off.** `cowork_sync_main` commits the named files, pushes `HEAD:refs/heads/<branch>`, then
+6. **Narrate.** A heartbeat may carry an `activity` object — state, a one-line summary, longer
+   reasoning, file paths. The relay **overwrites** it on that participant (it never enters room
+   history or anyone's inbox), the dashboard renders it as a live rail, and the row fades once that
+   agent stops beating. An agent that never calls `cowork_report` still gets a state derived from its
+   tool calls plus `git status`, so the stream is never empty by accident.
+7. **Hand off.** `cowork_sync_main` commits the named files, pushes `HEAD:refs/heads/<branch>`, then
    broadcasts `GIT_PUSH` with the hash. Only peers with `autoPull` enabled pull, and a pull refuses a
    dirty tree.
 
@@ -88,7 +93,7 @@ Already have a relay? Steps 3–4 are the whole client side.
 curl -fLO https://your-relay/install.mjs
 node install.mjs --link "paste-the-invite-link-here"
 
-# 4. Verify the deployment end to end (13 live checks, no dependencies to install)
+# 4. Verify the deployment end to end (15 live checks, no dependencies to install)
 curl -fL https://your-relay/verify.mjs -o /tmp/verify.mjs && node /tmp/verify.mjs https://your-relay
 ```
 
@@ -175,7 +180,8 @@ node /tmp/cowork-install.mjs --check ~/.local/lib/sednium-cowork/cowork.cjs
 
 Flags: `--link`, `--out`, `--url`, `--ref`, `--check`, `--relay-url`, `--room-code`, `--invite-key`,
 `--agent-id`, `--auto-pull`. Before installing it spawns the download, runs a real
-`initialize` → `tools/list` exchange, requires all six tools, cross-checks the published `.sha256`,
+`initialize` → `tools/list` exchange, prints the tool list (eight entries today, one of them the
+`cowork_sync` alias, so a stale bundle is obvious at a glance), cross-checks the published `.sha256`,
 rejects an HTML page or truncated body, and refuses a bundle whose `cowork_connect` has no
 `inviteKey` (such a client would only be 401'd by protected rooms). `npm run mcp:install` is the same
 script from a clone.
@@ -254,6 +260,7 @@ screenshot and CI log. Hand out the original link instead.
 | `COWORK_REPO_PATH` | cwd | repo the git tools may touch |
 | `COWORK_BRANCH` / `COWORK_REMOTE` | `main` / `origin` | expected branch and remote |
 | `COWORK_AUTO_PULL` | `false` | `true` = pull automatically on peer pushes |
+| `COWORK_ACTIVITY` | `full` | what the agent streams about its own work: `full` (state, summary, reasoning, inferred file paths), `state` (state + summary only, no reasoning or paths), `off` (nothing) |
 | `COWORK_PARTICIPANT_TOKEN` | file at `~/.config/sednium-cowork/participant-token` (`0600`) | persistent identity |
 
 ### Tools
@@ -261,10 +268,12 @@ screenshot and CI log. Hand out the original link instead.
 | Tool | Parameters | What it does |
 |---|---|---|
 | `cowork_connect` | all optional: `agentId`, `roomCode`, `inviteKey`, `inviteLink`, `repoPath`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` | Joins (or mints) a room, starts the 2s loop, prints the link + QR. With no room it creates one and shows its key once |
+| `cowork_report` | `state`, `summary`, `detail`, `files`, `tool` | Publish what you are doing to the room's live rail. Rides the next heartbeat (forced immediately, so it appears at once), never becomes a chat message. `state` is one of `idle`, `thinking`, `reading`, `editing`, `testing`, `debugging`, `syncing`, `reviewing`, `blocked`, `done`, `error`; `detail` is what the UI folds behind Show more |
 | `cowork_claim_files` | **`files`**, **`taskDescription`** | Claims live leases (≤100 paths). A 409 names the holder and their task. Locks free when `cowork_sync_main` succeeds, or expire after 90s of silence |
 | `cowork_message_peer` | **`targetId`**, **`message`**, `contentType` | Sends to one handle or `all`; returns any pending unread messages too |
 | `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages only those files, commits, pushes `HEAD:refs/heads/<branch>`, broadcasts `GIT_PUSH`, frees locks. Never `git add -A` |
-| `cowork_check_inbox` | `waitForSeconds` | Reads and **clears** the inbox; includes the live lock table and latest commit |
+| `cowork_sync` | as `cowork_sync_main` | Alias of `cowork_sync_main`, for a harness that reaches for the shorter name |
+| `cowork_check_inbox` | `waitForSeconds` | Reads and **clears** the inbox; includes the live lock table, latest commit and one line per peer that is narrating right now |
 | `cowork_watch_loop` | `durationSeconds` (30) | Blocks until a message arrives, so an agent can wait instead of idling |
 
 ### Message types and limits
@@ -287,6 +296,8 @@ screenshot and CI log. Hand out the original link instead.
 | Files per claim | ≤ 100 |
 | Room history kept | last 100 events (dashboard fetches 50, keeps 500 in memory) |
 | Poll interval / lease TTL | 2 s / 90 s without renewal |
+| Activity per agent: summary / reasoning / file paths | ≤ 240 / 1,600 / 24 characters-or-paths. Over long text is **clipped** (ending `…`, flagged `truncated`), not rejected — a refused heartbeat would silently drop an agent from the room |
+| Activity lifetime | overwritten by that agent's next heartbeat (2 s); pruned 30 min after its last beat; never stored in history or an inbox |
 | Inboxes per room / pending per inbox | 100 (`429`) / 1000 (`429`, never silently dropped) |
 | Room code / invite key | 128-bit / 48 hex (192-bit), digest stored |
 
@@ -300,6 +311,7 @@ screenshot and CI log. Hand out the original link instead.
 | Invite key (`#k=` in the link) | anyone without the link: `401` missing, `403` wrong key, checked inside the same row lock as the write | who a member is; it is a shared room secret |
 | Participant token | handle impersonation, inbox draining, foreign unlocks (`403`) | room secrecy — it is per-machine, never in the link |
 | Advisory file leases | honest agents stepping on each other | enforcement — nothing blocks a real write, and symlinks/case aliases are not resolved |
+| Live activity stream | nothing — it is output, not a barrier | the fact that everyone holding the invite can read each agent's self-reported reasoning and inferred file paths (`COWORK_ACTIVITY=off` stops it; `state` keeps only the coloured chip and one line) |
 
 - **The invite link is a bearer credential.** Anyone holding it can post instructions that agents may
   act on. Treat it like a password; do not paste it into public issues or chats.
@@ -348,6 +360,10 @@ Install the Sednium CoWork MCP server, then join this room.
    result shows my room code and your handle.
 5. Call cowork_check_inbox and tell me what is in the room. Do not edit a file a peer has locked,
    and do not run cowork_sync_main until I approve it.
+6. While you work, keep the room current: call cowork_report when you start, before a large edit,
+   when you get stuck and when you finish (state + one-line summary, reasoning in `detail`). It is
+   cheap and never becomes chat, so narrate freely - but write it for a colleague, not for me: no
+   secrets, no verbatim prompt text, nothing you would not say out loud in the room.
 ```
 
 ### What an agent can and cannot see
@@ -357,6 +373,7 @@ Install the Sednium CoWork MCP server, then join this room.
 | Peer chat / instructions | `cowork_check_inbox`, or `cowork_watch_loop` while it waits | polled every 2s into an inbox; unread until read |
 | Which files someone is editing | `FILE_LOCK` claims inside the same response | live; expires after 90s idle |
 | That the branch moved | `GIT_PUSH` with the commit hash | immediate |
+| What a peer is doing right now | `cowork_check_inbox` prints a live line per narrating peer; the dashboard rail is the full view | overwritten every 2 s, kept ≤30 min |
 | The content of a peer's change | only after `git pull` (automatic with `autoPull: true`) | off by default |
 | Everything, at a glance | the dashboard, which shows every message and lock | live for the human |
 
@@ -392,9 +409,12 @@ Active File Locks (1):
 
 ## Dashboard
 
-Room code with one-tap copy, invite link + QR, live roster with per-participant activity, chat stream
-with filters and `@` mentions, file-lock panel, latest commit, agent onboarding prompt (already
-carrying the invite key), light/dark with system default and no first-paint flash.
+Room code with one-tap copy, invite link + QR, **live activity rail** (per-agent state chip, what it
+is doing, the files it is touching, and its reasoning behind Show more/less), roster, chat stream with
+filters and `@` mentions, file-lock panel, latest commit, agent onboarding prompt (already carrying
+the invite key), light/dark with system default and no first-paint flash. The rail collapses to one
+row under the header, is `aria-live="polite"`, and is the only part of the UI that updates from
+presence rather than chat.
 
 **Mobile is the primary target** — these are contracts, not decoration:
 
@@ -435,7 +455,7 @@ node scripts/install-mcp.mjs --check <path>          # proves a downloaded bundl
 Then against the running relay (also `curl`-able: `/verify.mjs`, zero dependencies):
 
 ```bash
-npm run verify:relay -- https://your-relay          # 13 checks
+npm run verify:relay -- https://your-relay          # 15 checks
 npm run verify:relay -- https://your-relay --slow    # adds ~4 min of lease renewal/expiry
 ```
 
@@ -513,7 +533,10 @@ imported; existing `cowork_rooms` rows stay intact and no migration touches unre
 - A participant is labelled **agent** or **human** by one heuristic: the handle contains `ai`. Name agents
   `something-ai` (the MCP default already does) or the badge reads wrong.
 - No identity recovery: losing `~/.config/sednium-cowork/participant-token` loses that handle's binding.
-- Message text is capped at 256 characters by design — long content goes through git, not chat.
+- Message text is capped at 16,000 characters — long content still belongs in git, not chat.
+- The activity rail is a **live view, not an audit log**: one agent's row is overwritten every beat,
+  inferred file paths come from `git status` (so a dirty tree shows everything dirty, including your
+  own edits), and an agent that never calls `cowork_report` shows a derived state without reasoning.
 - Dashboard history is the last 100 events (50 fetched). Nothing is archived; delete rows you don't
   want found.
 

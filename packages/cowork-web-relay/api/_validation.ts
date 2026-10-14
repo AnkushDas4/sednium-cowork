@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import type { RoomState } from './_types.js';
+import type { ActivityInfo, ActivityState, RoomState } from './_types.js';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -31,6 +31,66 @@ export function files(value: unknown): string[] {
     return f;
   }))];
 }
+const ACTIVITY_STATES = [
+  'idle','thinking','reading','editing','testing','debugging','syncing','reviewing','blocked','done','error',
+] as const;
+export const ACTIVITY_SUMMARY_MAX = 240;
+export const ACTIVITY_DETAIL_MAX = 1600;
+export const ACTIVITY_FILES_MAX = 24;
+
+const clip = (value: string, max: number): [string, boolean] =>
+  value.length > max ? [value.slice(0, max - 1).trimEnd() + '\u2026', true] : [value, false];
+
+/** Control characters would break the one-line rendering and smuggle escape sequences into the UI. */
+function printable(value: unknown, name: string, max: number, allowNewlines: boolean): [string, boolean] {
+  if (typeof value !== 'string') throw new ApiError(400, `Invalid ${name}`);
+  let v = allowNewlines ? value.replace(/\r\n?/g, '\n') : value.replace(/[\r\n]+/g, ' ');
+  v = v.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
+  return clip(v, max);
+}
+
+/**
+ * Validate the presence heartbeat's activity patch.
+ * `undefined` means "unchanged" (a plain poll must not erase it); `null` means "clear it".
+ * Oversized text is clipped, never rejected: a heartbeat that fails validation would silently
+ * drop the agent's presence, which is worse than a truncated thought.
+ */
+export function activityInfo(value: unknown): ActivityInfo | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) throw new ApiError(400, 'Invalid activity');
+  const raw = value as Record<string, unknown>;
+  const state = String(raw.state ?? '').toLowerCase();
+  if (!ACTIVITY_STATES.includes(state as (typeof ACTIVITY_STATES)[number])) {
+    throw new ApiError(400, 'Invalid activity state');
+  }
+
+  let truncated = false;
+  const out: ActivityInfo = { state: state as ActivityState, at: Date.now() };
+
+  if (raw.summary !== undefined && raw.summary !== null && raw.summary !== '') {
+    const [summary, clipped] = printable(raw.summary, 'activity summary', ACTIVITY_SUMMARY_MAX, false);
+    if (summary) { out.summary = summary; truncated ||= clipped; }
+  }
+  if (raw.detail !== undefined && raw.detail !== null && raw.detail !== '') {
+    const [detail, clipped] = printable(raw.detail, 'activity detail', ACTIVITY_DETAIL_MAX, true);
+    if (detail) { out.detail = detail; truncated ||= clipped; }
+  }
+  if (raw.tool !== undefined && raw.tool !== null && raw.tool !== '') {
+    const [tool, clipped] = printable(raw.tool, 'activity tool', 64, false);
+    const safe = tool.replace(/[^\w.:/+ -]/g, '');
+    if (safe) { out.tool = safe; truncated ||= clipped; }
+  }
+  if (raw.files !== undefined && raw.files !== null) {
+    // files() already explains what is wrong with a bad path; do not flatten that into a generic 400.
+    let paths: string[] = files(raw.files);
+    if (paths.length > ACTIVITY_FILES_MAX) { paths = paths.slice(0, ACTIVITY_FILES_MAX); truncated = true; }
+    if (paths.length) out.files = paths;
+  }
+  if (truncated) out.truncated = true;
+  return out;
+}
+
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
 /** Mint a room's invite key: the secret that authorises the room code. */

@@ -7,7 +7,7 @@
  *
  * Exercises the guarantees over real HTTP against a running relay: atomic claims, path
  * aliases, at-least-once delivery with acknowledgements, participant-token binding, input
- * validation, broadcast routing and lock release. --slow additionally verifies lease renewal
+ * validation, broadcast routing, lock release and the live agent activity stream. --slow additionally verifies lease renewal
  * across the 90s TTL (takes ~4 minutes). It creates a throwaway room and leaves it empty;
  * the room row stays in the database like any other room.
  */
@@ -115,6 +115,46 @@ await check('harness/model metadata survives a plain heartbeat', async () => {
   const p = after.body.participants[a.handle];
   expect(p?.harness === 'Verifier' && p?.model === 'Verify Model 1.0', `got harness=${p?.harness} model=${p?.model}`);
   return 'harness + model preserved';
+});
+
+await check('live agent activity rides the heartbeat and is clipped, never rejected', async () => {
+  const beat = await presence({
+    roomCode: room, clientId: a.handle,
+    activity: {
+      state: 'editing',
+      summary: 'verifying the activity stream',
+      detail: 'x'.repeat(4000),
+      files: ['src/activity.ts', './src/activity.ts', 'packages/cowork-mcp/src/poller.ts'],
+    },
+  }, a.token);
+  expect(beat.status === 200, `status ${beat.status}: ${beat.body?.error}`);
+  const act = beat.body.participants[a.handle]?.activity;
+  expect(act?.state === 'editing', `state came back as ${act?.state}`);
+  expect(act?.summary === 'verifying the activity stream', `summary: ${act?.summary}`);
+  expect((act?.detail || '').length <= 1600 && act.detail.endsWith('\u2026'), `detail not clipped (len ${act?.detail?.length})`);
+  expect(act?.truncated === true, 'oversized input was not flagged as clipped');
+  expect(JSON.stringify(act?.files) === JSON.stringify(['src/activity.ts', 'packages/cowork-mcp/src/poller.ts']), `files: ${JSON.stringify(act?.files)}`);
+  expect(typeof act?.since === 'number' && act.since <= act.at, 'no stable since timer');
+
+  // A plain poll must not erase it, and null must clear it.
+  const plain = await presence({ roomCode: room, clientId: a.handle }, a.token);
+  expect(plain.body.participants[a.handle]?.activity?.summary === 'verifying the activity stream', 'activity lost on a plain heartbeat');
+  const cleared = await presence({ roomCode: room, clientId: a.handle, activity: null }, a.token);
+  expect(!cleared.body.participants[a.handle]?.activity, 'activity: null did not clear it');
+
+  const history = (await presence({ roomCode: room, clientId: b.handle }, b.token)).body.recentHistory || [];
+  expect(history.length === 0, `activity wrote ${history.length} history entries - it must never touch chat`);
+  return '240/1600/24 caps, preserve-and-clear semantics, zero chat pollution';
+});
+
+await check('activity cannot forge a state or smuggle a path', async () => {
+  const badState = await presence({ roomCode: room, clientId: a.handle, activity: { state: 'sleeping' } }, a.token);
+  expect(badState.status === 400, `unknown state accepted (${badState.status})`);
+  const badPath = await presence({ roomCode: room, clientId: a.handle, activity: { state: 'editing', files: ['../.env'] } }, a.token);
+  expect(badPath.status === 400 && /repository-relative/i.test(badPath.body?.error || ''), `path escape: ${badPath.status} ${badPath.body?.error}`);
+  const shape = await presence({ roomCode: room, clientId: a.handle, activity: 'editing stuff' }, a.token);
+  expect(shape.status === 400, `a string activity accepted (${shape.status})`);
+  return 'state enum, path escape and wrong shape all rejected with 400';
 });
 
 await check('concurrent claims on one path: exactly one wins', async () => {

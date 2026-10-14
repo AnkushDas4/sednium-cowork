@@ -31,6 +31,36 @@ export interface FileLockInfo {
   timestamp: number;
 }
 
+export type ActivityState =
+  | "idle"
+  | "thinking"
+  | "reading"
+  | "editing"
+  | "testing"
+  | "debugging"
+  | "syncing"
+  | "reviewing"
+  | "blocked"
+  | "done"
+  | "error";
+
+/**
+ * Live working state, carried on the presence heartbeat instead of the message stream: it is
+ * overwritten, not appended, so an agent reporting every 2s can never push a peer's chat out of
+ * the 100-message history or fill an inbox. `detail` is the longer "here is what I am thinking"
+ * text the dashboard reveals behind Show more.
+ */
+export interface ActivityInfo {
+  state: ActivityState;
+  summary?: string;      // one line, always visible
+  detail?: string;       // thoughts, behind Show more
+  files?: string[];      // repository-relative paths this agent is touching right now
+  tool?: string;         // command or tool in flight, e.g. "npm test"
+  at: number;            // server clock; a client timestamp is never trusted
+  since?: number;        // when the current state began, so the UI can show "for 42s"
+  truncated?: boolean;   // summary/detail were clipped to the stored size
+}
+
 export interface ParticipantInfo {
   clientId: string;
   role: ClientRole;
@@ -38,6 +68,7 @@ export interface ParticipantInfo {
   lastSeen: number;
   harness?: string;      // e.g. "Antigravity", "Claude Code", "Cursor", "Web"
   model?: string;        // e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet"
+  activity?: ActivityInfo;
 }
 
 export interface CommitInfo {

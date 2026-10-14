@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
+import { ActivityRail } from './ActivityRail.js';
 
 interface ChatTerminalProps {
   messages: CoWorkMessage[];
@@ -221,9 +222,18 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }
   };
 
-  const handleCopyCustomPrompt = (agentId: string) => {
+  // One template for both the preview and the copied text, so they can never drift apart.
+  const onboardingPrompt = (agentId: string) => {
     const key = inviteKeyFor(roomCode);
-    const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect${key ? ` with inviteKey ${key}` : ''}.`;
+    return (
+      `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect${key ? ` with inviteKey ${key}` : ''}. ` +
+      `Then keep the room current: call cowork_report when you start, before a large edit, when you are ` +
+      `blocked and when you finish, so the dashboard shows what you are doing.`
+    );
+  };
+
+  const handleCopyCustomPrompt = (agentId: string) => {
+    const prompt = onboardingPrompt(agentId);
     navigator.clipboard.writeText(prompt);
     setCopiedPrompt(agentId);
     setTimeout(() => setCopiedPrompt(null), 2500);
@@ -308,9 +318,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     });
   };
 
-  const promptPreview = `Connect to CoWork room ${roomCode} as ${
-    onboardingAgentId || 'my-agent'
-  } in this repository using cowork_connect${inviteKeyFor(roomCode) ? ` with inviteKey ${inviteKeyFor(roomCode)}` : ''}.`;
+  const promptPreview = onboardingPrompt(onboardingAgentId || 'my-agent');
 
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
@@ -857,6 +865,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         </button>
       )}
     </div>
+
+      {/* 2.5 Live working state of every agent - streamed over presence, never through chat */}
+      <ActivityRail participants={participants} currentClientId={currentClientId} />
 
       {/* 3. Command Composer Dock (Flush Edge-to-Edge Input Row) */}
       <div className="bg-panel border-t border-grid shrink-0 relative pb-[max(env(safe-area-inset-bottom),0.65rem)] sm:pb-0">

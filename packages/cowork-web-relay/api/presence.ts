@@ -1,6 +1,6 @@
 import { mutateRoom } from './_store.js';
-import { ApiError, id, text, authorize, authorizeInvite, errorResponse } from './_validation.js';
-import type { ClientRole } from './_types.js';
+import { ApiError, id, text, activityInfo, authorize, authorizeInvite, errorResponse } from './_validation.js';
+import type { ActivityInfo, ClientRole } from './_types.js';
 
 export interface PresenceParams {
   action?: string;
@@ -12,6 +12,8 @@ export interface PresenceParams {
   model?: string;
   ack?: string[];
   inviteKey?: string;
+  /** Live working state; omit to leave the stored one in place, send null to clear it. */
+  activity?: unknown;
 }
 
 /**
@@ -34,6 +36,7 @@ export async function handlePresence(params: PresenceParams, token?: unknown, in
   if (params.role !== undefined && !['human', 'agent'].includes(params.role)) throw new ApiError(400, 'Invalid role');
   const requestedRole: ClientRole | undefined = params.role;
   const status = params.status === undefined ? undefined : text(params.status, 'status', 2048);
+  const activityPatch = activityInfo(params.activity);
   const harness = params.harness === undefined ? undefined : text(params.harness, 'harness');
   const model = params.model === undefined ? undefined : text(params.model, 'model');
   const ack = params.ack ?? [];
@@ -47,14 +50,36 @@ export async function handlePresence(params: PresenceParams, token?: unknown, in
     //    harness/model a peer reported earlier through a message or richer presence update.
     const previous = room.participants[clientId];
     const role: ClientRole = requestedRole ?? previous?.role ?? 'agent';
+    const now = Date.now();
+
+    // Activity is last-write-wins per participant, and `since` survives while the state does not
+    // change so the dashboard can show "editing for 42s" instead of a timer that resets each beat.
+    let activity: ActivityInfo | undefined = previous?.activity;
+    if (activityPatch === null) activity = undefined;
+    else if (activityPatch) {
+      const carried = previous?.activity;
+      activity = {
+        ...activityPatch,
+        since: carried && carried.state === activityPatch.state ? carried.since ?? carried.at : activityPatch.at,
+      };
+    }
+
     room.participants[clientId] = {
       clientId,
       role,
-      status: status ?? previous?.status ?? 'Active',
-      lastSeen: Date.now(),
+      status: status ?? (activity ? `${activity.state}${activity.summary ? `: ${activity.summary}` : ''}` : previous?.status ?? 'Active'),
+      lastSeen: now,
       harness: harness ?? previous?.harness ?? (role === 'human' ? 'Web Dashboard' : 'AI Agent'),
       model: model ?? previous?.model,
+      activity,
     };
+
+    // Bound the row: a departed participant's thoughts are of no use hours later, and 100 stale
+    // activity blobs would ride along on every write forever.
+    const ACTIVITY_RETENTION_MS = 30 * 60 * 1000;
+    for (const [pid, p] of Object.entries(room.participants)) {
+      if (pid !== clientId && p.activity && now - p.activity.at > ACTIVITY_RETENTION_MS) delete p.activity;
+    }
 
     // Expired leases have already been removed under the row lock. Renew only live leases.
     for (const lock of Object.values(room.fileLocks)) {
@@ -110,6 +135,7 @@ export default async function handler(req: any, res: any) {
       model: query.model,
       ack: query.ack,
       inviteKey: query.inviteKey,
+      activity: query.activity,
     }, req.headers?.['x-cowork-client-token'], req.headers?.['x-cowork-invite-key']);
 
     res.statusCode = result.status;

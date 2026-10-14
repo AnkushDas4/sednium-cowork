@@ -10,6 +10,7 @@ import { z } from 'zod';
 import qrcodeTerminal from 'qrcode-terminal';
 import path from 'node:path';
 import { CoWorkPoller } from './poller.js';
+import type { ParticipantInfo } from './types.js';
 import { parseInviteLink } from './invite.js';
 import { safeCommitAndPush, getLatestCommit, getGit } from './git.js';
 import type { ContentType, CoWorkMessage } from './types.js';
@@ -20,6 +21,11 @@ let activePoller: CoWorkPoller | null = null;
  * Smart detection of running AI model and harness environment
  */
 const env = (name: string): string => (process.env[name] || '').trim();
+/** COWORK_ACTIVITY=full|state|off - what this agent publishes about its own work. */
+const activityModeFrom = (raw: string): 'full' | 'state' | 'off' => {
+  const v = raw.trim().toLowerCase();
+  return v === 'off' || v === 'state' ? v : 'full';
+};
 const slug = (v: string): string => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
 
 /**
@@ -36,6 +42,26 @@ const hhmmss = (ts: number): string => {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 };
+
+/**
+ * The same live stream the dashboard draws, as text: peers that are narrating their work right now.
+ * Empty when nobody reports, so an agent that ignores it loses nothing it could have acted on.
+ */
+function renderRoster(participants: Record<string, ParticipantInfo>, selfId: string): string {
+  const peers = Object.values(participants || {}).filter((p) => p.clientId !== selfId && p.activity);
+  if (!peers.length) return '';
+  const now = Date.now();
+  const lines = peers.slice(0, 8).map((p) => {
+    const a = p.activity!;
+    const age = Math.max(0, Math.round((now - (a.at ?? now)) / 1000));
+    const files = a.files?.length
+      ? ` - ${a.files.length} file(s)${a.files.length <= 4 ? `: ${a.files.join(', ')}` : ''}`
+      : '';
+    return `  - @${p.clientId} - ${a.state}${a.summary ? ` "${a.summary}"` : ''}${files} - ${age}s ago`;
+  });
+  return `\n\nPeers working right now (${peers.length} narrating, from presence - not chat):\n` + lines.join('\n')
+    + (peers.length > 8 ? `\n  (+${peers.length - 8} more)` : '');
+}
 
 function renderInboxMessage(m: any, indent = '  '): string {
   const via = m.senderHarness ? ` (via ${m.senderHarness}${m.senderModel ? ` · ${m.senderModel}` : ''})` : '';
@@ -171,6 +197,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: 'cowork_report',
+        description:
+          "Publish what you are doing right now to the human's dashboard: a state, a one-line summary and optional thoughts. " +
+          "This is the only way your working reasoning shows up live in the room, and it is cheap - it rides on the 2s presence " +
+          "heartbeat and never enters anyone's chat history. Call it when you start a task, before a large edit, when you are " +
+          "blocked, and when you finish. Edited-file paths are added automatically from git status, so only list files to override that. " +
+          "Keep summary short; put longer thinking in detail, because the UI folds it behind 'Show more'.",
+        inputSchema: {
+          type: 'object',
+          properties: {
+            state: {
+              type: 'string',
+              enum: ['idle', 'thinking', 'reading', 'editing', 'testing', 'debugging', 'syncing', 'reviewing', 'blocked', 'done', 'error'],
+              description: 'What you are doing. Drives the coloured chip in the room.',
+            },
+            summary: { type: 'string', description: 'One line, always visible. E.g. "adding retry to the relay poller".' },
+            detail: { type: 'string', description: 'Your reasoning, shown under Show more: what you considered, why, what you will check next.' },
+            files: { type: 'array', items: { type: 'string' }, description: 'Optional repository-relative paths to advertise instead of the git-status guess.' },
+            tool: { type: 'string', description: 'Optional command in flight, e.g. "npm test" or "Edit".' },
+          },
+        },
+      },
+      {
         name: 'cowork_message_peer',
         description:
           'Sends an instruction, schema, question, or sync status to the peer AI (@peer-ai) or human (@peer). Also drains and returns any pending messages in your inbox.',
@@ -237,7 +286,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'cowork_check_inbox',
         description:
-          "Reads and clears this agent's unread room messages (from humans and peer agents) plus the current file-lock table. Nothing enters your context by itself: if you do not call this, you have not seen the room. Call it between steps and before any coordinated change.",
+          "Reads and clears this agent's unread room messages (from humans and peer agents) plus the current file-lock table, latest commit and a live line per peer that is narrating its work. Nothing enters your context by itself: if you do not call this, you have not seen the room. Call it between steps and before any coordinated change.",
         inputSchema: {
           type: 'object',
           properties: {
@@ -299,7 +348,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
+    // Telemetry first: the room should see "editing" the moment a mutating tool starts, whether or
+    // not the agent bothers to narrate it.
+    activePoller?.noteTool(name);
     switch (name) {
+      case 'cowork_report': {
+        if (!activePoller) {
+          throw new Error('Not connected to a CoWork room. Run cowork_connect first.');
+        }
+        const info = activePoller.setActivity({
+          state: args?.state, summary: args?.summary, detail: args?.detail,
+          files: args?.files, tool: args?.tool,
+        });
+        // Push it now instead of waiting up to 2s for the next beat, so reporting feels live.
+        const delivered = await activePoller.poll();
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `📡 ${delivered ? 'State published to the room' : 'State queued (relay unreachable; it goes on the next heartbeat)'}: @${activePoller.getAgentId()} → ${info?.state ?? 'idle'}` +
+                    (info?.summary ? ` - ${info.summary}` : '') +
+                    (info?.files?.length ? `\nFiles the human can see you touching: ${info.files.slice(0, 8).join(', ')}${info.files.length > 8 ? ` (+${info.files.length - 8})` : ''}` : '\nNo file paths reported (git status clean or sharing disabled).') +
+                    (info?.detail ? `\nThoughts attached: ${info.detail.length} chars, folded behind Show more in the dashboard.` : ''),
+            },
+          ],
+        };
+      }
       case 'cowork_connect': {
         // One pasteable string can configure the whole session: the invite link.
         // Precedence everywhere is: explicit tool arg > invite link > COWORK_* env > default.
@@ -362,6 +436,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
           inviteKey: String(args?.inviteKey || invite.inviteKey || env('COWORK_INVITE_KEY') || generatedKey || '') || undefined,
           autoPull: args?.autoPull === true || truthy(env('COWORK_AUTO_PULL')),
+          activityMode: activityModeFrom(env('COWORK_ACTIVITY')),
           branch,
           remote: String(args?.remote || env('COWORK_REMOTE') || 'origin'),
         });
@@ -373,6 +448,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error(`Connection failed. ${reason || 'Check relay availability, the room code and its invite key.'}`);
         }
         activePoller.start();
+        activePoller.setActivity({ state: 'idle', summary: `Connected as @${agentId} via ${harness}`, tool: 'cowork_connect' });
 
         const joinKey = activePoller.getInviteKey();
         // Only the agent that just minted the room gets to broadcast the credential. A joiner was
@@ -394,7 +470,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                       : joinKey
                         ? `🔑 Invite key in use for this room: ${joinKey.slice(0, 6)}… (not repeated - it came from your config, and the full link is the thing to hand out)\n`
                         : `🔑 No invite key for this room; if it is protected, pass inviteKey to cowork_connect\n`) +
-                    `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
+                    `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n` +
+                    `📡 Live activity: state, summary and edited files stream into the room on every heartbeat. ` +
+                    `Call cowork_report to add your reasoning so the human can follow along.\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +
                     `🌿 Git Branch: ${branch} (${activePoller.getRemote()})\n` +
@@ -607,7 +685,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                       : Object.entries(locks)
                           .map(([f, l]) => `  - ${f} (locked by @${l.lockedBy}: "${l.task}")`)
                           .join('\n') + '\n') +
-                    (latestCommit ? `\nLatest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${latestCommit.author}` : ''),
+                    (latestCommit ? `\nLatest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${latestCommit.author}` : '') +
+                    renderRoster(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],
         };

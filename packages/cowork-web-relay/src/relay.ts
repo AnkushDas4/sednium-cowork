@@ -64,7 +64,8 @@ export class RelayError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string) { super(message); }
 }
 
-export async function relayRequest(url: string, body: unknown, roomCode = '') {
+/** Typed at the call site: the relay's JSON shape differs per endpoint, so the generic defaults to `any`. */
+export async function relayRequest<T = any>(url: string, body: unknown, roomCode = ''): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Cowork-Client-Token': participantToken(),
@@ -83,5 +84,5 @@ export async function relayRequest(url: string, body: unknown, roomCode = '') {
       : data?.error || `Relay error ${status}`;
     throw new RelayError(message, status, data?.code);
   }
-  return data;
+  return data as T;
 }

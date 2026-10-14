@@ -31,6 +31,22 @@ export interface FileLockInfo {
   timestamp: number;
 }
 
+export type ActivityState =
+  | "idle" | "thinking" | "reading" | "editing" | "testing" | "debugging"
+  | "syncing" | "reviewing" | "blocked" | "done" | "error";
+
+/** Presence-carried working state, mirrored from the relay's type. Overwritten every beat. */
+export interface ActivityInfo {
+  state: ActivityState;
+  summary?: string;
+  detail?: string;
+  files?: string[];
+  tool?: string;
+  at: number;
+  since?: number;
+  truncated?: boolean;
+}
+
 export interface ParticipantInfo {
   clientId: string;
   role: ClientRole;
@@ -38,6 +54,7 @@ export interface ParticipantInfo {
   lastSeen: number;
   harness?: string;
   model?: string;
+  activity?: ActivityInfo;
 }
 
 export interface CommitInfo {

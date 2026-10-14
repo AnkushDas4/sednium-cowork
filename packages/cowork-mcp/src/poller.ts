@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import type { CoWorkMessage, FileLockInfo, ParticipantInfo, CommitInfo, PresenceResponse } from './types.js';
-import { safePullRebase } from './git.js';
+import type { ActivityInfo, CoWorkMessage, FileLockInfo, ParticipantInfo, CommitInfo, PresenceResponse } from './types.js';
+import { safePullRebase, isGitBusy } from './git.js';
+import { ActivityTracker } from './activity.js';
 
 export interface PollerConfig {
   roomCode: string;
@@ -14,6 +15,8 @@ export interface PollerConfig {
   autoPull?: boolean;
   branch?: string;
   remote?: string;
+  /** 'full' (default) = state + summary + thoughts + file paths, 'state' = no thoughts/paths, 'off' = nothing. */
+  activityMode?: 'full' | 'state' | 'off';
 }
 
 export class CoWorkPoller {
@@ -26,6 +29,7 @@ export class CoWorkPoller {
   private pulling = false;
   private stopped = false;
   private currentStatus = 'Idle / Connected';
+  private activity: ActivityTracker;
 
   private pendingInbox: CoWorkMessage[] = [];
   private fileLocks: Record<string, FileLockInfo> = {};
@@ -47,6 +51,30 @@ export class CoWorkPoller {
       inviteKey: config.inviteKey || undefined,
       branch: config.branch || 'main', remote: config.remote || 'origin',
     };
+    this.activity = new ActivityTracker(
+      { repoPath: config.repoPath, mode: config.activityMode ?? 'full' },
+      () => isGitBusy(config.repoPath),
+    );
+  }
+
+  /** Explicit narration from the agent (cowork_report). Returns what the next beat will carry. */
+  public setActivity(patch: { state?: unknown; summary?: unknown; detail?: unknown; tool?: unknown; files?: unknown }): ActivityInfo | undefined {
+    const info = this.activity.report(patch);
+    this.currentStatus = this.activity.statusLine().slice(0, 2048);
+    return info;
+  }
+
+  /** Which tool is running - visible to the room even when the agent says nothing. */
+  public noteTool(name: string): void {
+    this.activity.noteTool(name);
+  }
+
+  public getActivity(): ActivityInfo | undefined {
+    return this.activity.snapshot();
+  }
+
+  public isSharingActivity(): boolean {
+    return this.activity.enabled();
   }
 
   public getHeaders(): Record<string, string> {
@@ -90,11 +118,15 @@ export class CoWorkPoller {
 
   public setStatus(status: string): void {
     this.currentStatus = status.slice(0, 2048);
+    // A status line is also telemetry: derive a state from it so harnesses that only ever call
+    // setStatus still stream something meaningful.
+    this.activity.noteStatus(status);
   }
 
   public start(): void {
     if (this.timer) return;
     this.stopped = false;
+    this.activity.noteTool('cowork_connect');
     void this.poll(); // Initial poll immediately
     this.timer = setInterval(() => this.poll(), 2000);
   }
@@ -105,6 +137,9 @@ export class CoWorkPoller {
       clearInterval(this.timer);
       this.timer = null;
     }
+    // Forget the narration: a reconnect must not republish "editing" for work that finished while
+    // the agent was down. The relay ages the row out on its own.
+    this.activity.clear();
   }
 
   public async poll(): Promise<boolean> {
@@ -112,11 +147,15 @@ export class CoWorkPoller {
     this.isPolling = true;
 
     try {
+      // Refresh the file view without delaying this beat; the previous snapshot is used meanwhile.
+      void this.activity.maybeRefresh();
+      const activity = this.activity.snapshot();
       const res = await fetch(`${this.config.relayUrl}/api/presence`, {
         method: 'POST', headers: this.getHeaders(), signal: AbortSignal.timeout(10_000),
         body: JSON.stringify({ action: 'inbox', roomCode: this.config.roomCode,
           clientId: this.config.agentId, role: 'agent', status: this.currentStatus,
-          harness: this.config.harness, model: this.config.model, ack: this.acknowledgements }),
+          harness: this.config.harness, model: this.config.model, ack: this.acknowledgements,
+          ...(activity ? { activity } : {}) }),
       });
       if (!res.ok) {
         let reason = '';
