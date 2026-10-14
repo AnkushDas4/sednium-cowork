@@ -62,13 +62,17 @@ chmod +x "$MCP_DIST_PATH"
 echo -e "${GREEN}✔ MCP Server built at: $MCP_DIST_PATH${RESET}"
 
 # 5. Inject MCP Server into Antigravity Config
-echo -e "\n${BOLD}⚙️  Configuring Antigravity MCP Server...${RESET}"
+echo -e "\n${BOLD}⚙️  Configuring AI Harness MCP Servers (Antigravity, Claude, Cursor, Windsurf)...${RESET}"
 
-# Candidate Antigravity MCP config locations
+# Candidate AI Harness MCP config locations
 CONFIG_PATHS=(
   "$HOME/.gemini/config/mcp_config.json"
   "$HOME/.gemini/antigravity/mcp_config.json"
   "$HOME/.gemini/antigravity/mcp.json"
+  "$HOME/.config/Claude/claude_desktop_config.json"
+  "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+  "$HOME/.cursor/mcp.json"
+  "$HOME/.codeium/windsurf/mcp_config.json"
 )
 
 # Helper node script to safely merge JSON
@@ -91,6 +95,12 @@ const mcpEntry = {
 for (const cfgPath of configPaths) {
   try {
     const dir = path.dirname(cfgPath);
+    // For third party harnesses (Claude, Cursor, Windsurf), only configure if parent folder or app exists
+    const isGemini = cfgPath.includes('.gemini');
+    if (!isGemini && !fs.existsSync(dir)) {
+      continue;
+    }
+
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -124,8 +134,9 @@ for (const cfgPath of configPaths) {
 EOF
 
 echo -e "\n${GREEN}${BOLD}🎉 Sednium CoWork Setup Complete!${RESET}\n"
-echo -e "To start pair programming with Antigravity:"
-echo -e "  1. Open or restart Antigravity."
+echo -e "Compatible AI Harnesses: Google Antigravity, Claude Code / Desktop, Cursor, Windsurf."
+echo -e "\nTo start pair programming:"
+echo -e "  1. Open Antigravity, Claude, Cursor, or Windsurf."
 echo -e "  2. Tell your agent:"
 echo -e "     ${CYAN}\"Connect to CoWork room SED-409 as peer-ai in this repo.\"${RESET}"
 echo -e "  3. Scan the terminal ASCII QR or visit ${CYAN}https://cowork.sednium.com/?room=SED-409${RESET} on your phone!"

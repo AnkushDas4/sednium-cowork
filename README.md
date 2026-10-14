@@ -102,18 +102,57 @@ In your Vercel project settings, assign domain `cowork.sednium.com`. Optionally 
 
 ---
 
-## Configuring Antigravity MCP
+## Configuring AI Harnesses (Antigravity, Claude, Cursor, Windsurf)
 
-Add the following to your Antigravity configuration file (`~/.gemini/antigravity/mcp.json` or project MCP config):
+Because `cowork-mcp` implements the standard Model Context Protocol (MCP) over Stdio, it works with **any AI harness**:
+
+### 1. Google Antigravity (`~/.gemini/config/mcp_config.json`)
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com"
+      }
+    }
+  }
+}
+```
+
+### 2. Claude Desktop (`claude_desktop_config.json`)
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
     "cowork": {
       "command": "node",
-      "args": [
-        "/home/ankush/.gemini/antigravity/scratch/sednium-cowork/packages/cowork-mcp/dist/index.js"
-      ],
+      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com"
+      }
+    }
+  }
+}
+```
+
+### 3. Claude Code CLI
+Run directly in your terminal:
+```bash
+claude mcp add cowork node <PATH_TO_REPO>/packages/cowork-mcp/dist/index.js -e COWORK_RELAY_URL=https://cowork.sednium.com
+```
+
+### 4. Cursor & Windsurf (`.cursor/mcp.json` or `~/.codeium/windsurf/mcp_config.json`)
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["<PATH_TO_REPO>/packages/cowork-mcp/dist/index.js"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
