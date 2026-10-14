@@ -18,6 +18,7 @@ import {
   Bot,
   Zap,
   ChevronDown,
+  ChevronUp,
   User,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
@@ -66,6 +67,41 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
+  const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+
+  const isUserInteractingRef = useRef(false);
+  const interactTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const startUserInteraction = () => {
+    isUserInteractingRef.current = true;
+    if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
+  };
+
+  const endUserInteraction = () => {
+    if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
+    interactTimeoutRef.current = setTimeout(() => {
+      isUserInteractingRef.current = false;
+    }, 1200);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.deltaY < 0) {
+      startUserInteraction();
+    }
+  };
+
+  const toggleExpand = (messageId: string) => {
+    setExpandedMap((prev) => ({
+      ...prev,
+      [messageId]: !prev[messageId],
+    }));
+  };
+
+  const isMessageLong = (text: string) => {
+    if (!text) return false;
+    const lineCount = (text.match(/\n/g) || []).length + 1;
+    return text.length > 150 || lineCount > 3;
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     streamEndRef.current?.scrollIntoView({ behavior });
@@ -78,7 +114,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     const el = scrollContainerRef.current;
     if (!el) return;
     const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    const atBottom = distanceToBottom < 70;
+    // Strict threshold: user is only at the bottom if within 35px
+    const atBottom = distanceToBottom <= 35;
     isNearBottomRef.current = atBottom;
     setIsScrolledUp(!atBottom);
     if (atBottom) {
@@ -93,7 +130,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     const lastMsg = messages[messages.length - 1];
     const isSelfLast = lastMsg && lastMsg.senderId === currentClientId;
 
-    if (isNearBottomRef.current || isSelfLast) {
+    // Self messages always scroll immediately
+    if (isSelfLast) {
+      scrollToBottom('smooth');
+      return;
+    }
+
+    // Only scroll background messages if user is sitting at bottom AND not touching/scrolling
+    if (isNearBottomRef.current && !isUserInteractingRef.current) {
       scrollToBottom('smooth');
     } else if (countDiff > 0) {
       setUnreadWhileScrolled((prev) => prev + countDiff);
@@ -340,11 +384,16 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       </div>
 
       {/* 2. Structured Event Stream OR Interactive Onboarding Card */}
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto scroll-panel bg-canvas p-3 xs:p-4 space-y-2 relative"
-      >
+      <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          onTouchStart={startUserInteraction}
+          onTouchEnd={endUserInteraction}
+          onTouchMove={startUserInteraction}
+          onWheel={handleWheel}
+          className="flex-1 overflow-y-auto scroll-panel bg-canvas p-3 xs:p-4 space-y-2"
+        >
         {filteredMessages.length === 0 ? (
           /* Flexible Quick-Start Onboarding Card */
           <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
@@ -567,11 +616,58 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
             // Self Message: Right-Aligned Speech Bubble
             if (isSelf) {
+              const isLong = isMessageLong(msg.text);
+              const isExpanded = !!expandedMap[msg.messageId];
+
               return (
                 <div key={msg.messageId} className="flex justify-end my-1 select-text">
                   <div className="flex flex-col items-end max-w-[85%] sm:max-w-[72%] space-y-1">
                     <div className="bg-accent text-accent-ink rounded-2xl rounded-tr-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-card break-words text-[14px] font-sans font-medium leading-relaxed">
-                      {renderFormattedText(msg.text)}
+                      {isLong && !isExpanded ? (
+                        <div>
+                          <div className="relative">
+                            <div className="max-h-24 overflow-hidden whitespace-pre-wrap select-text">
+                              {renderFormattedText(msg.text)}
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 h-10 pointer-events-none bg-gradient-to-t from-accent to-transparent" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(msg.messageId);
+                            }}
+                            className="mt-1.5 flex items-center gap-1 text-2xs font-mono font-bold bg-accent-strong hover:opacity-90 px-2.5 py-1 rounded-sm transition-all select-none cursor-pointer"
+                            aria-expanded={false}
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                            <span>Show more</span>
+                          </button>
+                        </div>
+                      ) : isLong && isExpanded ? (
+                        <div>
+                          <div className="whitespace-pre-wrap select-text">
+                            {renderFormattedText(msg.text)}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpand(msg.messageId);
+                            }}
+                            className="mt-1.5 flex items-center gap-1 text-2xs font-mono font-bold bg-accent-strong hover:opacity-90 px-2.5 py-1 rounded-sm transition-all select-none cursor-pointer"
+                            aria-expanded={true}
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                            <span>Show less</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="whitespace-pre-wrap select-text">
+                          {renderFormattedText(msg.text)}
+                        </div>
+                      )}
+
                       {msg.files && msg.files.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1.5 opacity-90">
                           {msg.files.map((f) => (
@@ -592,6 +688,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             }
 
             // Peer / AI Agent Message: Left-Aligned Speech Bubble
+            const isLong = isMessageLong(msg.text);
+            const isExpanded = !!expandedMap[msg.messageId];
+            const isAgent = msg.senderId.includes('ai');
+
             return (
               <div key={msg.messageId} className="flex justify-start my-1.5 select-text">
                 <div className="flex flex-col items-start max-w-[88%] sm:max-w-[75%] space-y-1">
@@ -603,7 +703,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                       className="font-mono text-xs font-semibold text-primary hover:text-accent flex items-center gap-1 transition-colors"
                       title={`Tag @${msg.senderId}`}
                     >
-                      {msg.senderId.includes('ai') ? (
+                      {isAgent ? (
                         <Bot className="w-3.5 h-3.5 text-accent" />
                       ) : (
                         <User className="w-3.5 h-3.5 text-secondary" />
@@ -620,6 +720,12 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                     {isPriority && !isDirectedAtMe && (
                       <span className="px-1.5 py-0.2 rounded-full bg-accent-soft text-accent border border-accent/30 text-2xs font-semibold font-mono">
                         PRIORITY
+                      </span>
+                    )}
+
+                    {isAgent && (
+                      <span className="px-1.5 py-0.2 rounded-sm bg-hover text-secondary border border-grid text-2xs font-mono">
+                        AGENT
                       </span>
                     )}
 
@@ -643,13 +749,58 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
                   {/* Bubble */}
                   <div
-                    className={`rounded-2xl rounded-tl-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-sm break-words text-[14px] font-sans font-medium leading-relaxed ${
+                    className={`rounded-2xl rounded-tl-xs px-3.5 sm:px-4 py-2.5 sm:py-3 shadow-sm break-words text-[14px] font-sans font-medium leading-relaxed ${
                       isDirectedAtMe
                         ? 'bg-panel border-2 border-accent text-primary shadow-float'
                         : 'bg-panel border border-grid text-primary'
                     }`}
                   >
-                    {renderFormattedText(msg.text)}
+                    {isLong && !isExpanded ? (
+                      <div>
+                        <div className="relative">
+                          <div className="max-h-24 overflow-hidden whitespace-pre-wrap select-text">
+                            {renderFormattedText(msg.text)}
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none bg-gradient-to-t from-panel to-transparent" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(msg.messageId);
+                          }}
+                          className="mt-2.5 flex items-center gap-1.5 text-xs font-mono font-semibold px-2.5 py-1 rounded-sm bg-accent-soft/80 hover:bg-accent-soft text-accent border border-accent/30 hover:border-accent transition-all select-none cursor-pointer"
+                          aria-expanded={false}
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span>
+                            {isAgent ? 'Expand agent work' : 'Show more'} ({Math.ceil(msg.text.length / 50)} lines)
+                          </span>
+                        </button>
+                      </div>
+                    ) : isLong && isExpanded ? (
+                      <div>
+                        <div className="whitespace-pre-wrap select-text">
+                          {renderFormattedText(msg.text)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(msg.messageId);
+                          }}
+                          className="mt-2.5 flex items-center gap-1.5 text-xs font-mono font-semibold px-2.5 py-1 rounded-sm bg-hover hover:bg-grid text-secondary hover:text-primary border border-grid transition-all select-none cursor-pointer"
+                          aria-expanded={true}
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span>Show less</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="whitespace-pre-wrap select-text">
+                        {renderFormattedText(msg.text)}
+                      </div>
+                    )}
 
                     {/* Attached files */}
                     {msg.files && msg.files.length > 0 && (
@@ -683,27 +834,29 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             );
           })
         )}
-        {/* Floating Scroll-to-Bottom Down-Arrow Button */}
-        {isScrolledUp && (
-          <button
-            type="button"
-            onClick={() => scrollToBottom('smooth')}
-            className="fixed bottom-24 right-4 sm:right-8 z-30 flex items-center gap-1.5 px-3 py-2 bg-panel/95 hover:bg-panel border border-grid hover:border-accent text-primary rounded-full shadow-float backdrop-blur-md text-xs font-mono font-semibold transition-all animate-bounce"
-            title="Scroll down to latest messages"
-            aria-label="Scroll to bottom"
-          >
-            <ChevronDown className="w-4 h-4 text-accent" strokeWidth={2.5} />
-            {unreadWhileScrolled > 0 ? (
-              <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-ink text-2xs font-bold">
-                {unreadWhileScrolled} new
-              </span>
-            ) : (
-              <span className="text-2xs text-secondary hidden xs:inline">Latest</span>
-            )}
-          </button>
-        )}
         <div ref={streamEndRef} />
       </div>
+
+      {/* Floating Scroll-to-Bottom Down-Arrow Button */}
+      {isScrolledUp && (
+        <button
+          type="button"
+          onClick={() => scrollToBottom('smooth')}
+          className="absolute bottom-4 right-4 sm:right-6 z-20 flex items-center gap-1.5 px-3.5 py-2 bg-panel/95 hover:bg-panel border border-grid hover:border-accent text-primary rounded-full shadow-float backdrop-blur-md text-xs font-mono font-semibold transition-all animate-bounce cursor-pointer select-none"
+          title="Scroll down to latest messages"
+          aria-label="Scroll to bottom"
+        >
+          <ChevronDown className="w-4 h-4 text-accent" strokeWidth={2.5} />
+          {unreadWhileScrolled > 0 ? (
+            <span className="px-1.5 py-0.2 rounded-full bg-accent text-accent-ink text-2xs font-bold">
+              {unreadWhileScrolled} new
+            </span>
+          ) : (
+            <span className="text-2xs text-secondary hidden xs:inline">Jump to bottom</span>
+          )}
+        </button>
+      )}
+    </div>
 
       {/* 3. Command Composer Dock (Flush Edge-to-Edge Input Row) */}
       <div className="bg-panel border-t border-grid shrink-0 relative">
