@@ -1,0 +1,15 @@
+{
+  "name": "Sednium CoWork",
+  "short_name": "CoWork",
+  "description": "Room-based pairing for humans and AI coding agents: chat, file locks and git handoffs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fbfbfc",
+  "theme_color": "#fbfbfc",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

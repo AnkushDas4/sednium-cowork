@@ -8,4 +8,6 @@ dist/
 .env.*
 !.env.example
 
-packages/cowork-web-relay/public/
+packages/cowork-web-relay/public/*
+!packages/cowork-web-relay/public/icon.svg
+!packages/cowork-web-relay/public/manifest.webmanifest

@@ -4,6 +4,10 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      screens: {
+        // Phones are not one size: 360px needs different choices than 420px.
+        xs: '400px',
+      },
       colors: {
         // rgb(...) + <alpha-value> so bg-panel/40 and border-grid/60 behave like real tints.
         canvas: 'rgb(var(--rgb-canvas) / <alpha-value>)',

@@ -46,9 +46,9 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
   const allLocks = Object.entries(fileLocks);
 
   return (
-    <div className="h-full flex flex-col divide-y divide-grid bg-canvas overflow-y-auto">
+    <div className="h-full flex flex-col divide-y divide-grid bg-canvas overflow-y-auto scroll-panel">
       {/* 1. Header Bar for Agent Section */}
-      <div className="px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
+      <div className="px-4 xs:px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-accent" />
           <span className="font-semibold text-primary text-xs">AGENT NODES</span>
@@ -84,7 +84,7 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
             const locks = getAgentLocks(agentId);
 
             return (
-              <div key={agentId} className="px-5 py-4 space-y-2.5 bg-canvas transition-colors">
+              <div key={agentId} className="px-4 xs:px-5 py-3.5 space-y-2.5 bg-canvas transition-colors">
                 {/* Agent Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">

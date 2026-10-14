@@ -199,9 +199,10 @@ export const App: React.FC = () => {
             </div>
           )}
           {/* Mobile Tab Switcher */}
-          <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-9 text-xs font-mono divide-x divide-grid shrink-0">
+          <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-11 text-xs font-mono divide-x divide-grid shrink-0">
             <button
               onClick={() => setMobileTab('stream')}
+              aria-pressed={mobileTab === 'stream'}
               className={`flex-1 flex items-center justify-center gap-1.5 ${
                 mobileTab === 'stream'
                   ? 'bg-canvas text-accent font-semibold'
@@ -213,6 +214,7 @@ export const App: React.FC = () => {
             </button>
             <button
               onClick={() => setMobileTab('agents')}
+              aria-pressed={mobileTab === 'agents'}
               className={`flex-1 flex items-center justify-center gap-1.5 ${
                 mobileTab === 'agents'
                   ? 'bg-canvas text-accent font-semibold'

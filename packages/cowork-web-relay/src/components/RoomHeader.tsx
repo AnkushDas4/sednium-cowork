@@ -83,7 +83,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   };
 
   return (
-    <header className="h-14 border-b border-grid bg-panel/85 backdrop-blur-md flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
+    <header className="min-h-14 pt-safe border-b border-grid bg-panel/85 backdrop-blur-md flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
       <div className="hidden md:flex items-center gap-3 px-4 md:px-5 shrink-0">
         <div className="w-7 h-7 bg-accent flex items-center justify-center rounded-lg shrink-0 shadow-card">
@@ -100,16 +100,16 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       </div>
 
       {/* 2. Room Session Cell */}
-      <div className="flex items-center gap-2.5 px-4 shrink-0">
-        <div className="flex items-center gap-1.5 font-mono">
+      <div className="flex items-center gap-2 px-3 xs:px-4 flex-1 min-w-0 sm:flex-none">
+        <div className="flex items-center gap-1.5 font-mono min-w-0">
           <Hash className="w-4 h-4 text-accent" strokeWidth={2.5} />
-          <span title={roomCode} className="font-semibold text-primary text-[15px] tracking-tight truncate max-w-[110px] lg:max-w-[220px]">{roomCode}</span>
+          <span title={roomCode} className="font-semibold text-primary text-sm xs:text-[15px] tracking-tight truncate min-w-0">{roomCode}</span>
         </div>
 
-        <div className="flex items-center gap-1.5 ml-1">
+        <div className="flex items-center gap-1.5 ml-1 shrink-0">
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
             title="Copy invite link"
           >
             {copied ? (
@@ -117,12 +117,12 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             ) : (
               <Copy className="w-3.5 h-3.5 text-accent" />
             )}
-            <span>{copied ? 'Copied!' : hasInviteKey ? 'Copy Link + Key' : 'Copy Link'}</span>
+            <span className="hidden sm:inline">{copied ? 'Copied!' : hasInviteKey ? 'Copy Link + Key' : 'Copy Link'}</span>
           </button>
 
           <button
             onClick={() => setShowQr(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
             title="Show mobile QR code"
           >
             <QrCode className="w-3.5 h-3.5 text-secondary" />
@@ -133,7 +133,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             <button
               onClick={handleCreateNewRoom}
               disabled={isGenerating}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
+              className="min-tap justify-center px-0 sm:px-2.5 py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
               title="Generate a new collision-free room code"
             >
               <Sparkles className="w-3.5 h-3.5 text-accent" />
@@ -182,7 +182,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
                 <div key={pId} className="flex items-center gap-1">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      isOnline(p.lastSeen) ? 'bg-[#10B981]' : 'bg-muted'
+                      isOnline(p.lastSeen) ? 'bg-ok' : 'bg-muted'
                     }`}
                   />
                   <span
@@ -201,6 +201,19 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           </div>
         </div>
 
+        {/* Compact roster for narrow screens: presence dots; handles live in the roster panel */}
+        <div
+          className="flex xs:hidden items-center gap-1 px-1"
+          title="People in this room (green = seen in the last 90s)"
+        >
+          {participantEntries.slice(0, 4).map(([pId, p]) => (
+            <span
+              key={pId}
+              className={`w-2 h-2 rounded-full ${isOnline(p.lastSeen) ? 'bg-ok' : 'bg-muted'}`}
+            />
+          ))}
+        </div>
+
         {/* Live sync pulse */}
         <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
           <Activity className="w-4 h-4 text-accent animate-pulse" />
@@ -209,7 +222,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
         {/* Theme Toggle Button */}
         <button
           onClick={onToggleTheme}
-          className="p-2 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          className="min-tap p-2 flex items-center justify-center hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
           title={`Switch to ${theme === 'dark' ? 'Milk White (Light)' : 'Charcoal Black (Dark)'} mode`}
           aria-label="Toggle theme"
         >
@@ -222,8 +235,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
         <button
           onClick={onLeave}
-          className="p-2 hover:bg-hover text-muted hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          className="min-tap p-2 flex items-center justify-center hover:bg-hover text-muted hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
           title="Exit Room"
+          aria-label="Leave this room"
         >
           <LogOut className="w-4 h-4" />
         </button>
@@ -232,7 +246,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       {/* QR Code Modal Popover */}
       {showQr && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-panel border border-grid rounded-sm p-6 max-w-xs w-full shadow-float relative">
+          <div className="bg-panel border border-grid rounded-2xl p-5 w-[min(92vw,22rem)] max-h-[86dvh] overflow-y-auto scroll-panel shadow-float relative">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-grid">
               <div className="flex items-center gap-2">
                 <QrCode className="w-4 h-4 text-accent" />
@@ -252,13 +266,13 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               <QRCodeSVG value={shareUrl} size={190} level="M" />
             </div>
 
-            <div className="text-center font-mono text-xs text-secondary mb-4 break-all bg-canvas p-2 rounded-sm border border-grid">
+            <div className="text-center font-mono text-[13px] text-secondary mb-4 break-all bg-canvas p-2.5 rounded-lg border border-grid select-all">
               {shareUrl}
             </div>
 
             <button
               onClick={handleCopy}
-              className="w-full py-2.5 bg-accent hover:bg-accent-strong text-accent-ink text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
+              className="w-full min-h-[44px] bg-accent hover:bg-accent-strong text-accent-ink text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'LINK COPIED' : 'COPY SHARE LINK'}</span>

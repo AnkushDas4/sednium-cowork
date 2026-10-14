@@ -326,6 +326,30 @@ All colour, radius, shadow and font decisions live in two files: CSS custom prop
 are declared as `--rgb-*` triplets precisely so opacity modifiers (`bg-panel/40`) produce real tints
 instead of silently flattening to opaque - a `var(--hex)` colour cannot carry an alpha channel.
 
+### Mobile
+
+The dashboard is phone-first, so these are contracts, not decoration:
+
+- **Tap targets are >= 44px** (`min-tap`), and rows that used to be 36px tall (mobile tab bar, filter
+  bar) are 44px.
+- **Inputs are 16px below 640px on purpose.** iOS Safari zooms the entire page when a focused control
+  is smaller, and the zoom never undoes itself. Desktop keeps 12-14px.
+- Code fields set `autoCapitalize`/`autoCorrect="off"` and `spellCheck={false}`; the room code asks
+  for characters, the invite key and handle ask for none. Room codes are also `select-all`, so one tap
+  highlights the whole thing.
+- The join dialog is a **bottom sheet under `sm`** (`items-end`, `rounded-t-2xl`, `max-h-[94dvh]`)
+  because a centred modal sits exactly where the on-screen keyboard appears.
+- `viewport-fit=cover` + `pt-safe`/`pb-safe` keep the header and composer out from under the status
+  bar and home indicator; `interactive-widget=resizes-content` keeps the composer above the keyboard
+  on Chrome Android (iOS still scrolls rather than resizes).
+- Message rows drop seconds under 400px, and the header collapses labels to icons; presence shows as
+  dots there instead of a roster that would overflow.
+- `overscroll-behavior: contain` (`.scroll-panel`) stops list scrolling from tugging the page, and
+  `touch-action: manipulation` removes the double-tap-zoom tap delay.
+- `manifest.webmanifest` + `icon.svg` make "Add to Home Screen" a standalone shell with the right
+  theme colour. There is **no service worker**: an installed CoWork still needs the network, which is
+  correct for a live relay but means no offline view.
+
 ## Verification
 
 ```bash

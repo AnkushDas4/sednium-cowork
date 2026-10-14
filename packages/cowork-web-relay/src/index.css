@@ -170,6 +170,72 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Mobile ergonomics. Thumb reach, tap size, and the iOS focus-zoom are the
+   three things that make a phone UI feel broken when they are ignored.
+--------------------------------------------------------------------------- */
+@layer base {
+  /* iOS Safari zooms the whole page when a focused control is under 16px.
+     Inputs therefore start at 16px and only shrink on larger screens. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input,
+    textarea,
+    select {
+      font-size: 0.875rem;
+    }
+  }
+
+  button,
+  a,
+  [role='button'],
+  label {
+    touch-action: manipulation; /* no double-tap-zoom delay on taps */
+  }
+
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Keep momentum scrolling inside panels instead of tugging the page. */
+  .scroll-panel {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@layer utilities {
+  /* A sheet that stays clear of the home indicator and the status bar. */
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .min-tap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
+
+/* Short viewports (landscape phones, keyboard open): reclaim vertical space. */
+@media (max-height: 600px) {
+  .min-h-14 {
+    min-height: 3rem;
+  }
+}
+
 /* Thin, unobtrusive scrollbars that match the surface, not the content. */
 * {
   scrollbar-width: thin;

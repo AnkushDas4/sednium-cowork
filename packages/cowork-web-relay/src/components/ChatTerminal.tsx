@@ -196,10 +196,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
       {/* 1. Filter Tab Bar */}
-      <div className="h-10 bg-panel border-b border-grid flex items-stretch px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto">
+      <div className="h-11 xs:h-10 bg-panel border-b border-grid flex items-stretch px-1 xs:px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setFilter('ALL')}
-          className={`flex items-center gap-1.5 px-3.5 text-xs font-sans font-medium relative transition-colors ${
+          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
             filter === 'ALL'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
@@ -215,7 +215,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('MENTIONS')}
-          className={`flex items-center gap-1.5 px-3.5 text-xs font-sans font-medium relative transition-colors ${
+          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
             filter === 'MENTIONS'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
@@ -230,7 +230,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('GIT')}
-          className={`flex items-center gap-1.5 px-3.5 text-xs font-sans font-medium relative transition-colors ${
+          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
             filter === 'GIT'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
@@ -245,7 +245,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
         <button
           onClick={() => setFilter('LOCKS')}
-          className={`flex items-center gap-1.5 px-3.5 text-xs font-sans font-medium relative transition-colors ${
+          className={`min-tap justify-center gap-1.5 px-4 xs:px-3.5 text-[13px] xs:text-xs font-sans font-medium relative transition-colors flex items-center ${
             filter === 'LOCKS'
               ? 'text-primary font-semibold'
               : 'text-muted hover:text-secondary'
@@ -260,7 +260,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       </div>
 
       {/* 2. Structured Event Stream OR Interactive Onboarding Card */}
-      <div className="flex-1 overflow-y-auto divide-y divide-grid bg-canvas">
+      <div className="flex-1 overflow-y-auto scroll-panel divide-y divide-grid bg-canvas">
         {filteredMessages.length === 0 ? (
           /* Flexible Quick-Start Onboarding Card */
           <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
@@ -307,6 +307,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                           )
                         }
                         placeholder="agent handle (e.g. cursor-ai, claude-code)"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
                         className="w-full bg-canvas border border-grid rounded-sm pl-7 pr-3 py-2 text-xs font-mono text-primary font-semibold placeholder:text-muted focus:outline-none focus:border-accent"
                       />
                     </div>
@@ -424,24 +427,28 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         ) : (
           filteredMessages.map((msg) => {
-            const timeStr = new Date(msg.timestamp).toLocaleTimeString([], {
+            const clock = new Date(msg.timestamp).toLocaleTimeString([], {
               hour12: false,
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
             });
+            // Seconds only pay for themselves once there is room for them.
+            const timeStr = clock.slice(0, 5);
+            const timeSec = clock.slice(5);
             const isSelf = msg.senderId === currentClientId;
 
             return (
               <div
                 key={msg.messageId}
-                className={`px-5 py-3.5 flex items-start gap-3.5 transition-colors hover:bg-hover/30 ${
+                className={`px-3.5 xs:px-5 py-3 xs:py-3.5 flex items-start gap-3 transition-colors hover:bg-hover/30 ${
                   isSelf ? 'bg-panel/20' : ''
                 }`}
               >
                 {/* Timestamp */}
-                <div className="font-mono text-xs text-muted shrink-0 pt-0.5 select-none font-medium">
+                <div className="font-mono text-[11px] xs:text-xs text-muted shrink-0 pt-0.5 select-none font-medium w-[38px] xs:w-auto">
                   {timeStr}
+                  <span className="hidden xs:inline">{timeSec}</span>
                 </div>
 
                 {/* Event Type Icon */}
@@ -553,17 +560,19 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             type="text"
             value={input}
             onChange={handleInputChange}
-            placeholder="Assign task with @peer-ai or message team..."
-            className="flex-1 bg-canvas h-full px-2 text-xs md:text-sm text-primary placeholder:text-muted focus:outline-none font-sans font-medium"
+            placeholder="Message the room, or @handle to direct..."
+            enterKeyHint="send"
+            autoComplete="off"
+            className="flex-1 bg-canvas h-full px-2 text-[16px] md:text-sm text-primary placeholder:text-muted focus:outline-none font-sans font-medium"
           />
 
           <button
             type="submit"
             disabled={!input.trim() || sending}
-            className="h-full px-6 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-xs md:text-sm flex items-center gap-2 transition-colors shrink-0 select-none shadow-card"
+            className="h-full min-w-[52px] px-4 xs:px-6 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-sm flex items-center justify-center gap-2 transition-colors shrink-0 select-none shadow-card"
           >
             <Send className="w-4 h-4" />
-            <span>DISPATCH</span>
+            <span className="hidden xs:inline">DISPATCH</span>
           </button>
         </form>
       </div>

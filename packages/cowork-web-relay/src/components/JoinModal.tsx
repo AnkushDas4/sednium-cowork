@@ -88,8 +88,8 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 select-none">
-      <div className="w-full max-w-md bg-panel border border-grid rounded-2xl shadow-float overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4 select-none">
+      <div className="w-full sm:max-w-md bg-panel border border-grid rounded-t-2xl sm:rounded-2xl shadow-float max-h-[94dvh] overflow-y-auto scroll-panel relative">
         {/* Hardware Top Accent Bar in Safety Orange */}
         <div className="h-1 bg-accent w-full opacity-90" />
 
@@ -126,7 +126,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4">
           {/* Room Code */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
@@ -138,7 +138,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                 type="button"
                 onClick={fetchCollisionFreeCode}
                 disabled={isRefreshing}
-                className="text-2xs text-muted hover:text-accent flex items-center gap-1 transition-colors disabled:opacity-50"
+                className="min-h-[36px] -my-1.5 px-2 -ml-2 rounded-lg text-2xs text-muted hover:text-accent flex items-center gap-1 transition-colors disabled:opacity-50"
               >
                 <RefreshCw
                   className={`w-2.5 h-2.5 ${isRefreshing ? 'animate-spin' : ''}`}
@@ -153,7 +153,10 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               value={room}
               onChange={(e) => { requestVersion.current++; setRoom(e.target.value.toUpperCase()); }}
               placeholder="e.g. SED-409"
-              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-accent tracking-wider"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              className="w-full bg-canvas border border-grid rounded-lg px-3 py-2.5 min-h-[44px] text-[16px] sm:text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-accent tracking-wider"
             />
 
             {invite ? (
@@ -166,7 +169,11 @@ export const JoinModal: React.FC<JoinModalProps> = ({
                 value={invite}
                 onChange={(e) => setInvite(e.target.value.trim().toLowerCase())}
                 placeholder="invite key (only if the room requires one)"
-                className="w-full bg-canvas border border-grid rounded-sm px-3 py-1.5 text-[11px] text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                autoComplete="off"
+                className="w-full bg-canvas border border-grid rounded-lg px-3 py-2 min-h-[44px] text-[16px] sm:text-xs text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
               />
             )}
           </div>
@@ -190,13 +197,17 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               autoFocus={!clientId}
               onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
               placeholder="host - your handle (e.g. android-lab)"
-              className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-xs text-primary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete="username"
+              className="w-full bg-canvas border border-grid rounded-lg px-3 py-2.5 min-h-[44px] text-[16px] sm:text-sm text-primary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-accent hover:bg-accent-strong text-accent-ink text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 shadow-card font-sans tracking-wide"
+            className="w-full min-h-[48px] bg-accent hover:bg-accent-strong text-accent-ink text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-card font-sans tracking-wide"
           >
             <span>CONNECT TO RELAY</span>
             <ArrowRight className="w-4 h-4" />
