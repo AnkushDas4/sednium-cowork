@@ -209,6 +209,13 @@ A production 503 also returns a machine-readable `code`/`hint` (`DATABASE_URL_MI
 `STORAGE_UNAVAILABLE` + Postgres/driver code such as `ETIMEDOUT`, `ECONNREFUSED`, `28P01`, `42501`).
 Hints never contain hostnames or credentials, so they are safe to show and to paste into a bug report.
 
+`DATABASE_URL_INVALID` also covers an unreplaced `[YOUR-PASSWORD]` placeholder or an empty password.
+On any database failure the function logs a private summary (`user`, password **length**, host, port)
+so a truncated or stale credential is visible in Vercel logs without the secret ever appearing in a
+response. A `_` is harmless in a URL password, and a raw `@` is parsed correctly by this driver
+(the last `@` wins), so chase a stale/reset password first; encode `@` as `%40` anyway if you use
+`psql` or another tool with the same string.
+
 `DATABASE_URL_INVALID` means the relay refused to parse a connection string that a URL parser
 would silently truncate (an unencoded `#`, `?`, `/` or space in the password). Percent-encode
 those characters, or reset the database password to letters and digits only - the simplest option.

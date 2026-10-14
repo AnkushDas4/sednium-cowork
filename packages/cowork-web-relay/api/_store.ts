@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import type { RoomState, CoWorkMessage } from './_types.js';
 import { ApiError, id } from './_validation.js';
-import { buildTls } from './_tls.js';
+import { buildTls, describeConnection } from './_tls.js';
 
 export const LOCK_TTL_MS = 90_000;
 const memoryStore = new Map<string, RoomState>();
@@ -56,7 +56,12 @@ async function initialize(p: Pool): Promise<void> {
       await c.query('COMMIT');
     } catch (e) { await c.query('ROLLBACK'); throw e; }
     finally { c.release(); }
-  })().catch(e => { initialized = undefined; throw e; });
+  })().catch(e => {
+    initialized = undefined;
+    // Only ever logged to the platform's private function logs, never to a client.
+    console.error(`[CoWork] Database init failed (${(e as Error)?.message || 'unknown'}). Parsed config: ${describeConnection(process.env.DATABASE_URL || '')}`);
+    throw e;
+  });
   return initialized;
 }
 

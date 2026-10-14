@@ -58,6 +58,24 @@ export function assertUsableUrl(raw: string): void {
     throw new Error('DATABASE_URL username is invalid for a URL - percent-encode it, or use an alphanumeric database password');
   }
   if (/[#?/\s]/.test(password) || /%(?![0-9A-Fa-f]{2})/.test(password)) throw new Error(invalid);
+  const host = authority.slice(at + 1).toLowerCase().replace(/:\d+$/, '');
+  const localHost = LOCAL_HOSTS.has(host) || host.startsWith('127.') || host.startsWith('[::1]');
+  if (/YOUR-PASSWORD|YOUR_PASSWORD/i.test(password) || (password === '' && !localHost)) {
+    throw new Error('DATABASE_URL still contains the [YOUR-PASSWORD] placeholder (or an empty password) - paste the real database password');
+  }
+}
+
+/**
+ * Server-log-only summary. Never returns password content: length and host are enough to spot
+ * a truncated or stale credential, and this must not reach an API response.
+ */
+export function describeConnection(raw: string): string {
+  try {
+    const url = new URL(raw);
+    return `user=${url.username ? url.username.slice(0, 3) + '***' : '(none)'} password length=${decodeURIComponent(url.password).length} host=${url.hostname} port=${url.port || 'default'}`;
+  } catch {
+    return 'connection string could not be parsed';
+  }
 }
 
 export function buildTls(rawUrl: string, env: NodeJS.ProcessEnv = process.env): TlsDecision {

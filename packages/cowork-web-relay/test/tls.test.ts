@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { buildTls } from '../api/_tls.js';
+import { buildTls, describeConnection } from '../api/_tls.js';
 import { errorResponse } from '../api/_validation.js';
 
 const URL = 'postgresql://postgres.x:pw@aws-0-ap-south-1.pooler.supabase.com:6543/postgres';
@@ -60,6 +60,16 @@ describe('Database TLS policy', () => {
     // Properly encoded or plain ASCII passwords pass through untouched.
     expect(buildTls('postgresql://postgres.x:pa%23ss@h:6543/postgres', {}).mode).toBe('verify-full');
     expect(buildTls('postgresql://postgres.x:Simple1Password@h:6543/postgres', {}).connectionString).toContain('Simple1Password');
+  });
+  it('catches an unreplaced password placeholder without echoing secrets', () => {
+    expect(() => buildTls('postgresql://postgres.abc:[YOUR-PASSWORD]@h:6543/postgres', {})).toThrow('placeholder');
+    expect(() => buildTls('postgresql://postgres.abc:@h:6543/postgres', {})).toThrow('placeholder');
+    expect(buildTls('postgresql://postgres@localhost:5432/db', {}).mode).toBe('disabled'); // local passwordless dev stays allowed
+    const summary = describeConnection('postgresql://postgres.abc:Sup3rSecretPw@h.pooler.supabase.com:6543/postgres');
+    expect(summary).toContain('password length=13');
+    expect(summary).toContain('host=h.pooler.supabase.com');
+    expect(summary).not.toContain('Sup3rSecretPw');
+    expect(summary).not.toContain('postgres.abc');
   });
   it('explains Supabase certificate failures to the operator', () => {
     let configError: Error | undefined;
