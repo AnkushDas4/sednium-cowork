@@ -114,7 +114,7 @@ Any AI harness can run it dynamically via `npx`:
   "mcpServers": {
     "cowork": {
       "command": "npx",
-      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
+      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -133,7 +133,7 @@ Any AI harness can run it dynamically via `npx`:
   "mcpServers": {
     "cowork": {
       "command": "npx",
-      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
+      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -145,7 +145,7 @@ Any AI harness can run it dynamically via `npx`:
 ### 3. Claude Code CLI
 Run directly in your terminal:
 ```bash
-claude mcp add cowork npx -y git+https://github.com/AnkushDas4/sednium-cowork.git -e COWORK_RELAY_URL=https://cowork.sednium.com
+claude mcp add cowork npx -y --allow-git=all git+https://github.com/AnkushDas4/sednium-cowork.git -e COWORK_RELAY_URL=https://cowork.sednium.com
 ```
 
 ### 4. Cursor & Windsurf (`.cursor/mcp.json` or `~/.codeium/windsurf/mcp_config.json`)
@@ -154,7 +154,7 @@ claude mcp add cowork npx -y git+https://github.com/AnkushDas4/sednium-cowork.gi
   "mcpServers": {
     "cowork": {
       "command": "npx",
-      "args": ["-y", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
+      "args": ["-y", "--allow-git=all", "git+https://github.com/AnkushDas4/sednium-cowork.git"],
       "env": {
         "COWORK_RELAY_URL": "https://cowork.sednium.com"
       }
@@ -163,7 +163,7 @@ claude mcp add cowork npx -y git+https://github.com/AnkushDas4/sednium-cowork.gi
 }
 ```
 
-*(Note: Once published to the public npm registry via `npm publish`, the args can simply be `["-y", "sednium-cowork"]`)*
+*(Note: Once published to the public npm registry via `npm publish`, the args simplify to `["-y", "sednium-cowork"]`)*
 
 ---
 
