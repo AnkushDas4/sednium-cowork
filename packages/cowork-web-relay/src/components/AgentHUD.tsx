@@ -6,10 +6,6 @@ import {
   ShieldAlert,
   Cpu,
   FileCode,
-  Copy,
-  Check,
-  Terminal,
-  Sparkles,
 } from 'lucide-react';
 import type { ParticipantInfo, FileLockInfo } from '../../api/_types.js';
 
@@ -22,24 +18,15 @@ interface AgentHUDProps {
 export const AgentHUD: React.FC<AgentHUDProps> = ({
   participants,
   fileLocks,
-  roomCode = 'SED-409',
 }) => {
   const [now, setNow] = useState(Date.now());
-  const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleCopyPrompt = (agentId: string) => {
-    const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect.`;
-    navigator.clipboard.writeText(prompt);
-    setCopiedSlot(agentId);
-    setTimeout(() => setCopiedSlot(null), 2500);
-  };
-
-  // Find all actually registered agents from participants
+  // Dynamically find all connected agents from live participants (zero hardcoded names)
   const connectedAgentEntries = Object.entries(participants).filter(
     ([_, p]) => p.role === 'agent'
   );
@@ -58,9 +45,6 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
 
   const allLocks = Object.entries(fileLocks);
 
-  // Default slots that can be paired
-  const expectedSlots = ['loid-ai', 'peer-ai'];
-
   return (
     <div className="h-full flex flex-col divide-y divide-grid bg-canvas overflow-y-auto">
       {/* 1. Header Bar for Agent Section */}
@@ -70,71 +54,31 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
           <span className="font-bold text-primary text-xs">AGENT NODES</span>
         </div>
         <span className="text-[11px] font-semibold text-secondary">
-          {connectedAgentEntries.length > 0
-            ? `${connectedAgentEntries.length} ACTIVE`
-            : '0 ACTIVE • 2 SLOTS'}
+          {connectedAgentEntries.length === 0
+            ? '0 ACTIVE AGENTS'
+            : `${connectedAgentEntries.length} ACTIVE AGENT${
+                connectedAgentEntries.length > 1 ? 'S' : ''
+              }`}
         </span>
       </div>
 
-      {/* 2. Flush Agent Cards / Slots */}
+      {/* 2. Flush Agent Cards / 0-State */}
       <div className="divide-y divide-grid bg-canvas">
         {connectedAgentEntries.length === 0 ? (
-          /* Zero Agents Connected: Show Clear Pairing Slots */
-          <>
-            <div className="px-5 py-3.5 bg-hover/40 border-b border-grid">
-              <div className="flex items-center gap-2 text-xs font-sans font-bold text-primary">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
-                <span>Pair Antigravity AI With This Room</span>
-              </div>
-              <p className="text-[11px] font-sans text-secondary mt-0.5 leading-snug">
-                Run the prompt in your local terminal or AI session to bind an agent.
-              </p>
+          /* Pure Dynamic 0-Agent Empty State (No hardcoded ghost slots) */
+          <div className="px-5 py-12 text-center text-muted space-y-2.5">
+            <div className="w-10 h-10 rounded-sm bg-panel border border-grid flex items-center justify-center mx-auto text-muted">
+              <Bot className="w-5 h-5 opacity-40" />
             </div>
-
-            {expectedSlots.map((slotId) => (
-              <div key={slotId} className="px-5 py-4 space-y-3 bg-canvas transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 bg-hover border border-grid flex items-center justify-center rounded-sm text-muted">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-[15px] text-primary font-sans leading-tight">
-                        @{slotId}
-                      </div>
-                      <div className="text-[11px] text-muted font-mono">
-                        {slotId === 'loid-ai' ? 'Host Agent Slot' : 'Collaborator Agent Slot'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-hover border border-grid text-muted">
-                    WAITING TO PAIR
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleCopyPrompt(slotId)}
-                  className="w-full py-2 px-3 bg-panel hover:bg-hover border border-grid hover:border-[#FF6B00]/40 text-primary rounded-sm text-xs font-mono font-medium flex items-center justify-center gap-2 transition-all shadow-sm"
-                >
-                  {copiedSlot === slotId ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
-                      <span className="text-[#FF6B00] font-semibold">Prompt Copied to Clipboard!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 text-[#FF6B00]" />
-                      <span>+ COPY AGY CONNECT PROMPT</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            ))}
-          </>
+            <div className="text-xs font-sans font-bold text-primary">
+              No Agents Connected
+            </div>
+            <p className="text-[11px] font-sans text-secondary max-w-xs mx-auto leading-relaxed">
+              Connect your Antigravity AI using the prompt generator in the center canvas to bind an agent to this room.
+            </p>
+          </div>
         ) : (
-          /* Render Actually Connected Agents */
+          /* Render Exclusively Connected Agents with whatever custom agentId was given */
           connectedAgentEntries.map(([agentId, participant]) => {
             const status = getStatus(participant?.lastSeen);
             const locks = getAgentLocks(agentId);

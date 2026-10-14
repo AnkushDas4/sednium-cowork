@@ -15,6 +15,7 @@ import {
   QrCode,
   Sparkles,
   Radio,
+  Bot,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType } from '../../api/_types.js';
 
@@ -41,6 +42,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showMentionPopup, setShowMentionPopup] = useState(false);
+
+  // Flexible Onboarding Agent ID input
+  const [onboardingAgentId, setOnboardingAgentId] = useState<string>(
+    currentClientId ? `${currentClientId}-ai` : 'loid-ai'
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
   const streamEndRef = useRef<HTMLDivElement>(null);
@@ -98,7 +104,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }
   };
 
-  const handleCopyPrompt = (agentId: string) => {
+  const handleCopyCustomPrompt = (agentId: string) => {
     const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect.`;
     navigator.clipboard.writeText(prompt);
     setCopiedPrompt(agentId);
@@ -169,6 +175,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     });
   };
 
+  const promptPreview = `Connect to CoWork room ${roomCode} as ${
+    onboardingAgentId || 'my-agent'
+  } in this repository using cowork_connect.`;
+
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
       {/* 1. Filter Tab Bar */}
@@ -238,7 +248,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       {/* 2. Structured Event Stream OR Interactive Onboarding Card */}
       <div className="flex-1 overflow-y-auto divide-y divide-grid bg-canvas">
         {filteredMessages.length === 0 ? (
-          /* Interactive Quick-Start Onboarding Card (Fixes Dead Empty State) */
+          /* Flexible Quick-Start Onboarding Card */
           <div className="p-6 md:p-10 max-w-2xl mx-auto space-y-6">
             <div className="text-center space-y-2">
               <div className="w-10 h-10 bg-[#FF6B00]/10 border border-[#FF6B00]/30 text-[#FF6B00] rounded-sm flex items-center justify-center mx-auto mb-2">
@@ -253,8 +263,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             </div>
 
             <div className="border border-grid rounded-sm bg-panel divide-y divide-grid shadow-sm">
-              {/* Step 1 */}
-              <div className="p-4 space-y-2.5">
+              {/* Step 1: Flexible Custom Agent Prompt Generator */}
+              <div className="p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <span className="w-5 h-5 rounded-sm bg-[#FF6B00] text-white font-mono text-xs font-bold flex items-center justify-center">
                     1
@@ -264,33 +274,73 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-secondary font-sans pl-7">
-                  Copy and paste this instruction into your local Antigravity AI prompt window:
+                  Type any agent handle you want to assign, or pick a suggestion:
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPrompt('loid-ai')}
-                    className="py-2 px-3 bg-canvas hover:bg-hover border border-grid text-primary rounded-sm text-xs font-mono text-left flex items-center justify-between gap-2 transition-colors"
-                  >
-                    <span>Connect @loid-ai</span>
-                    {copiedPrompt === 'loid-ai' ? (
-                      <Check className="w-3.5 h-3.5 text-[#FF6B00]" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5 text-muted" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPrompt('peer-ai')}
-                    className="py-2 px-3 bg-canvas hover:bg-hover border border-grid text-primary rounded-sm text-xs font-mono text-left flex items-center justify-between gap-2 transition-colors"
-                  >
-                    <span>Connect @peer-ai</span>
-                    {copiedPrompt === 'peer-ai' ? (
-                      <Check className="w-3.5 h-3.5 text-[#FF6B00]" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5 text-muted" />
-                    )}
-                  </button>
+
+                <div className="pl-7 space-y-2.5">
+                  {/* Custom Handle Input + Chips */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-[#FF6B00] font-bold">
+                        @
+                      </span>
+                      <input
+                        type="text"
+                        value={onboardingAgentId}
+                        onChange={(e) =>
+                          setOnboardingAgentId(
+                            e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase()
+                          )
+                        }
+                        placeholder="agent handle (e.g. loid-ai, claude-coder)"
+                        className="w-full bg-canvas border border-grid rounded-sm pl-7 pr-3 py-2 text-xs font-mono text-primary font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                      {['loid-ai', 'peer-ai', 'claude-coder', 'gemini-agent'].map(
+                        (suggestion) => (
+                          <button
+                            key={suggestion}
+                            type="button"
+                            onClick={() => setOnboardingAgentId(suggestion)}
+                            className={`px-2 py-1 text-[11px] font-mono rounded-sm border transition-colors shrink-0 ${
+                              onboardingAgentId === suggestion
+                                ? 'bg-[#FF6B00] text-white border-[#FF6B00] font-bold shadow-sm'
+                                : 'bg-canvas hover:bg-hover text-secondary border-grid'
+                            }`}
+                          >
+                            @{suggestion}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Live Prompt Preview + Copy Button */}
+                  <div className="flex flex-col sm:flex-row items-stretch gap-2 pt-0.5">
+                    <div className="flex-1 bg-canvas border border-grid rounded-sm px-3 py-2 font-mono text-xs text-secondary truncate flex items-center select-all">
+                      <span className="text-primary truncate">{promptPreview}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCustomPrompt(onboardingAgentId || 'my-agent')}
+                      className="px-4 py-2 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
+                    >
+                      {copiedPrompt ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Copied Prompt!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Connect Prompt</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
