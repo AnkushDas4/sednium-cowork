@@ -19,8 +19,11 @@ const base = (args.find(a => !a.startsWith('--')) || process.env.COWORK_RELAY_UR
 const token = () => randomBytes(32).toString('hex');
 const id = () => Math.random().toString(36).slice(2, 8);
 
+let inviteKey = ''; // set from the minted room; sent as a header, never in a query string
 async function api(pathname, init) {
-  const res = await fetch(base + pathname, { ...init, signal: AbortSignal.timeout(15_000) });
+  const headers = { ...(init?.headers || {}) };
+  if (inviteKey) headers['X-Cowork-Invite-Key'] = inviteKey;
+  const res = await fetch(base + pathname, { ...init, headers, signal: AbortSignal.timeout(15_000) });
   let body = null;
   try { body = await res.json(); } catch { /* non-JSON: proxy or html error page */ }
   return { status: res.status, body };
@@ -54,12 +57,43 @@ console.log(`\nSednium CoWork relay verification\ntarget: ${base}\n${'-'.repeat(
 const created = await api('/api/presence?action=new-room');
 expect(created.status === 200 && created.body?.ok, `cannot create room: ${created.status} ${JSON.stringify(created.body)}`);
 const room = created.body.roomCode;
-console.log(`room: ${room}\n`);
+inviteKey = typeof created.body.inviteKey === 'string' ? created.body.inviteKey : '';
+console.log(`room: ${room}`);
+console.log(`invite key: ${inviteKey ? `${inviteKey.slice(0, 6)}*** (${inviteKey.length} chars, shown once by design)` : 'none - this relay build mints open rooms'}\n`);
 
 const a = { handle: `vfy-a-${id()}`, token: token() };
 const b = { handle: `vfy-b-${id()}`, token: token() };
 const intruder = { handle: a.handle, token: token() };
 const file = `src/verify-${id()}.ts`;
+
+await check('a freshly minted room carries its own invite key', async () => {
+  if (!inviteKey) return 'skipped: relay predates invite keys';
+  expect(/^[a-f0-9]{48}$/.test(inviteKey), `unexpected key shape: ${inviteKey.length} chars`);
+  expect(!JSON.stringify(created.body).includes('inviteHash'), 'the stored hash must never be returned');
+  return '48 hex chars, only the digest is stored';
+});
+
+await check('the room code alone cannot read or write a protected room', async () => {
+  if (!inviteKey) return 'skipped: room is not key-protected';
+  const noKeyPresence = await fetch(`${base}/api/presence`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': token() },
+    body: JSON.stringify({ action: 'inbox', roomCode: room, clientId: 'noskey' }), signal: AbortSignal.timeout(15_000),
+  });
+  expect(noKeyPresence.status === 401, `code-only presence returned ${noKeyPresence.status}`);
+  const noKeySend = await fetch(`${base}/api/send`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': token() },
+    body: JSON.stringify({ roomCode: room, senderId: 'noskey', text: 'x' }), signal: AbortSignal.timeout(15_000),
+  });
+  expect(noKeySend.status === 401, `code-only send returned ${noKeySend.status}`);
+  const wrongKey = await fetch(`${base}/api/presence`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': token(), 'X-Cowork-Invite-Key': 'f'.repeat(48) },
+    body: JSON.stringify({ action: 'inbox', roomCode: room, clientId: 'wrongkey' }), signal: AbortSignal.timeout(15_000),
+  });
+  expect(wrongKey.status === 403, `wrong invite key returned ${wrongKey.status}`);
+  const body = await noKeyPresence.json();
+  expect(/invite key/i.test(body.error || ''), `unhelpful error text: ${JSON.stringify(body)}`);
+  return '401 without key, 403 with the wrong key, actionable message';
+});
 
 await check('two agents can register presence', async () => {
   const [ra, rb] = await Promise.all([presence({ roomCode: room, clientId: a.handle, role: 'agent' }, a.token), presence({ roomCode: room, clientId: b.handle, role: 'agent' }, b.token)]);

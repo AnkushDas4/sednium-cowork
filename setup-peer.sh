@@ -91,6 +91,11 @@ const mcpEntry = {
     COWORK_RELAY_URL: relayUrl
   }
 };
+// Optional room invite key, so an agent configured here can join a key-protected room.
+const inviteKey = (process.env.COWORK_INVITE_KEY || '').trim();
+if (/^[a-fA-F0-9]{48,64}$/.test(inviteKey)) {
+  mcpEntry.env.COWORK_INVITE_KEY = inviteKey;
+}
 
 for (const cfgPath of configPaths) {
   try {

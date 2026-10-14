@@ -46,6 +46,8 @@ export interface CommitInfo {
 }
 
 export interface RoomState {
+  /** SHA-256 of the room's invite key; the key itself is never stored or returned. */
+  inviteHash?: string;
   participantKeys?: Record<string, string>;
   roomCode: string;
   createdAt: number;

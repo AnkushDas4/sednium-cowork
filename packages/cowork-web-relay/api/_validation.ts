@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { RoomState } from './_types.js';
 
 export class ApiError extends Error {
@@ -31,12 +31,35 @@ export function files(value: unknown): string[] {
     return f;
   }))];
 }
+const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+/** Mint a room's invite key: the secret that authorises the room code. */
+export function mintInviteKey(): { inviteKey: string; inviteHash: string } {
+  const inviteKey = randomBytes(24).toString('hex');
+  return { inviteKey, inviteHash: sha256(inviteKey) };
+}
+
+/**
+ * Rooms created with an invite key reject code-only clients. Rooms that predate the feature
+ * have no hash and stay code-only, so an upgrade never locks an existing session out.
+ */
+export function authorizeInvite(room: RoomState, inviteKey: unknown): void {
+  if (!room.inviteHash) return;
+  if (typeof inviteKey !== 'string' || !/^[a-fA-F0-9]{48,64}$/.test(inviteKey.trim())) {
+    throw new ApiError(401, 'This room requires its invite key. Open the original invite link (it carries #k=...) or ask a member to re-share it.');
+  }
+  const candidate = sha256(inviteKey.trim().toLowerCase());
+  if (candidate.length !== room.inviteHash.length || !timingSafeEqual(Buffer.from(candidate), Buffer.from(room.inviteHash))) {
+    throw new ApiError(403, 'Invalid invite key for this room.');
+  }
+}
+
 export function authorize(room: RoomState, clientId: string, token: unknown): void {
   if (typeof token !== 'string' || !/^[a-zA-Z0-9_-]{32,128}$/.test(token)) {
     throw new ApiError(401, 'A participant token is required. Update your CoWork client.');
   }
   room.participantKeys ??= {};
-  const hash = createHash('sha256').update(token).digest('hex');
+  const hash = sha256(token);
   const existing = room.participantKeys[clientId];
   if (existing && !timingSafeEqual(Buffer.from(existing), Buffer.from(hash))) {
     throw new ApiError(403, 'This handle belongs to another session. Choose a different handle or restore its participant token.');

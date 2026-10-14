@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { mutateRoom, enqueue } from './_store.js';
-import { ApiError, id, text as validateText, files as validateFiles, authorize, errorResponse } from './_validation.js';
+import { ApiError, id, text as validateText, files as validateFiles, authorize, authorizeInvite, errorResponse } from './_validation.js';
 import type { CoWorkMessage, SendMessageResponse, ContentType } from './_types.js';
 
 export interface SendPayload {
   roomCode: string;
+  /** Only consulted for rooms created without an invite key; the header is authoritative. */
+  inviteKey?: string;
   senderId: string;
   targetId?: string;
   contentType?: ContentType;
@@ -18,7 +20,7 @@ export interface SendPayload {
 /**
  * Pure business logic for POST /api/send
  */
-export async function handleSend(payload: SendPayload, token?: unknown): Promise<{ status: number; body: SendMessageResponse }> {
+export async function handleSend(payload: SendPayload, token?: unknown, inviteKey?: unknown): Promise<{ status: number; body: SendMessageResponse }> {
   if (!payload || typeof payload !== 'object') throw new ApiError(400, 'Invalid payload');
   const roomCode = id(payload.roomCode, 'roomCode').toUpperCase();
   const senderId = id(payload.senderId, 'senderId');
@@ -47,6 +49,7 @@ export async function handleSend(payload: SendPayload, token?: unknown): Promise
   }
 
   return mutateRoom(roomCode, room => {
+    authorizeInvite(room, inviteKey ?? payload.inviteKey);
     authorize(room, senderId, token);
     if (!room.participants[senderId] && Object.keys(room.participants).length >= 100) throw new ApiError(429, 'Room participant limit reached');
 
@@ -208,7 +211,7 @@ export async function handleSend(payload: SendPayload, token?: unknown): Promise
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cowork-Client-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cowork-Client-Token, X-Cowork-Invite-Key');
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -222,7 +225,7 @@ export default async function handler(req: any, res: any) {
 
   try {
     const payload = req.body || {};
-    const result = await handleSend(payload, req.headers?.['x-cowork-client-token']);
+    const result = await handleSend(payload, req.headers?.['x-cowork-client-token'], req.headers?.['x-cowork-invite-key']);
     res.statusCode = result.status;
     return res.json(result.body);
   } catch (err: any) {

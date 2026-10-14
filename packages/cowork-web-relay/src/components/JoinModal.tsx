@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { rememberInvite, inviteKeyFor } from '../relay.js';
 import {
   Terminal,
   KeyRound,
@@ -8,6 +9,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface JoinModalProps {
@@ -29,6 +31,11 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   const [room, setRoom] = useState(initialRoom);
   const [clientId, setClientId] = useState(initialClientId);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [invite, setInvite] = useState(() => inviteKeyFor(initialRoom));
+
+  useEffect(() => {
+    setInvite(inviteKeyFor(room.trim().toUpperCase()));
+  }, [room]);
 
   const fetchCollisionFreeCode = async () => {
     const version = ++requestVersion.current;
@@ -38,7 +45,13 @@ export const JoinModal: React.FC<JoinModalProps> = ({
       if (res.ok) {
         const data = await res.json();
         if (data.roomCode) {
-          if (requestVersion.current === version) setRoom(data.roomCode);
+          // A freshly minted room carries its invite key once, here. It is kept in localStorage
+          // and embedded in the invite link/QR; the server only ever stores its hash.
+          rememberInvite(data.roomCode, data.inviteKey);
+          if (requestVersion.current === version) {
+            setRoom(data.roomCode);
+            setInvite(typeof data.inviteKey === 'string' ? data.inviteKey : '');
+          }
           return;
         }
       }
@@ -65,6 +78,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (room.trim() && clientId.trim()) {
+      rememberInvite(room.trim().toUpperCase(), invite.trim()); // no-op unless the key is well-formed
       onJoin(room.trim().toUpperCase(), clientId.trim().toLowerCase());
     }
   };
@@ -137,6 +151,20 @@ export const JoinModal: React.FC<JoinModalProps> = ({
               placeholder="e.g. SED-409"
               className="w-full bg-canvas border border-grid rounded-sm px-3 py-2 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-[#FF6B00] tracking-wider"
             />
+
+            {invite ? (
+              <p className="text-[11px] font-mono text-[#FF6B00] flex items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3" /> Invite key stored - link and QR will carry it
+              </p>
+            ) : (
+              <input
+                type="text"
+                value={invite}
+                onChange={(e) => setInvite(e.target.value.trim().toLowerCase())}
+                placeholder="invite key (only if the room requires one)"
+                className="w-full bg-canvas border border-grid rounded-sm px-3 py-1.5 text-[11px] text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-[#FF6B00]"
+              />
+            )}
           </div>
 
           {/* Operator Handle */}

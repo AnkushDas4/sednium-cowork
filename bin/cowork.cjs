@@ -26283,6 +26283,7 @@ var CoWorkPoller = class {
   latestCommit = null;
   recentHistory = [];
   messageListeners = [];
+  lastError = "";
   constructor(config2) {
     this.config = {
       ...config2,
@@ -26291,12 +26292,18 @@ var CoWorkPoller = class {
       harness: config2.harness || "AI Agent",
       model: config2.model,
       participantToken: config2.participantToken || (0, import_node_crypto2.randomBytes)(32).toString("hex"),
+      inviteKey: config2.inviteKey || void 0,
       branch: config2.branch || "main",
       remote: config2.remote || "origin"
     };
   }
   getHeaders() {
-    return { "Content-Type": "application/json", "X-Cowork-Client-Token": this.config.participantToken };
+    const headers = { "Content-Type": "application/json", "X-Cowork-Client-Token": this.config.participantToken };
+    if (this.config.inviteKey) headers["X-Cowork-Invite-Key"] = this.config.inviteKey;
+    return headers;
+  }
+  getInviteKey() {
+    return this.config.inviteKey;
   }
   getBranch() {
     return this.config.branch;
@@ -26315,6 +26322,10 @@ var CoWorkPoller = class {
   }
   getHarness() {
     return this.config.harness;
+  }
+  /** Last failure text, so cowork_connect can report WHY instead of a generic "failed". */
+  getLastError() {
+    return this.lastError;
   }
   getModel() {
     return this.config.model;
@@ -26360,10 +26371,19 @@ var CoWorkPoller = class {
           ack: this.acknowledgements
         })
       });
-      if (!res.ok) throw new Error(`Presence failed (${res.status})`);
+      if (!res.ok) {
+        let reason = "";
+        try {
+          const data2 = await res.clone().json();
+          reason = data2?.error ? `: ${data2.error}` : "";
+        } catch {
+        }
+        throw new Error(`Presence failed (${res.status})${reason}`);
+      }
       const data = await res.json();
       if (!data.ok) throw new Error("Presence rejected");
       if (this.stopped) return false;
+      this.lastError = "";
       this.acknowledgements = (data.messages || []).map((m2) => m2.messageId);
       this.fileLocks = data.fileLocks || {};
       this.participants = data.participants || {};
@@ -26395,7 +26415,8 @@ var CoWorkPoller = class {
       }
       return true;
     } catch (err) {
-      console.error(`[CoWork MCP Poller] Error: ${err.message || String(err)}`);
+      this.lastError = err?.message ? String(err.message).slice(0, 400) : String(err);
+      console.error(`[CoWork MCP Poller] Error: ${this.lastError}`);
       return false;
     } finally {
       this.isPolling = false;
@@ -26510,6 +26531,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: "Optional room invite code. If omitted, a cryptographically random room code is reserved."
             },
+            inviteKey: { type: "string", description: "Room invite key (the #k= value from an invite link). Required for rooms created with invite-key protection." },
             participantToken: { type: "string", description: "Private persistent identity token (32\u2013128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts." },
             autoPull: { type: "boolean", description: "Opt in to automatic Git pulls on peer pushes. Default false." },
             branch: { type: "string", description: "Expected checked-out Git branch (default main)." },
@@ -26659,12 +26681,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args?.relayUrl || process.env.COWORK_RELAY_URL || "https://cowork.sednium.com"
         );
         let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : "";
+        let generatedKey = "";
         if (!roomCode) {
           try {
             const codeRes = await fetch(`${relayUrl.replace(/\/+$/, "")}/api/presence?action=new-room`, { signal: AbortSignal.timeout(1e4) });
             if (codeRes.ok) {
               const codeData = await codeRes.json();
-              if (codeData.roomCode) roomCode = codeData.roomCode;
+              if (codeData.roomCode) {
+                roomCode = codeData.roomCode;
+                if (typeof codeData.inviteKey === "string") generatedKey = codeData.inviteKey;
+              }
             }
           } catch {
             throw new Error("Cannot reserve a room: relay unavailable.");
@@ -26686,17 +26712,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           harness,
           model,
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
+          inviteKey: String(args?.inviteKey || process.env.COWORK_INVITE_KEY || generatedKey || "") || void 0,
           autoPull: args?.autoPull === true,
           branch: String(args?.branch || "main"),
           remote: String(args?.remote || "origin")
         });
         if (!await activePoller.poll()) {
+          const reason = activePoller.getLastError();
           activePoller.stop();
           activePoller = null;
-          throw new Error("Connection failed. Check relay availability and participant credentials.");
+          throw new Error(`Connection failed. ${reason || "Check relay availability, the room code and its invite key."}`);
         }
         activePoller.start();
-        const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}`;
+        const joinKey = activePoller.getInviteKey();
+        const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}${joinKey ? `#k=${joinKey}` : ""}`;
         const asciiQr = await getAsciiQr(joinUrl);
         return {
           content: [
@@ -26705,7 +26734,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: `\u2705 Connected to Sednium CoWork Room: ${roomCode} as @${agentId}
 \u{1F916} Smart Model Recognition: [${model}] via [${harness}]
 
-\u{1F517} Join URL (Web/Phone Dashboard): ${joinUrl}
+` + (joinKey ? `\u{1F511} Invite key (needed by every other agent joining this room): ${joinKey}
+` : `\u{1F511} No invite key for this room; if it is protected, pass inviteKey to cowork_connect
+`) + `\u{1F517} Join URL (Web/Phone Dashboard): ${joinUrl}
 
 \u{1F4F1} Scan QR on phone:
 ${asciiQr}

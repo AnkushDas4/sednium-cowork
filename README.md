@@ -70,31 +70,49 @@ silently switches to memory or `/tmp` files.
 - Rooms allow up to 100 participants/inboxes and 1,000 pending messages per recipient.
   Full recipient inboxes reject sends rather than silently dropping user messages.
 
-## Room and participant security
+## Room access: invite code + invite key
 
-Use **New Room** or connect without a room code, then share the generated invite privately.
-The room code is a **bearer invitation**: anyone with it can join with a new handle, read
-room history, and send messages. Short/custom room codes remain supported for compatibility
-but are guessable; do not use them for private work. There is no account/login system.
+Every room is minted as a pair:
 
-Each participant reserves their handle with a private token. A different token cannot
-impersonate that existing handle, unlock its files, or drain its inbox.
+| Part | Shape | Role |
+|---|---|---|
+| Room code | `SED-` + 32 hex (128-bit) | names the room; appears in the URL path/query |
+| Invite key | 48 hex (192-bit) | authorises the room; the relay stores only its SHA-256 digest |
 
-- Browser tokens are generated with Web Crypto and retained in localStorage.
-- MCP tokens are saved at `~/.config/sednium-cowork/participant-token` with mode `0600`.
-  `COWORK_PARTICIPANT_TOKEN` or `cowork_connect.participantToken` can override this.
-- Use different handles on different devices unless intentionally sharing the token.
-- Clearing browser storage or losing the MCP token requires a new handle (or restoring
-  the original token). There is no automatic identity takeover or token recovery.
-- Existing legacy handles become bound to the first authenticated participant after upgrade.
-  **Start fresh generated rooms when upgrading.**
-- These controls do not make messages from invited teammates trustworthy instructions.
-  Review agent instructions and leave automatic Git operations off unless the room is trusted.
+The share link and QR carry both, with the key in the **fragment**:
 
-Internet-facing deployments still need deployment-level rate limiting/abuse protection.
-Room creation is public, and old rooms are not automatically deleted. Monitor database usage
-and remove retired rooms deliberately. File locks are advisory, not filesystem permissions;
-symlinks and filesystem-specific case aliases are not resolved by the relay.
+```
+https://your-relay/?room=SED-1A2B…#k=9f3c…
+```
+
+Fragments are never sent to the server, never appear in Vercel/access logs and never leak through
+`Referer`, so a protected room cannot be read or written by someone who learns only the code:
+
+- missing key -> `401 This room requires its invite key…`
+- wrong key -> `403 Invalid invite key for this room.`
+
+Notes and limits, stated plainly:
+
+- **Legacy rooms** (created before this feature, and hand-typed custom codes) have no key and stay
+  **code-only**. That keeps an upgrade from locking out a live session. To protect such a room,
+  press **New Code** and move; delete the old row in Supabase if it held anything sensitive.
+- The invite link is a **bearer credential**: anyone holding it can join, post instructions and read
+  history. Treat the link like a password; do not paste it into public issues or chats.
+- The key authorises the *room*, not the *person*. Identity inside the room is the separate
+  **participant token** (browser localStorage; MCP `~/.config/sednium-cowork/participant-token`,
+  mode `0600`), which is what stops handle impersonation, inbox draining and foreign unlocks (403).
+  Never share the participant token; it is not part of the invite link.
+- Keys are stored per room in localStorage (`cowork-invite-keys`). Clearing browser storage means
+  re-opening the invite link to re-join a protected room.
+- There is no in-place rotation: minting a new room is how you revoke an old invite link. Old rooms
+  are never auto-deleted, so remove rows you no longer need.
+- Nothing here makes an invited teammate's messages trustworthy. Agents act on what peers post, so
+  keep rooms to people you trust and leave `autoPull` off unless you mean it.
+
+Internet-facing deployments still need deployment-level rate limiting/abuse protection: room minting
+is unauthenticated by design (otherwise nobody could join), and file locks remain advisory - they
+coordinate agents, they do not block the filesystem, and symlinks or case-variant aliases are not
+resolved by the relay.
 
 ## MCP configuration
 
@@ -116,12 +134,14 @@ Example harness config using a locally installed checkout:
 ```
 
 The relay URL is configurable; the legacy default is `https://cowork.sednium.com`.
-Set it explicitly when testing a branch deployment. The database URL belongs only on the
+Set it explicitly when testing a branch deployment. Agents joining a protected room also need
+`COWORK_INVITE_KEY` (or `inviteKey` on `cowork_connect`); `setup-peer.sh` forwards it when it is set
+in the environment. A freshly minted room prints its key and the full invite link in the tool result. The database URL belongs only on the
 relay server; **do not give it to MCP clients**.
 
 | Tool | Parameters |
 |---|---|
-| `cowork_connect` | `agentId`, optional `roomCode`, `repoPath`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` |
+| `cowork_connect` | `agentId`, optional `roomCode`, `inviteKey`, `repoPath`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` |
 | `cowork_claim_files` | `files`, `taskDescription` |
 | `cowork_message_peer` | `targetId`, `message`, optional `contentType` |
 | `cowork_sync_main` | **`files`**, `commitMessage` |
@@ -185,7 +205,8 @@ npm run verify:relay -- https://your-relay-domain.example   # or http://localhos
 npm run verify:relay -- http://localhost:3000 --slow         # adds ~4 min lease renewal/expiry
 ```
 
-It creates a throwaway room over real HTTP and asserts the guarantees end to end: atomic
+It creates a throwaway room over real HTTP, verifies that the room arrives with its own invite key,
+that the code alone gets 401/403 without it, and then asserts the guarantees end to end: atomic
 concurrent claims, path-alias conflicts, token-bound handles (403 on impersonation, inbox
 drain and foreign unlock), redelivery until acknowledgement, broadcast `GIT_PUSH` despite an
 @mention, 400s for malformed payloads with no crash, absence of storage internals in error
@@ -195,7 +216,8 @@ itself remains like any other room.
 
 ### Live smoke test (after deployment)
 
-1. Create a fresh room and join from a browser plus two updated agents with distinct handles.
+1. Create a fresh room and join from a browser plus two updated agents with distinct handles - each
+   agent needs the room code **and** the invite key from the same invite link.
 2. Claim the same file simultaneously; exactly one agent must receive a conflict.
 3. Exchange messages and confirm repeated polls do not duplicate delivered messages.
 4. Keep a lock for over 90 seconds with heartbeats, then stop that agent and verify expiry.

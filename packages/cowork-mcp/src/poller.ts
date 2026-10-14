@@ -10,6 +10,7 @@ export interface PollerConfig {
   harness?: string;
   model?: string;
   participantToken?: string;
+  inviteKey?: string;
   autoPull?: boolean;
   branch?: string;
   remote?: string;
@@ -33,6 +34,7 @@ export class CoWorkPoller {
   private recentHistory: CoWorkMessage[] = [];
 
   private messageListeners: Array<(msg: CoWorkMessage) => void> = [];
+  private lastError = '';
 
   constructor(config: PollerConfig) {
     this.config = {
@@ -42,13 +44,17 @@ export class CoWorkPoller {
       harness: config.harness || 'AI Agent',
       model: config.model,
       participantToken: config.participantToken || randomBytes(32).toString('hex'),
+      inviteKey: config.inviteKey || undefined,
       branch: config.branch || 'main', remote: config.remote || 'origin',
     };
   }
 
   public getHeaders(): Record<string, string> {
-    return { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': this.config.participantToken! };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': this.config.participantToken! };
+    if (this.config.inviteKey) headers['X-Cowork-Invite-Key'] = this.config.inviteKey;
+    return headers;
   }
+  public getInviteKey(): string | undefined { return this.config.inviteKey; }
   public getBranch(): string { return this.config.branch!; }
   public getRemote(): string { return this.config.remote!; }
   public getParticipantToken(): string { return this.config.participantToken!; }
@@ -62,6 +68,11 @@ export class CoWorkPoller {
 
   public getHarness(): string | undefined {
     return this.config.harness;
+  }
+
+  /** Last failure text, so cowork_connect can report WHY instead of a generic "failed". */
+  public getLastError(): string {
+    return this.lastError;
   }
 
   public getModel(): string | undefined {
@@ -106,10 +117,15 @@ export class CoWorkPoller {
           clientId: this.config.agentId, role: 'agent', status: this.currentStatus,
           harness: this.config.harness, model: this.config.model, ack: this.acknowledgements }),
       });
-      if (!res.ok) throw new Error(`Presence failed (${res.status})`);
+      if (!res.ok) {
+        let reason = '';
+        try { const data = await res.clone().json() as { error?: string }; reason = data?.error ? `: ${data.error}` : ''; } catch { /* non-JSON gateway error */ }
+        throw new Error(`Presence failed (${res.status})${reason}`);
+      }
       const data = (await res.json()) as PresenceResponse;
       if (!data.ok) throw new Error('Presence rejected');
       if (this.stopped) return false;
+      this.lastError = '';
       this.acknowledgements = (data.messages || []).map(m => m.messageId);
       this.fileLocks = data.fileLocks || {};
       this.participants = data.participants || {};
@@ -146,7 +162,8 @@ export class CoWorkPoller {
       return true;
     } catch (err: any) {
       // Background poll failure is logged to stderr so MCP JSON-RPC on stdout is not corrupted
-      console.error(`[CoWork MCP Poller] Error: ${err.message || String(err)}`);
+      this.lastError = err?.message ? String(err.message).slice(0, 400) : String(err);
+      console.error(`[CoWork MCP Poller] Error: ${this.lastError}`);
       return false;
     } finally {
       this.isPolling = false;

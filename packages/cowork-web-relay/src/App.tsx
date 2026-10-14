@@ -1,4 +1,4 @@
-import { relayRequest } from './relay.js';
+import { relayRequest, captureInviteFromUrl, inviteKeyFor } from './relay.js';
 import React, { useState, useEffect } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
@@ -16,9 +16,10 @@ import type {
 type ThemeMode = 'dark' | 'light';
 
 export const App: React.FC = () => {
-  const [roomCode, setRoomCode] = useState<string>(() => new URLSearchParams(window.location.search).get('room')?.trim().toUpperCase() || '');
+  const [roomCode, setRoomCode] = useState<string>(() => captureInviteFromUrl().roomCode || '');
   const [clientId, setClientId] = useState<string>('');
   const [connectionError, setConnectionError] = useState('');
+  const [inviteNotice, setInviteNotice] = useState('');
   const [connected, setConnected] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'stream' | 'agents'>('stream');
 
@@ -52,25 +53,19 @@ export const App: React.FC = () => {
   const [latestCommit, setLatestCommit] = useState<CommitInfo | null>(null);
   const [messages, setMessages] = useState<CoWorkMessage[]>([]);
 
-  // 1. Parse initial room and clientId from URL query params (?room=SED409&as=loid)
+  // 1. Adopt an invite link: ?room=<code>#k=<invite key>. The key never leaves the fragment.
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const roomParam = params.get('room');
-      const asParam = params.get('as') || params.get('clientId');
-
-      if (roomParam) {
-        const cleanRoom = roomParam.toUpperCase();
-        setRoomCode(cleanRoom);
-
-        if (asParam) {
-          setClientId(asParam.trim().toLowerCase());
-          setConnected(true);
-        } else {
-          setClientId('peer');
-          setConnected(false);
-        }
-      }
+    const { roomCode: linkedRoom, inviteKey, hadInvite } = captureInviteFromUrl();
+    if (!linkedRoom) return;
+    setRoomCode(linkedRoom);
+    if (hadInvite) setInviteNotice('Invite key loaded from this link - this room is protected.');
+    const params = new URLSearchParams(window.location.search);
+    const asParam = params.get('as') || params.get('clientId');
+    if (asParam) {
+      setClientId(asParam.trim().toLowerCase());
+      setConnected(true);
+    } else {
+      setClientId('peer');
     }
   }, []);
 
@@ -89,10 +84,11 @@ export const App: React.FC = () => {
         const data: PresenceResponse = await relayRequest('/api/presence', {
           action: 'inbox', roomCode, clientId, role: 'human', status: 'Viewing Dashboard',
           ack: acknowledgements,
-        });
+        }, roomCode);
         if (!isMounted) return;
         acknowledgements = (data.messages || []).map(m => m.messageId);
         setConnectionError('');
+        setInviteNotice('');
 
         setParticipants(data.participants || {});
         setFileLocks(data.fileLocks || {});
@@ -132,7 +128,7 @@ export const App: React.FC = () => {
 
   const handleJoin = (joinedRoom: string, joinedId: string) => {
     setMessages([]); setParticipants({}); setFileLocks({}); setLatestCommit(null);
-    setConnectionError('');
+    setConnectionError(''); setInviteNotice('');
     setRoomCode(joinedRoom);
     setClientId(joinedId);
     setConnected(true);
@@ -141,6 +137,8 @@ export const App: React.FC = () => {
       const url = new URL(window.location.href);
       url.searchParams.set('room', joinedRoom);
       url.searchParams.set('as', joinedId);
+      const key = inviteKeyFor(joinedRoom);
+      if (key) url.hash = `k=${key}`; else url.hash = '';
       window.history.pushState({}, '', url.toString());
     }
   };
@@ -162,7 +160,7 @@ export const App: React.FC = () => {
 
     await relayRequest('/api/send', {
       roomCode, senderId: clientId, targetId: 'all', contentType: 'CHAT', text,
-    });
+    }, roomCode);
   };
 
   return (
@@ -190,6 +188,7 @@ export const App: React.FC = () => {
           />
 
           {connectionError && <div role="alert" className="p-2 text-sm text-red-500 bg-panel">Relay disconnected: {connectionError}</div>}
+          {inviteNotice && !connectionError && <div className="p-2 text-xs text-[#FF6B00] bg-panel font-mono">{inviteNotice}</div>}
           {/* Mobile Tab Switcher */}
           <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-9 text-xs font-mono divide-x divide-grid shrink-0">
             <button

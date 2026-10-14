@@ -2,7 +2,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { handleSend } from '../api/send.js';
 import { errorResponse } from '../api/_validation.js';
 import presenceHandler, { handlePresence } from '../api/presence.js';
-import { generateUniqueRoomCode, getRoom, mutateRoom, resetStore } from '../api/_store.js';
+import { generateUniqueRoom, getRoom, mutateRoom, resetStore } from '../api/_store.js';
 
 const token = 'a'.repeat(64);
 const roomCode = 'SAFETY';
@@ -71,11 +71,33 @@ describe('Relay safety regressions', () => {
     const leaked = errorResponse(new Error('relation cowork_rooms does not exist at secret-host'));
     expect(JSON.stringify(leaked.body)).not.toContain('secret-host');
   });
-  it('reserves high-entropy room codes', async () => {
-    const codes = await Promise.all(Array.from({ length: 30 }, () => generateUniqueRoomCode()));
+  it('reserves high-entropy room codes with their own invite keys', async () => {
+    const rooms = await Promise.all(Array.from({ length: 30 }, () => generateUniqueRoom()));
+    const codes = rooms.map(r => r.roomCode);
+    const keys = rooms.map(r => r.inviteKey);
     expect(new Set(codes).size).toBe(30);
+    expect(new Set(keys).size).toBe(30);
     expect(codes.every(code => /^SED-[A-F0-9]{32}$/.test(code))).toBe(true);
-    expect((await getRoom(codes[0])).roomCode).toBe(codes[0]);
+    expect(keys.every(key => /^[a-f0-9]{48}$/.test(key))).toBe(true);
+    const stored = await getRoom(codes[0]);
+    expect(stored.roomCode).toBe(codes[0]);
+    expect(stored.inviteHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(stored)).not.toContain(keys[0]); // only the digest is persisted
+  });
+  it('requires the invite key on minted rooms but keeps legacy rooms code-only', async () => {
+    const { roomCode, inviteKey } = await generateUniqueRoom();
+    const params = { roomCode, clientId: 'member', role: 'agent' as const };
+    await expect(handlePresence(params, token)).rejects.toMatchObject({ status: 401 });
+    await expect(handlePresence({ ...params }, token, 'f'.repeat(48))).rejects.toMatchObject({ status: 403 });
+    await expect(handlePresence({ ...params }, token, inviteKey)).resolves.toMatchObject({ status: 200 });
+    await expect(handleSend({ roomCode, senderId: 'member', text: 'hi' }, token, inviteKey)).resolves.toMatchObject({ status: 200 });
+    // A room created before the feature (no hash) still accepts code-only clients.
+    await expect(handlePresence({ roomCode: 'LEGACY-1', clientId: 'member' }, token)).resolves.toMatchObject({ status: 200 });
+  });
+  it('never returns the invite hash to clients', async () => {
+    const { roomCode, inviteKey } = await generateUniqueRoom();
+    const res = await handlePresence({ roomCode, clientId: 'member' }, token, inviteKey);
+    expect(JSON.stringify(res.body)).not.toMatch(/inviteHash/i);
   });
   it('rolls back all state when a room mutation fails', async () => {
     await expect(mutateRoom(roomCode, room => { room.history.push({} as any); throw new Error('fail'); })).rejects.toThrow('fail');

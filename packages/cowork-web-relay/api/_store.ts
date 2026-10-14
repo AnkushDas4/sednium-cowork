@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import { Pool } from 'pg';
 import type { RoomState, CoWorkMessage } from './_types.js';
-import { ApiError, id } from './_validation.js';
+import { ApiError, id, mintInviteKey } from './_validation.js';
 import { buildTls, describeConnection } from './_tls.js';
 
 export const LOCK_TTL_MS = 90_000;
@@ -108,8 +108,8 @@ export function cleanExpiredLocks(room: RoomState): boolean {
   return modified;
 }
 
-export function createDefaultRoom(roomCode: string): RoomState {
-  return { roomCode, createdAt: Date.now(), latestCommit: null,
+export function createDefaultRoom(roomCode: string, inviteHash?: string): RoomState {
+  return { roomCode, inviteHash, createdAt: Date.now(), latestCommit: null,
     participants: {}, fileLocks: {}, inboxes: {}, history: [], participantKeys: {} };
 }
 
@@ -154,23 +154,30 @@ export async function saveRoom(state: RoomState): Promise<void> {
   if (process.env.NODE_ENV !== 'test') throw new Error('Use mutateRoom for writes');
   await mutateRoom(state.roomCode, room => { Object.assign(room, structuredClone(state)); });
 }
-export async function generateUniqueRoomCode(): Promise<string> {
+export async function generateUniqueRoom(): Promise<{ roomCode: string; inviteKey: string }> {
   const p = database();
   if (p) await initialize(p);
   for (let attempt = 0; attempt < 10; attempt++) {
-    // The room code is an unguessable invite capability; share it only with teammates.
+    // The code names the room; the invite key authorises it. Only the hash is stored, and the
+    // key travels once inside the invite link/QR fragment (never a query param, never a log).
     const code = `SED-${randomBytes(16).toString('hex').toUpperCase()}`;
-    const state = createDefaultRoom(code);
+    const { inviteKey, inviteHash } = mintInviteKey();
+    const state = createDefaultRoom(code, inviteHash);
     if (p) {
       const res = await p.query(`INSERT INTO public.cowork_rooms(room_code,state) VALUES($1,$2)
         ON CONFLICT DO NOTHING RETURNING room_code`, [code, JSON.stringify(state)]);
-      if (res.rowCount) return code;
+      if (res.rowCount) return { roomCode: code, inviteKey };
     } else if (!memoryStore.has(code)) {
       memoryStore.set(code, state);
-      return code;
+      return { roomCode: code, inviteKey };
     }
   }
   throw new Error('Unable to reserve room');
+}
+
+/** @deprecated prefer generateUniqueRoom(); kept for callers that only need a code. */
+export async function generateUniqueRoomCode(): Promise<string> {
+  return (await generateUniqueRoom()).roomCode;
 }
 export async function resetStore(): Promise<void> {
   if (process.env.NODE_ENV !== 'test') throw new Error('resetStore is test-only');

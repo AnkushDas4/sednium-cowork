@@ -94,6 +94,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'string',
               description: 'Optional room invite code. If omitted, a cryptographically random room code is reserved.',
             },
+            inviteKey: { type: 'string', description: 'Room invite key (the #k= value from an invite link). Required for rooms created with invite-key protection.' },
             participantToken: { type: 'string', description: 'Private persistent identity token (32–128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts.' },
             autoPull: { type: 'boolean', description: 'Opt in to automatic Git pulls on peer pushes. Default false.' },
             branch: { type: 'string', description: 'Expected checked-out Git branch (default main).' },
@@ -256,12 +257,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
 
         let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : '';
+        let generatedKey = '';
         if (!roomCode) {
           try {
             const codeRes = await fetch(`${relayUrl.replace(/\/+$/, '')}/api/presence?action=new-room`, { signal: AbortSignal.timeout(10_000) });
             if (codeRes.ok) {
               const codeData: any = await codeRes.json();
-              if (codeData.roomCode) roomCode = codeData.roomCode;
+              if (codeData.roomCode) {
+                roomCode = codeData.roomCode;
+                if (typeof codeData.inviteKey === 'string') generatedKey = codeData.inviteKey;
+              }
             }
           } catch {
             throw new Error('Cannot reserve a room: relay unavailable.');
@@ -286,18 +291,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           harness,
           model,
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
+          inviteKey: String(args?.inviteKey || process.env.COWORK_INVITE_KEY || generatedKey || '') || undefined,
           autoPull: args?.autoPull === true,
           branch: String(args?.branch || 'main'), remote: String(args?.remote || 'origin'),
         });
 
         if (!await activePoller.poll()) {
+          const reason = activePoller.getLastError();
           activePoller.stop();
           activePoller = null;
-          throw new Error('Connection failed. Check relay availability and participant credentials.');
+          throw new Error(`Connection failed. ${reason || 'Check relay availability, the room code and its invite key.'}`);
         }
         activePoller.start();
 
-        const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}`;
+        const joinKey = activePoller.getInviteKey();
+        const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}${joinKey ? `#k=${joinKey}` : ''}`;
         const asciiQr = await getAsciiQr(joinUrl);
 
         return {
@@ -306,6 +314,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: 'text',
               text: `✅ Connected to Sednium CoWork Room: ${roomCode} as @${agentId}\n` +
                     `🤖 Smart Model Recognition: [${model}] via [${harness}]\n\n` +
+                    (joinKey
+                      ? `🔑 Invite key (needed by every other agent joining this room): ${joinKey}\n`
+                      : `🔑 No invite key for this room; if it is protected, pass inviteKey to cowork_connect\n`) +
                     `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +

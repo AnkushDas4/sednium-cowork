@@ -18,6 +18,7 @@ import {
   Bot,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
+import { inviteKeyFor, inviteLink } from '../relay.js';
 
 interface ChatTerminalProps {
   messages: CoWorkMessage[];
@@ -109,20 +110,21 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   };
 
   const handleCopyCustomPrompt = (agentId: string) => {
-    const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect.`;
+    const key = inviteKeyFor(roomCode);
+    const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect${key ? ` with inviteKey ${key}` : ''}.`;
     navigator.clipboard.writeText(prompt);
     setCopiedPrompt(agentId);
     setTimeout(() => setCopiedPrompt(null), 2500);
   };
 
-  const handleCopyInviteLink = () => {
-    const shareUrl =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
-        : `https://cowork.sednium.com/?room=${encodeURIComponent(roomCode)}`;
-    navigator.clipboard.writeText(shareUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopyInviteLink = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink(roomCode));
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      alert('Clipboard unavailable. Copy the link shown in the QR dialog instead.');
+    }
   };
 
   const handleSendTestPing = async () => {
@@ -181,7 +183,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   const promptPreview = `Connect to CoWork room ${roomCode} as ${
     onboardingAgentId || 'my-agent'
-  } in this repository using cowork_connect.`;
+  } in this repository using cowork_connect${inviteKeyFor(roomCode) ? ` with inviteKey ${inviteKeyFor(roomCode)}` : ''}.`;
 
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">

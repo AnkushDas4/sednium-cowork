@@ -1,5 +1,5 @@
 import { mutateRoom } from './_store.js';
-import { ApiError, id, text, authorize, errorResponse } from './_validation.js';
+import { ApiError, id, text, authorize, authorizeInvite, errorResponse } from './_validation.js';
 import type { ClientRole } from './_types.js';
 
 export interface PresenceParams {
@@ -11,22 +11,21 @@ export interface PresenceParams {
   harness?: string;
   model?: string;
   ack?: string[];
+  inviteKey?: string;
 }
 
 /**
  * Presence with explicit acknowledgement, metadata and lease renewal
  */
-export async function handlePresence(params: PresenceParams, token?: unknown): Promise<{ status: number; body: any }> {
+export async function handlePresence(params: PresenceParams, token?: unknown, inviteKey?: unknown): Promise<{ status: number; body: any }> {
   // 0. Support unique room code generation with guaranteed non-collision
   if (params.action === 'new-room' || params.action === 'generate-room') {
-    const { generateUniqueRoomCode } = await import('./_store.js');
-    const newCode = await generateUniqueRoomCode();
+    const { generateUniqueRoom } = await import('./_store.js');
+    const room = await generateUniqueRoom();
     return {
       status: 200,
-      body: {
-        ok: true,
-        roomCode: newCode,
-      }
+      // inviteKey is returned exactly once, at creation, to whoever minted the room.
+      body: { ok: true, roomCode: room.roomCode, inviteKey: room.inviteKey },
     };
   }
 
@@ -41,6 +40,7 @@ export async function handlePresence(params: PresenceParams, token?: unknown): P
   if (!Array.isArray(ack) || ack.length > 100 || ack.some(v => typeof v !== 'string' || v.length > 100)) throw new ApiError(400, 'Invalid acknowledgement');
 
   return mutateRoom(roomCode, room => {
+    authorizeInvite(room, inviteKey ?? params.inviteKey);
     authorize(room, clientId, token);
     if (!room.participants[clientId] && Object.keys(room.participants).length >= 100) throw new ApiError(429, 'Room participant limit reached');
     // 1. Heartbeat. Omitted metadata is PRESERVED: a plain poll must not erase the
@@ -86,7 +86,7 @@ export async function handlePresence(params: PresenceParams, token?: unknown): P
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cowork-Client-Token');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Cowork-Client-Token, X-Cowork-Invite-Key');
 
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
@@ -109,7 +109,8 @@ export default async function handler(req: any, res: any) {
       harness: query.harness,
       model: query.model,
       ack: query.ack,
-    }, req.headers?.['x-cowork-client-token']);
+      inviteKey: query.inviteKey,
+    }, req.headers?.['x-cowork-client-token'], req.headers?.['x-cowork-invite-key']);
 
     res.statusCode = result.status;
     return res.json(result.body);

@@ -19,6 +19,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { CommitInfo, ParticipantInfo } from '../../api/_types.js';
+import { inviteKeyFor, inviteLink, rememberInvite } from '../relay.js';
 
 interface RoomHeaderProps {
   roomCode: string;
@@ -53,6 +54,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Unable to create room');
       if (data.roomCode) {
+        rememberInvite(data.roomCode, data.inviteKey);
         onNewRoom(data.roomCode);
       }
     } catch (err) {
@@ -62,10 +64,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
     }
   };
 
-  const shareUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/?room=${encodeURIComponent(roomCode)}`
-      : `https://cowork.sednium.com/?room=${encodeURIComponent(roomCode)}`;
+  // The code identifies the room, the fragment carries its invite key (never sent to servers).
+  const shareUrl = inviteLink(roomCode);
+  const hasInviteKey = Boolean(inviteKeyFor(roomCode));
 
   const handleCopy = async () => {
     try {
@@ -116,7 +117,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             ) : (
               <Copy className="w-3.5 h-3.5 text-[#FF6B00]" />
             )}
-            <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+            <span>{copied ? 'Copied!' : hasInviteKey ? 'Copy Link + Key' : 'Copy Link'}</span>
           </button>
 
           <button
