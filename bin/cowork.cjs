@@ -2871,20 +2871,20 @@ var require_compile = __commonJS({
     var util_1 = require_util();
     var validate_1 = require_validate();
     var SchemaEnv = class {
-      constructor(env) {
+      constructor(env2) {
         var _a;
         this.refs = {};
         this.dynamicAnchors = {};
         let schema;
-        if (typeof env.schema == "object")
-          schema = env.schema;
-        this.schema = env.schema;
-        this.schemaId = env.schemaId;
-        this.root = env.root || this;
-        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
-        this.schemaPath = env.schemaPath;
-        this.localRefs = env.localRefs;
-        this.meta = env.meta;
+        if (typeof env2.schema == "object")
+          schema = env2.schema;
+        this.schema = env2.schema;
+        this.schemaId = env2.schemaId;
+        this.root = env2.root || this;
+        this.baseId = (_a = env2.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env2.schemaId || "$id"]);
+        this.schemaPath = env2.schemaPath;
+        this.localRefs = env2.localRefs;
+        this.meta = env2.meta;
         this.$async = schema === null || schema === void 0 ? void 0 : schema.$async;
         this.refs = {};
       }
@@ -3068,15 +3068,15 @@ var require_compile = __commonJS({
           baseId = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schId);
         }
       }
-      let env;
+      let env2;
       if (typeof schema != "boolean" && schema.$ref && !(0, util_1.schemaHasRulesButRef)(schema, this.RULES)) {
         const $ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schema.$ref);
-        env = resolveSchema.call(this, root, $ref);
+        env2 = resolveSchema.call(this, root, $ref);
       }
       const { schemaId } = this.opts;
-      env = env || new SchemaEnv({ schema, schemaId, root, baseId });
-      if (env.schema !== env.root.schema)
-        return env;
+      env2 = env2 || new SchemaEnv({ schema, schemaId, root, baseId });
+      if (env2.schema !== env2.root.schema)
+        return env2;
       return void 0;
     }
   }
@@ -4874,8 +4874,8 @@ var require_ref = __commonJS({
       schemaType: "string",
       code(cxt) {
         const { gen, schema: $ref, it: it2 } = cxt;
-        const { baseId, schemaEnv: env, validateName, opts, self } = it2;
-        const { root } = env;
+        const { baseId, schemaEnv: env2, validateName, opts, self } = it2;
+        const { root } = env2;
         if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
           return callRootRef();
         const schOrEnv = compile_1.resolveRef.call(self, root, baseId, $ref);
@@ -4885,8 +4885,8 @@ var require_ref = __commonJS({
           return callValidate(schOrEnv);
         return inlineRefSchema(schOrEnv);
         function callRootRef() {
-          if (env === root)
-            return callRef(cxt, validateName, env, env.$async);
+          if (env2 === root)
+            return callRef(cxt, validateName, env2, env2.$async);
           const rootName = gen.scopeValue("root", { ref: root });
           return callRef(cxt, (0, codegen_1._)`${rootName}.validate`, root, root.$async);
         }
@@ -4916,14 +4916,14 @@ var require_ref = __commonJS({
     exports2.getValidate = getValidate;
     function callRef(cxt, v2, sch, $async) {
       const { gen, it: it2 } = cxt;
-      const { allErrors, schemaEnv: env, opts } = it2;
+      const { allErrors, schemaEnv: env2, opts } = it2;
       const passCxt = opts.passContext ? names_1.default.this : codegen_1.nil;
       if ($async)
         callAsyncRef();
       else
         callSyncRef();
       function callAsyncRef() {
-        if (!env.$async)
+        if (!env2.$async)
           throw new Error("async schema referenced by sync schema");
         const valid = gen.let("valid");
         gen.try(() => {
@@ -10789,20 +10789,20 @@ var require_compile2 = __commonJS({
     var validate_1 = require_validate2();
     var URI = require_uri_all();
     var SchemaEnv = class {
-      constructor(env) {
+      constructor(env2) {
         var _a;
         this.refs = {};
         this.dynamicAnchors = {};
         let schema;
-        if (typeof env.schema == "object")
-          schema = env.schema;
-        this.schema = env.schema;
-        this.schemaId = env.schemaId;
-        this.root = env.root || this;
-        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env.schemaId || "$id"]);
-        this.schemaPath = env.schemaPath;
-        this.localRefs = env.localRefs;
-        this.meta = env.meta;
+        if (typeof env2.schema == "object")
+          schema = env2.schema;
+        this.schema = env2.schema;
+        this.schemaId = env2.schemaId;
+        this.root = env2.root || this;
+        this.baseId = (_a = env2.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env2.schemaId || "$id"]);
+        this.schemaPath = env2.schemaPath;
+        this.localRefs = env2.localRefs;
+        this.meta = env2.meta;
         this.$async = schema === null || schema === void 0 ? void 0 : schema.$async;
         this.refs = {};
       }
@@ -10985,15 +10985,15 @@ var require_compile2 = __commonJS({
           baseId = (0, resolve_1.resolveUrl)(baseId, schId);
         }
       }
-      let env;
+      let env2;
       if (typeof schema != "boolean" && schema.$ref && !(0, util_1.schemaHasRulesButRef)(schema, this.RULES)) {
         const $ref = (0, resolve_1.resolveUrl)(baseId, schema.$ref);
-        env = resolveSchema.call(this, root, $ref);
+        env2 = resolveSchema.call(this, root, $ref);
       }
       const { schemaId } = this.opts;
-      env = env || new SchemaEnv({ schema, schemaId, root, baseId });
-      if (env.schema !== env.root.schema)
-        return env;
+      env2 = env2 || new SchemaEnv({ schema, schemaId, root, baseId });
+      if (env2.schema !== env2.root.schema)
+        return env2;
       return void 0;
     }
   }
@@ -11655,8 +11655,8 @@ var require_ref2 = __commonJS({
       schemaType: "string",
       code(cxt) {
         const { gen, schema: $ref, it: it2 } = cxt;
-        const { baseId, schemaEnv: env, validateName, opts, self } = it2;
-        const { root } = env;
+        const { baseId, schemaEnv: env2, validateName, opts, self } = it2;
+        const { root } = env2;
         if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
           return callRootRef();
         const schOrEnv = compile_1.resolveRef.call(self, root, baseId, $ref);
@@ -11666,8 +11666,8 @@ var require_ref2 = __commonJS({
           return callValidate(schOrEnv);
         return inlineRefSchema(schOrEnv);
         function callRootRef() {
-          if (env === root)
-            return callRef(cxt, validateName, env, env.$async);
+          if (env2 === root)
+            return callRef(cxt, validateName, env2, env2.$async);
           const rootName = gen.scopeValue("root", { ref: root });
           return callRef(cxt, (0, codegen_1._)`${rootName}.validate`, root, root.$async);
         }
@@ -11697,14 +11697,14 @@ var require_ref2 = __commonJS({
     exports2.getValidate = getValidate;
     function callRef(cxt, v2, sch, $async) {
       const { gen, it: it2 } = cxt;
-      const { allErrors, schemaEnv: env, opts } = it2;
+      const { allErrors, schemaEnv: env2, opts } = it2;
       const passCxt = opts.passContext ? names_1.default.this : codegen_1.nil;
       if ($async)
         callAsyncRef();
       else
         callSyncRef();
       function callAsyncRef() {
-        if (!env.$async)
+        if (!env2.$async)
           throw new Error("async schema referenced by sync schema");
         const valid = gen.let("valid");
         gen.try(() => {
@@ -14926,7 +14926,7 @@ var require_ms = __commonJS({
 // node_modules/debug/src/common.js
 var require_common = __commonJS({
   "node_modules/debug/src/common.js"(exports2, module2) {
-    function setup(env) {
+    function setup(env2) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
       createDebug.coerce = coerce;
@@ -14935,8 +14935,8 @@ var require_common = __commonJS({
       createDebug.enabled = enabled;
       createDebug.humanize = require_ms();
       createDebug.destroy = destroy;
-      Object.keys(env).forEach((key) => {
-        createDebug[key] = env[key];
+      Object.keys(env2).forEach((key) => {
+        createDebug[key] = env2[key];
       });
       createDebug.names = [];
       createDebug.skips = [];
@@ -26470,8 +26470,37 @@ var CoWorkPoller = class {
   }
 };
 
+// packages/cowork-mcp/src/invite.ts
+var ROOM_RE = /^SED-[0-9a-fA-F]{8,64}$/;
+var KEY_RE = /^[0-9a-fA-F]{48,64}$/;
+function parseInviteLink(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return {};
+  if (ROOM_RE.test(text)) return { roomCode: text.toUpperCase() };
+  let url;
+  try {
+    url = new URL(text);
+  } catch {
+    return {};
+  }
+  const parts = {};
+  if (url.protocol === "http:" || url.protocol === "https:") {
+    parts.relayUrl = url.origin;
+  }
+  const room = url.searchParams.get("room") || url.searchParams.get("roomCode") || "";
+  if (room.trim()) parts.roomCode = room.trim().toUpperCase();
+  const hash = url.hash.replace(/^#/, "");
+  const keyed = /(?:^|[&;])k(?:ey)?=([^&;]+)/i.exec(hash);
+  const candidate = (keyed?.[1] || url.searchParams.get("key") || "").trim();
+  if (KEY_RE.test(candidate)) parts.inviteKey = candidate.toLowerCase();
+  return parts;
+}
+
 // packages/cowork-mcp/src/index.ts
 var activePoller = null;
+var env = (name) => (process.env[name] || "").trim();
+var slug = (v2) => v2.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "agent";
+var truthy = (v2) => /^(1|true|yes|on)$/i.test(v2);
 function detectSmartModelAndHarness(customModel, customHarness) {
   let harness = customHarness;
   let model = customModel;
@@ -26523,7 +26552,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "cowork_connect",
-        description: "Connects this agent to a Sednium CoWork room. Starts the 2s background sync loop, prints the ASCII QR code and join URL for human phone/laptop pairing.",
+        description: 'Connects this agent to a Sednium CoWork room. Pass inviteLink (the whole link a human shared, "?room=CODE#k=KEY") or just roomCode+inviteKey; with neither, a fresh protected room is minted and its link printed for the phone dashboard. Starts the 2s background sync loop.',
         inputSchema: {
           type: "object",
           properties: {
@@ -26532,13 +26561,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: "Optional room invite code. If omitted, a cryptographically random room code is reserved."
             },
             inviteKey: { type: "string", description: "Room invite key (the #k= value from an invite link). Required for rooms created with invite-key protection." },
+            inviteLink: { type: "string", description: "Full invite link shared by a human, e.g. https://relay/?room=SED-\u2026#k=\u2026 . Relay URL, room code and invite key are all read from it; explicit args still win." },
             participantToken: { type: "string", description: "Private persistent identity token (32\u2013128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts." },
             autoPull: { type: "boolean", description: "Opt in to automatic Git pulls on peer pushes. Default false." },
             branch: { type: "string", description: "Expected checked-out Git branch (default main)." },
             remote: { type: "string", description: "Git remote (default origin)." },
             agentId: {
               type: "string",
-              description: 'Unique agent identifier for this harness, e.g. "cursor-ai" or "claude-code".'
+              description: 'Handle shown in the room, e.g. "cursor-ai". Omit it to use COWORK_AGENT_ID, or the auto-detected harness name, so the configured identity wins over an invented one.'
             },
             repoPath: {
               type: "string",
@@ -26556,8 +26586,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "string",
               description: 'Optional AI harness name (auto-detected if omitted, e.g. "Antigravity", "Claude Code", "Cursor").'
             }
-          },
-          required: ["agentId"]
+          }
         }
       },
       {
@@ -26675,12 +26704,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case "cowork_connect": {
-        const agentId = String(args?.agentId || "agent-ai");
-        const repoPath = import_node_path4.default.resolve(String(args?.repoPath || process.cwd()));
+        const invite = parseInviteLink(String(args?.inviteLink || env("COWORK_INVITE_LINK")));
         const relayUrl = String(
-          args?.relayUrl || process.env.COWORK_RELAY_URL || "https://cowork.sednium.com"
+          args?.relayUrl || env("COWORK_RELAY_URL") || invite.relayUrl || "https://cowork.sednium.com"
         );
-        let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : "";
+        const { harness, model } = detectSmartModelAndHarness(
+          args?.model ? String(args.model) : void 0,
+          args?.harness ? String(args.harness) : void 0
+        );
+        const agentId = String(
+          args?.agentId || env("COWORK_AGENT_ID") || `${slug(harness)}-ai`
+        );
+        const repoPath = import_node_path4.default.resolve(String(args?.repoPath || env("COWORK_REPO_PATH") || process.cwd()));
+        let roomCode = String(args?.roomCode || env("COWORK_ROOM_CODE") || invite.roomCode || "").toUpperCase();
         let generatedKey = "";
         if (!roomCode) {
           try {
@@ -26697,10 +26733,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
           if (!roomCode) throw new Error("Relay did not allocate a room.");
         }
-        const { harness, model } = detectSmartModelAndHarness(
-          args?.model ? String(args.model) : void 0,
-          args?.harness ? String(args.harness) : void 0
-        );
         if (activePoller) {
           activePoller.stop();
         }
@@ -26712,10 +26744,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           harness,
           model,
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
-          inviteKey: String(args?.inviteKey || process.env.COWORK_INVITE_KEY || generatedKey || "") || void 0,
-          autoPull: args?.autoPull === true,
-          branch: String(args?.branch || "main"),
-          remote: String(args?.remote || "origin")
+          inviteKey: String(args?.inviteKey || invite.inviteKey || env("COWORK_INVITE_KEY") || generatedKey || "") || void 0,
+          autoPull: args?.autoPull === true || truthy(env("COWORK_AUTO_PULL")),
+          branch: String(args?.branch || env("COWORK_BRANCH") || "main"),
+          remote: String(args?.remote || env("COWORK_REMOTE") || "origin")
         });
         if (!await activePoller.poll()) {
           const reason = activePoller.getLastError();
@@ -26725,7 +26757,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         activePoller.start();
         const joinKey = activePoller.getInviteKey();
-        const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}${joinKey ? `#k=${joinKey}` : ""}`;
+        const mintedHere = Boolean(generatedKey);
+        const shareKey = mintedHere ? joinKey : "";
+        const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}${shareKey ? `#k=${shareKey}` : ""}`;
         const asciiQr = await getAsciiQr(joinUrl);
         return {
           content: [
@@ -26734,7 +26768,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: `\u2705 Connected to Sednium CoWork Room: ${roomCode} as @${agentId}
 \u{1F916} Smart Model Recognition: [${model}] via [${harness}]
 
-` + (joinKey ? `\u{1F511} Invite key (needed by every other agent joining this room): ${joinKey}
+` + (mintedHere && joinKey ? `\u{1F511} Invite key (needed by every other agent joining this room): ${joinKey}
+` : joinKey ? `\u{1F511} Invite key in use for this room: ${joinKey.slice(0, 6)}\u2026 (not repeated - it came from your config, and the full link is the thing to hand out)
 ` : `\u{1F511} No invite key for this room; if it is protected, pass inviteKey to cowork_connect
 `) + `\u{1F517} Join URL (Web/Phone Dashboard): ${joinUrl}
 

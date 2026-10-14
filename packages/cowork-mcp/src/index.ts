@@ -10,6 +10,7 @@ import { z } from 'zod';
 import qrcodeTerminal from 'qrcode-terminal';
 import path from 'node:path';
 import { CoWorkPoller } from './poller.js';
+import { parseInviteLink } from './invite.js';
 import { safeCommitAndPush, getLatestCommit } from './git.js';
 import type { ContentType, CoWorkMessage } from './types.js';
 
@@ -18,6 +19,10 @@ let activePoller: CoWorkPoller | null = null;
 /**
  * Smart detection of running AI model and harness environment
  */
+const env = (name: string): string => (process.env[name] || '').trim();
+const slug = (v: string): string => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
+const truthy = (v: string): boolean => /^(1|true|yes|on)$/i.test(v);
+
 export function detectSmartModelAndHarness(
   customModel?: string,
   customHarness?: string
@@ -86,7 +91,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       {
         name: 'cowork_connect',
         description:
-          'Connects this agent to a Sednium CoWork room. Starts the 2s background sync loop, prints the ASCII QR code and join URL for human phone/laptop pairing.',
+          'Connects this agent to a Sednium CoWork room. Pass inviteLink (the whole link a human shared, "?room=CODE#k=KEY") or just roomCode+inviteKey; with neither, a fresh protected room is minted and its link printed for the phone dashboard. Starts the 2s background sync loop.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -95,13 +100,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Optional room invite code. If omitted, a cryptographically random room code is reserved.',
             },
             inviteKey: { type: 'string', description: 'Room invite key (the #k= value from an invite link). Required for rooms created with invite-key protection.' },
+            inviteLink: { type: 'string', description: 'Full invite link shared by a human, e.g. https://relay/?room=SED-…#k=… . Relay URL, room code and invite key are all read from it; explicit args still win.' },
             participantToken: { type: 'string', description: 'Private persistent identity token (32–128 URL-safe characters). Set COWORK_PARTICIPANT_TOKEN to reuse your handle across restarts.' },
             autoPull: { type: 'boolean', description: 'Opt in to automatic Git pulls on peer pushes. Default false.' },
             branch: { type: 'string', description: 'Expected checked-out Git branch (default main).' },
             remote: { type: 'string', description: 'Git remote (default origin).' },
             agentId: {
               type: 'string',
-              description: 'Unique agent identifier for this harness, e.g. "cursor-ai" or "claude-code".',
+              description: 'Handle shown in the room, e.g. "cursor-ai". Omit it to use COWORK_AGENT_ID, or the auto-detected harness name, so the configured identity wins over an invented one.',
             },
             repoPath: {
               type: 'string',
@@ -120,7 +126,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: 'Optional AI harness name (auto-detected if omitted, e.g. "Antigravity", "Claude Code", "Cursor").',
             },
           },
-          required: ['agentId'],
         },
       },
       {
@@ -250,13 +255,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     switch (name) {
       case 'cowork_connect': {
-        const agentId = String(args?.agentId || 'agent-ai');
-        const repoPath = path.resolve(String(args?.repoPath || process.cwd()));
+        // One pasteable string can configure the whole session: the invite link.
+        // Precedence everywhere is: explicit tool arg > invite link > COWORK_* env > default.
+        const invite = parseInviteLink(String(args?.inviteLink || env('COWORK_INVITE_LINK')));
         const relayUrl = String(
-          args?.relayUrl || process.env.COWORK_RELAY_URL || 'https://cowork.sednium.com'
+          args?.relayUrl || env('COWORK_RELAY_URL') || invite.relayUrl || 'https://cowork.sednium.com'
         );
+        const { harness, model } = detectSmartModelAndHarness(
+          args?.model ? String(args.model) : undefined,
+          args?.harness ? String(args.harness) : undefined
+        );
+        const agentId = String(
+          args?.agentId || env('COWORK_AGENT_ID') || `${slug(harness)}-ai`
+        );
+        const repoPath = path.resolve(String(args?.repoPath || env('COWORK_REPO_PATH') || process.cwd()));
 
-        let roomCode = args?.roomCode ? String(args.roomCode).toUpperCase() : '';
+        let roomCode = String(args?.roomCode || env('COWORK_ROOM_CODE') || invite.roomCode || '').toUpperCase();
         let generatedKey = '';
         if (!roomCode) {
           try {
@@ -274,11 +288,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (!roomCode) throw new Error('Relay did not allocate a room.');
         }
 
-        const { harness, model } = detectSmartModelAndHarness(
-          args?.model ? String(args.model) : undefined,
-          args?.harness ? String(args.harness) : undefined
-        );
-
         if (activePoller) {
           activePoller.stop();
         }
@@ -291,9 +300,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           harness,
           model,
           participantToken: args?.participantToken ? String(args.participantToken) : getParticipantToken(),
-          inviteKey: String(args?.inviteKey || process.env.COWORK_INVITE_KEY || generatedKey || '') || undefined,
-          autoPull: args?.autoPull === true,
-          branch: String(args?.branch || 'main'), remote: String(args?.remote || 'origin'),
+          inviteKey: String(args?.inviteKey || invite.inviteKey || env('COWORK_INVITE_KEY') || generatedKey || '') || undefined,
+          autoPull: args?.autoPull === true || truthy(env('COWORK_AUTO_PULL')),
+          branch: String(args?.branch || env('COWORK_BRANCH') || 'main'),
+          remote: String(args?.remote || env('COWORK_REMOTE') || 'origin'),
         });
 
         if (!await activePoller.poll()) {
@@ -305,7 +315,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         activePoller.start();
 
         const joinKey = activePoller.getInviteKey();
-        const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}${joinKey ? `#k=${joinKey}` : ''}`;
+        // Only the agent that just minted the room gets to broadcast the credential. A joiner was
+        // *given* the key; repeating it here would leak the room's bearer secret into model
+        // transcripts, screenshots of the terminal, and any log that captures tool output.
+        const mintedHere = Boolean(generatedKey);
+        const shareKey = mintedHere ? joinKey : '';
+        const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}${shareKey ? `#k=${shareKey}` : ''}`;
         const asciiQr = await getAsciiQr(joinUrl);
 
         return {
@@ -314,9 +329,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: 'text',
               text: `✅ Connected to Sednium CoWork Room: ${roomCode} as @${agentId}\n` +
                     `🤖 Smart Model Recognition: [${model}] via [${harness}]\n\n` +
-                    (joinKey
+                    (mintedHere && joinKey
                       ? `🔑 Invite key (needed by every other agent joining this room): ${joinKey}\n`
-                      : `🔑 No invite key for this room; if it is protected, pass inviteKey to cowork_connect\n`) +
+                      : joinKey
+                        ? `🔑 Invite key in use for this room: ${joinKey.slice(0, 6)}… (not repeated - it came from your config, and the full link is the thing to hand out)\n`
+                        : `🔑 No invite key for this room; if it is protected, pass inviteKey to cowork_connect\n`) +
                     `🔗 Join URL (Web/Phone Dashboard): ${joinUrl}\n\n` +
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +

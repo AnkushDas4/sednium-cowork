@@ -23,7 +23,11 @@ echo -e "${BOLD}Sednium CoWork Setup for Antigravity Pairing${RESET}\n"
 
 # 1. Determine Repository Path
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MCP_DIST_PATH="$REPO_ROOT/packages/cowork-mcp/dist/index.js"
+MCP_ENTRY="$REPO_ROOT/packages/cowork-mcp/dist/index.js"
+# The committed single-file bundle works without any build, so a fresh clone can pair immediately.
+if [ ! -f "$MCP_ENTRY" ] && [ -f "$REPO_ROOT/bin/cowork.cjs" ]; then
+  MCP_ENTRY="$REPO_ROOT/bin/cowork.cjs"
+fi
 RELAY_URL="${COWORK_RELAY_URL:-https://cowork.sednium.com}"
 
 echo -e "${CYAN}📁 Working Directory:${RESET} $REPO_ROOT"
@@ -53,13 +57,14 @@ npm install
 echo -e "\n${BOLD}🔨 Compiling TypeScript packages...${RESET}"
 npm run build
 
-if [ ! -f "$MCP_DIST_PATH" ]; then
-  echo -e "${YELLOW}❌ Build output missing: $MCP_DIST_PATH${RESET}"
+if [ ! -f "$MCP_ENTRY" ]; then
+  echo -e "${YELLOW}❌ No MCP server entry found (expected $MCP_ENTRY)${RESET}"
+  echo   "Run: npm ci && npm run build"
   exit 1
 fi
 
-chmod +x "$MCP_DIST_PATH"
-echo -e "${GREEN}✔ MCP Server built at: $MCP_DIST_PATH${RESET}"
+chmod +x "$MCP_ENTRY" 2>/dev/null || true
+echo -e "${GREEN}✔ MCP server entry: $MCP_ENTRY${RESET}"
 
 # 5. Inject MCP Server into Antigravity Config
 echo -e "\n${BOLD}⚙️  Configuring AI Harness MCP Servers (Antigravity, Claude, Cursor, Windsurf)...${RESET}"
@@ -76,7 +81,7 @@ CONFIG_PATHS=(
 )
 
 # Helper node script to safely merge JSON
-node - "$MCP_DIST_PATH" "$RELAY_URL" "${CONFIG_PATHS[@]}" << 'EOF'
+node - "$MCP_ENTRY" "$RELAY_URL" "${CONFIG_PATHS[@]}" << 'EOF'
 const fs = require('fs');
 const path = require('path');
 
@@ -91,6 +96,10 @@ const mcpEntry = {
     COWORK_RELAY_URL: relayUrl
   }
 };
+// The whole invite link is enough: it carries relay URL, room code and key together.
+if ((process.env.COWORK_INVITE_LINK || '').trim()) {
+  mcpEntry.env.COWORK_INVITE_LINK = process.env.COWORK_INVITE_LINK.trim();
+}
 // Optional room invite key, so an agent configured here can join a key-protected room.
 const inviteKey = (process.env.COWORK_INVITE_KEY || '').trim();
 if (/^[a-fA-F0-9]{48,64}$/.test(inviteKey)) {

@@ -83,9 +83,9 @@ function assess(tools) {
 }
 
 function configSnippet() {
-  const room = flag('room-code', '');
-  const invite = flag('invite-key', '');
-  const agent = flag('agent-id', 'android-lab-ai');
+  const room = flag('room-code', link.roomCode || '');
+  const invite = flag('invite-key', link.inviteKey || '');
+  const agent = flag('agent-id', process.env.COWORK_AGENT_ID || 'android-lab-ai');
   const env = { COWORK_RELAY_URL: relayUrl, COWORK_AGENT_ID: agent };
   if (room) env.COWORK_ROOM_CODE = room;
   if (invite) env.COWORK_INVITE_KEY = invite;
@@ -111,11 +111,13 @@ if (has('check')) {
   process.exit(0);
 }
 
-const relay = flag('relay-url', process.env.COWORK_RELAY_URL || DEFAULT_RELAY).replace(/\/+$/, '');
+// A pasted invite link can be the only argument: it carries relay, room and key together.
+const link = parseInvite(flag('link', process.env.COWORK_INVITE_LINK || ''));
+const relay = (flag('relay-url', link.relayUrl || process.env.COWORK_RELAY_URL || DEFAULT_RELAY)).replace(/\/+$/, '');
 const ref = flag('ref', '');
-const url = flag('url', ref
-  ? `https://raw.githubusercontent.com/${REPO}/${ref}/bin/cowork.cjs`
-  : `${relay}/cowork.cjs`);
+const url = flag('url', link.relayUrl && !ref ? `${relay}/cowork.cjs` : (ref
+    ? `https://raw.githubusercontent.com/${REPO}/${ref}/bin/cowork.cjs`
+    : `${relay}/cowork.cjs`));
 
 if (major() < 20) die(`Node >= 20 required (found ${process.version}); install nodejs-lts first`);
 
@@ -169,3 +171,20 @@ console.log(`  COWORK_INVITE_KEY on every other machine that must join, or pass 
 console.log(`  Update later: re-run this installer (it overwrites only after verifying). Check any copy:`);
 
 function major() { return Number(process.versions.node.split('.')[0]); }
+
+/** Same rules the MCP server applies: #k= first, then #key=, then a legacy ?key=. */
+function parseInvite(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return {};
+  if (/^SED-[0-9a-f]{8,64}$/i.test(text)) return { roomCode: text.toUpperCase() };
+  let url;
+  try { url = new URL(text); } catch { return {}; }
+  const out = {};
+  if (url.protocol === 'http:' || url.protocol === 'https:') out.relayUrl = url.origin;
+  const room = (url.searchParams.get('room') || url.searchParams.get('roomCode') || '').trim();
+  if (room) out.roomCode = room.toUpperCase();
+  const keyed = /(?:^|[&;])k(?:ey)?=([^&;]+)/i.exec(url.hash.replace(/^#/, ''));
+  const cand = (keyed?.[1] || url.searchParams.get('key') || '').trim();
+  if (/^[0-9a-f]{48,64}$/i.test(cand)) out.inviteKey = cand.toLowerCase();
+  return out;
+}

@@ -104,6 +104,9 @@ Notes and limits, stated plainly:
   Never share the participant token; it is not part of the invite link.
 - Keys are stored per room in localStorage (`cowork-invite-keys`). Clearing browser storage means
   re-opening the invite link to re-join a protected room.
+- Only the agent that **minted** a room prints its full key and keyed link/QR. An agent that joined with
+  a key prints `77f477…` and a code-only link, so the credential does not spread into every
+  transcript, terminal screenshot or CI log. Hand out the original link instead.
 - There is no in-place rotation: minting a new room is how you revoke an old invite link. Old rooms
   are never auto-deleted, so remove rows you no longer need.
 - Nothing here makes an invited teammate's messages trustworthy. Agents act on what peers post, so
@@ -115,6 +118,48 @@ coordinate agents, they do not block the filesystem, and symlinks or case-varian
 resolved by the relay.
 
 ## MCP configuration
+### Let the agent install and join it
+
+Install and joining are both things a harness can do for you. Paste this into the agent (one block,
+link included) - it installs the single file, writes its own config, and joins the room:
+
+```text
+Install the Sednium CoWork MCP server, then join this room.
+
+1. Check `node -v` is >= 20. If not, stop and tell me instead of installing anything.
+2. Run:  curl -fL https://cowork.sednium.com/install.mjs -o /tmp/cowork-install.mjs
+          node /tmp/cowork-install.mjs --link "<PASTE THE FULL INVITE LINK HERE>"
+   It downloads the server, verifies it with a real MCP handshake, and prints an mcpServers block.
+3. Merge that printed block into this harness's real MCP config file, using the absolute paths it
+   printed. Never paste the invite key or participant token into a file that is committed.
+4. Reload MCP, then call cowork_connect with inviteLink set to the same link, and confirm the tool
+   result shows my room code and your handle.
+5. Call cowork_check_inbox and tell me what is in the room. Do not edit a file a peer has locked,
+   and do not run cowork_sync_main until I approve it.
+```
+
+The `#k=` part of the link is a credential: if the chat log is shared, treat the room as exposed and
+mint a new one. Prefer `--link` over retyping a code, and never ask the agent to echo the key.
+
+### What an agent can and cannot see
+
+An MCP server cannot write into a model's context, so nothing arrives *unprompted*. Presence is real
+time; awareness is pull-based by design:
+
+| Signal | How the agent learns it | Freshness |
+|---|---|---|
+| Peer chat / instructions | `cowork_check_inbox`, or `cowork_watch_loop` while it waits | polled every 2s into an inbox; unread until read |
+| Which files someone is editing | `FILE_LOCK` claims inside the same responses | live; a lock expires after 90s idle |
+| That main moved | `GIT_PUSH` message carrying the commit hash | immediate |
+| The actual content of a peer's change | only after `git pull` (automatic with `autoPull: true`) | off by default |
+| The human's view of all of it | the web dashboard, which shows every message and lock | live |
+
+So yes: agents can discuss in the webchat and each can see the other's locks, messages and pushed
+commits - but a busy agent that never calls `cowork_check_inbox` will not notice anything, and
+without `autoPull` it will not see new file contents, only the notification that they exist. Put the
+check into the room's standing instructions (step 5 above) if you want them to look between tasks.
+Locks are advisory coordination, not enforcement: they never block a harness from editing a file.
+
 
 ### Single-file install (no repo clone)
 
@@ -175,8 +220,21 @@ Example harness config using a locally installed checkout:
 }
 ```
 
-The relay URL is configurable; the legacy default is `https://cowork.sednium.com`.
-Set it explicitly when testing a branch deployment. Agents joining a protected room also need
+Every one of these is read by `cowork_connect` as a fallback for the matching tool argument
+(arg > invite link > env > default), so configuring a machine is enough - no need to make the model
+retype an identity it could get wrong:
+
+| Env var | Effect when the tool arg is omitted |
+|---|---|
+| `COWORK_INVITE_LINK` | full link: supplies relay URL, room code **and** invite key at once |
+| `COWORK_RELAY_URL` | relay origin (default `https://cowork.sednium.com`) |
+| `COWORK_ROOM_CODE` / `COWORK_INVITE_KEY` | the room to join, and its key |
+| `COWORK_AGENT_ID` | handle in the room (default: detected harness + `-ai`) |
+| `COWORK_REPO_PATH` / `COWORK_BRANCH` / `COWORK_REMOTE` | repo, expected branch (default `main`), remote (default `origin`) |
+| `COWORK_AUTO_PULL` | `true` opts into automatic pulls on peer pushes |
+| `COWORK_PARTICIPANT_TOKEN` | persistent identity; otherwise read from `~/.config/sednium-cowork/` |
+
+Set `COWORK_RELAY_URL` explicitly when testing a branch deployment. Agents joining a protected room also need
 `COWORK_INVITE_KEY` (or `inviteKey` on `cowork_connect`); `setup-peer.sh` forwards it when it is set
 in the environment. A freshly minted room prints its key and the full invite link in the tool
 result. The database URL belongs only on the relay server; **do not give it to MCP clients**.
