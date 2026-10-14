@@ -16,6 +16,7 @@ import {
   Sparkles,
   Radio,
   Bot,
+  Zap,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
@@ -73,8 +74,22 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const quickTargets = [...Object.keys(participants).filter(id => id !== currentClientId).map(id => `@${id}`), '@all'];
 
   const handlePillClick = (mention: string) => {
-    if (!input.includes(mention)) {
-      setInput((prev) => `${mention} ${prev}`.trim() + ' ');
+    if (mention === '@all') {
+      setInput((prev) => {
+        const textOnly = prev.replace(/@\S+/g, '').trim();
+        return `@all ${textOnly}`.trim() + ' ';
+      });
+    } else {
+      setInput((prev) => {
+        let cleaned = prev.replace(/@all\s*/g, '').trim();
+        const regex = new RegExp(`(^|\\s)${mention}(\\s|$)`, 'g');
+        if (regex.test(cleaned)) {
+          cleaned = cleaned.replace(regex, ' ').replace(/\s+/g, ' ').trim();
+          return cleaned ? `${cleaned} ` : '';
+        } else {
+          return `${mention} ${cleaned}`.trim() + ' ';
+        }
+      });
     }
     inputRef.current?.focus();
   };
@@ -139,14 +154,29 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     await onSendMessage(`👋 Live relay test ping from ${currentClientId}`);
   };
 
+  // Priority and Mentions count
+  const mentionsCount = messages.filter((m) => {
+    const mentions = m.mentions || [...(m.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(x => x[1]);
+    return (
+      m.contentType === 'CROSS_PROMPT' ||
+      m.priority === 'HIGH' ||
+      mentions.length > 0 ||
+      (m.targetId && m.targetId !== 'all')
+    );
+  }).length;
+
   // Filter messages
   const filteredMessages = messages.filter((m) => {
     if (filter === 'ALL') return true;
     if (filter === 'MENTIONS') {
+      const mentions = m.mentions || [...(m.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(x => x[1]);
       return (
         m.contentType === 'CROSS_PROMPT' ||
-        m.text.includes('@') ||
-        m.targetId !== 'all'
+        m.priority === 'HIGH' ||
+        mentions.includes(currentClientId) ||
+        mentions.length > 0 ||
+        (m.targetId && m.targetId !== 'all') ||
+        m.text.includes('@')
       );
     }
     if (filter === 'GIT') return m.contentType === 'GIT_PUSH';
@@ -221,8 +251,13 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               : 'text-muted hover:text-secondary'
           }`}
         >
-          <AtSign className="w-3.5 h-3.5" />
-          <span>@Mentions & Tasks</span>
+          <AtSign className="w-3.5 h-3.5 text-accent" />
+          <span>Priority & Mentions</span>
+          {mentionsCount > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-sm bg-accent text-accent-ink font-bold">
+              {mentionsCount}
+            </span>
+          )}
           {filter === 'MENTIONS' && (
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
           )}
@@ -438,11 +473,23 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             const timeSec = clock.slice(5);
             const isSelf = msg.senderId === currentClientId;
 
+            // Multiple tagging & High Priority detection
+            const parsedMentions = [...new Set([...(msg.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(m => m[1]))];
+            const allMentions = msg.mentions && msg.mentions.length > 0 ? msg.mentions : parsedMentions;
+            const isPriority = msg.priority === 'HIGH' || allMentions.length > 0 || (msg.targetId && msg.targetId !== 'all') || msg.contentType === 'CROSS_PROMPT';
+            const isDirectedAtMe = allMentions.includes(currentClientId) || msg.targetId === currentClientId;
+
             return (
               <div
                 key={msg.messageId}
-                className={`px-3.5 xs:px-5 py-3 xs:py-3.5 flex items-start gap-3 transition-colors hover:bg-hover/30 ${
-                  isSelf ? 'bg-panel/20' : ''
+                className={`px-3.5 xs:px-5 py-3 xs:py-3.5 flex items-start gap-3 transition-colors ${
+                  isDirectedAtMe
+                    ? 'bg-accent/10 border-l-4 border-accent pl-3 xs:pl-4 shadow-sm'
+                    : isPriority
+                      ? 'bg-panel/40 border-l-2 border-accent/60 pl-3.5 xs:pl-4'
+                      : isSelf
+                        ? 'bg-panel/20'
+                        : 'hover:bg-hover/30'
                 }`}
               >
                 {/* Timestamp */}
@@ -452,7 +499,13 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                 </div>
 
                 {/* Event Type Icon */}
-                <div className="shrink-0 pt-0.5">{getTypeIcon(msg.contentType)}</div>
+                <div className="shrink-0 pt-0.5">
+                  {isPriority ? (
+                    <Zap className="w-4 h-4 text-accent fill-accent" strokeWidth={1.5} />
+                  ) : (
+                    getTypeIcon(msg.contentType)
+                  )}
+                </div>
 
                 {/* Content Area */}
                 <div className="flex-1 min-w-0 space-y-1">
@@ -461,12 +514,43 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                       @{msg.senderId}
                     </span>
                     <ArrowRight className="w-3 h-3 text-muted shrink-0" />
-                    <span className="font-mono text-xs font-semibold text-accent">
-                      @{msg.targetId}
-                    </span>
+                    {allMentions.length > 0 ? (
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {allMentions.map((m) => (
+                          <span
+                            key={m}
+                            className={`font-mono text-xs font-semibold px-1.5 py-0.2 rounded-sm border ${
+                              m === currentClientId
+                                ? 'bg-accent text-accent-ink border-accent font-bold'
+                                : 'bg-panel text-accent border-accent/40'
+                            }`}
+                          >
+                            @{m}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="font-mono text-xs font-semibold text-accent">
+                        @{msg.targetId}
+                      </span>
+                    )}
                     <span className="font-mono text-2xs uppercase px-1.5 py-0.2 rounded-sm bg-panel text-muted border border-grid">
                       {msg.contentType}
                     </span>
+
+                    {/* High Priority & Direct Mention Badges */}
+                    {isDirectedAtMe && (
+                      <span className="font-mono text-2xs uppercase px-1.5 py-0.5 rounded-sm bg-accent text-accent-ink font-bold flex items-center gap-1 shadow-card">
+                        <Zap className="w-2.5 h-2.5 fill-current" />
+                        DIRECTED AT YOU
+                      </span>
+                    )}
+                    {!isDirectedAtMe && isPriority && (
+                      <span className="font-mono text-2xs uppercase px-1.5 py-0.5 rounded-sm bg-accent-soft text-accent border border-accent/30 font-semibold flex items-center gap-1">
+                        <Zap className="w-2.5 h-2.5 fill-current" />
+                        HIGH PRIORITY
+                      </span>
+                    )}
                   </div>
 
                   <div className="text-[14px] text-primary font-sans font-medium leading-relaxed break-words">
@@ -524,26 +608,29 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         )}
 
-        {/* Row 1: Quick Target Mention Bar */}
+        {/* Row 1: Quick Target Mention Bar with Multiple Tagging Support */}
         <div className="flex items-center gap-2 px-4 py-2 border-b border-grid overflow-x-auto bg-hover/30">
           <span className="text-2xs font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1 font-semibold">
             <AtSign className="w-3 h-3 text-accent" />
-            QUICK TARGET:
+            TAG TARGETS:
           </span>
           {quickTargets.map((mention) => {
-            const isSelected = input.includes(mention);
+            const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
             return (
               <button
                 key={mention}
                 type="button"
                 onClick={() => handlePillClick(mention)}
-                className={`px-2.5 py-0.5 rounded-sm text-xs font-mono transition-colors shrink-0 border ${
+                className={`px-2.5 py-0.5 rounded-sm text-xs font-mono transition-colors shrink-0 border flex items-center gap-1 ${
                   isSelected
                     ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
                     : 'bg-panel hover:bg-hover text-secondary hover:text-primary border-grid'
                 }`}
               >
-                {mention}
+                <span>{mention}</span>
+                {isSelected && mention !== '@all' && (
+                  <span className="text-[10px] opacity-75 hover:opacity-100 font-bold ml-0.5">✕</span>
+                )}
               </button>
             );
           })}

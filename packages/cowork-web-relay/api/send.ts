@@ -35,16 +35,14 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
   const senderModel = payload.senderModel === undefined ? undefined : validateText(payload.senderModel, 'model');
   const senderHarness = payload.senderHarness === undefined ? undefined : validateText(payload.senderHarness, 'harness');
 
-  // 1. Mentions Parsing: e.g., "@peer-ai build navbar"
-  const mentionMatch = text.match(/@([a-zA-Z0-9_-]+)/);
-  if (mentionMatch && contentType === 'CHAT') {
-    const mentionedId = mentionMatch[1];
-    // If target was default 'all', route specifically to the mentioned entity
+  // 1. Multiple Mentions Parsing & High Priority Tagging: e.g., "@antigravity-ai @peer-ai fix the tests"
+  const allMentions = [...new Set([...text.matchAll(/@([a-zA-Z0-9_-]+)/g)].map(m => m[1]))];
+  const isPriority = allMentions.length > 0 || (targetId && targetId !== 'all') || contentType === 'CROSS_PROMPT';
+  if (allMentions.length > 0 && contentType === 'CHAT') {
+    contentType = 'CROSS_PROMPT';
+    // If target was default 'all' and exactly one mention, set targetId to that mention
     if (targetId === 'all') {
-      targetId = id(mentionedId, 'mention');
-      if (contentType === 'CHAT') {
-        contentType = 'CROSS_PROMPT';
-      }
+      targetId = allMentions.length === 1 ? id(allMentions[0], 'mention') : 'all';
     }
   }
 
@@ -162,6 +160,8 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       commitHash,
       senderModel,
       senderHarness,
+      mentions: allMentions.length > 0 ? allMentions : undefined,
+      priority: isPriority ? 'HIGH' : 'NORMAL',
     };
 
     // Add to room history (capped at 100)
@@ -170,23 +170,35 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       room.history.shift();
     }
 
-    // 6. Multicast Queueing into inboxes
+    // 6. Multicast Queueing into inboxes (Guaranteed Multiple Tagging Delivery)
+    const targetSet = new Set<string>();
     if (targetId === 'all') {
       for (const participantId of Object.keys(room.participants)) {
         if (participantId !== senderId) {
-          enqueue(room, participantId, message);
+          targetSet.add(participantId);
         }
       }
     } else {
       // Specific target
-      enqueue(room, targetId, message);
+      targetSet.add(targetId);
 
       // Also mirror to human dashboard participants so phone/web UI observes cross-agent interactions
       for (const [pId, p] of Object.entries(room.participants)) {
         if (p.role === 'human' && pId !== senderId && pId !== targetId) {
-          enqueue(room, pId, message);
+          targetSet.add(pId);
         }
       }
+    }
+
+    // High-Priority Multiple Tagging: Guarantee EVERY tagged handle receives the message directly in their inbox
+    for (const mention of allMentions) {
+      if (mention !== senderId && mention !== 'all') {
+        targetSet.add(mention);
+      }
+    }
+
+    for (const recipient of targetSet) {
+      enqueue(room, recipient, message);
     }
 
     return {

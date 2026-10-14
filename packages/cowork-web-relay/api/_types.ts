@@ -21,6 +21,8 @@ export interface CoWorkMessage {
   commitHash?: string;
   senderModel?: string;   // e.g. "Gemini 3.8 Flash", "Claude 3.7 Sonnet"
   senderHarness?: string; // e.g. "Antigravity", "Claude Code", "Cursor"
+  mentions?: string[];    // All tagged entities (e.g. ["antigravity-ai", "peer-ai"])
+  priority?: 'HIGH' | 'NORMAL';
 }
 
 export interface FileLockInfo {
