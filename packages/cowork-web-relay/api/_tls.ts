@@ -28,9 +28,40 @@ export interface TlsDecision {
 }
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+/**
+ * A URL parser only sees what the connection string lets it see: an unencoded `#`, `?`, `/`
+ * or whitespace inside the password silently truncates it, and pg then authenticates with a
+ * shorter password (28P01). Fail loudly instead of guessing. Never echoes the value.
+ */
 const SSL_PARAMS = ['sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'sslcrl', 'sslpassword', 'ssl', 'uselibpqcompat', 'sslnegotiation'];
 
+export function assertUsableUrl(raw: string): void {
+  const invalid = 'DATABASE_URL contains an unencoded character in the password - percent-encode it (# -> %23, ? -> %3F, / -> %2F, % -> %25) or reset the database password to letters and digits only';
+  const schemeEnd = raw.indexOf('://');
+  if (schemeEnd === -1) return;
+  const rest = raw.slice(schemeEnd + 3);
+  const queryAt = rest.search(/[?]/);
+  const authorityRegion = queryAt === -1 ? rest : rest.slice(0, queryAt);
+  const firstSlash = authorityRegion.indexOf('/');
+  const authority = firstSlash === -1 ? authorityRegion : authorityRegion.slice(0, firstSlash);
+  const at = authority.lastIndexOf('@');
+  if (at === -1) {
+    // An '@' after a '/' means the password held an unencoded '/'.
+    if (firstSlash !== -1 && authorityRegion.includes('@')) throw new Error(invalid);
+    return;
+  }
+  const userinfo = authority.slice(0, at);
+  const colon = userinfo.lastIndexOf(':');
+  const user = colon === -1 ? userinfo : userinfo.slice(0, colon);
+  const password = colon === -1 ? '' : userinfo.slice(colon + 1);
+  if (user && !/^[\w.$-]+$/.test(user)) {
+    throw new Error('DATABASE_URL username is invalid for a URL - percent-encode it, or use an alphanumeric database password');
+  }
+  if (/[#?/\s]/.test(password) || /%(?![0-9A-Fa-f]{2})/.test(password)) throw new Error(invalid);
+}
+
 export function buildTls(rawUrl: string, env: NodeJS.ProcessEnv = process.env): TlsDecision {
+  assertUsableUrl(rawUrl);
   const url = new URL(rawUrl);
   const urlSslMode = url.searchParams.get('sslmode') || '';
   const urlRootCert = url.searchParams.get('sslrootcert') || '';

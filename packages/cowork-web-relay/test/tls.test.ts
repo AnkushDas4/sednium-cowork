@@ -49,7 +49,25 @@ describe('Database TLS policy', () => {
     expect(buildTls('postgresql://u@localhost:5432/db', {}).mode).toBe('disabled');
     expect(() => buildTls(URL, { COWORK_DB_TLS: 'disable' })).toThrow('refuses remote databases');
   });
+  it('rejects connection strings a URL parser would silently truncate', () => {
+    for (const url of [
+      'postgresql://postgres.x:pa#ss@h:6543/postgres',
+      'postgresql://postgres.x:pa ss@h:6543/postgres',
+      'postgresql://postgres.x:pa/ss@h:6543/postgres',
+      'postgresql://postgres.x:100%zz@h:6543/postgres',
+    ]) expect(() => buildTls(url, {})).toThrow('unencoded character');
+    expect(() => buildTls('postgresql://post gres:pw@h:6543/postgres', {})).toThrow('username is invalid');
+    // Properly encoded or plain ASCII passwords pass through untouched.
+    expect(buildTls('postgresql://postgres.x:pa%23ss@h:6543/postgres', {}).mode).toBe('verify-full');
+    expect(buildTls('postgresql://postgres.x:Simple1Password@h:6543/postgres', {}).connectionString).toContain('Simple1Password');
+  });
   it('explains Supabase certificate failures to the operator', () => {
+    let configError: Error | undefined;
+    try { buildTls('postgresql://postgres.x:pa#ss@h:6543/postgres', {}); } catch (e) { configError = e as Error; }
+    const bad = errorResponse(configError);
+    expect(bad.body.code).toBe('DATABASE_URL_INVALID');
+    expect(String(bad.body.hint)).toContain('percent-encode');
+    expect(JSON.stringify(bad.body)).not.toContain('pa#ss');
     for (const code of ['SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'ERR_TLS_CERT_ALTNAME_FAILED']) {
       const r = errorResponse(Object.assign(new Error('hidden'), { code }));
       expect(String(r.body.hint)).toMatch(/CA|hostname/);

@@ -66,6 +66,9 @@ const STORAGE_HINTS: Record<string, string> = {
 export function errorResponse(err: unknown): { status: number; body: Record<string, unknown> } {
   if (err instanceof ApiError) return { status: err.status, body: { ok: false, error: err.message } };
   const e = err as { message?: string; code?: string; errno?: string };
+  if (typeof e?.message === 'string' && e.message.startsWith('DATABASE_URL')) {
+    return { status: 503, body: { ok: false, error: 'Relay storage misconfigured', code: 'DATABASE_URL_INVALID', hint: e.message } };
+  }
   if (e?.message === 'DATABASE_URL is required in production') {
     return { status: 503, body: { ok: false, error: 'Relay storage not configured', code: 'DATABASE_URL_MISSING', hint: 'Add DATABASE_URL to Vercel Production environment variables, then redeploy.' } };
   }
