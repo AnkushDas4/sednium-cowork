@@ -17,7 +17,8 @@
     "build": "npm run build --workspaces && npm run bundle:mcp",
     "test": "vitest run",
     "typecheck": "tsc -p packages/cowork-mcp/tsconfig.json --noEmit && npm --workspace=@sednium/cowork-web-relay run typecheck",
-    "verify:relay": "node scripts/verify-relay.mjs"
+    "verify:relay": "node scripts/verify-relay.mjs",
+    "mcp:install": "node scripts/install-mcp.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.27.0",

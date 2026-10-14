@@ -116,6 +116,42 @@ resolved by the relay.
 
 ## MCP configuration
 
+### Single-file install (no repo clone)
+
+`bin/cowork.cjs` is a self-contained esbuild bundle: every dependency is inlined, so a machine needs
+only **Node >= 20 and that one file** - no `npm install`, no build, no clone.
+
+```bash
+node scripts/install-mcp.mjs --room-code SED-… --invite-key <48-hex>
+```
+
+The installer fetches the bundle from GitHub, writes it to `~/.local/lib/sednium-cowork/cowork.cjs`
+and **verifies before it installs**: it spawns the server, drives a real `initialize` -> `tools/list`
+handshake, and refuses the file unless it answers with all six tools. A stale build (no `inviteKey`
+on `cowork_connect`) is rejected too, because protected rooms would only 401 it. Flags: `--out`,
+`--url`, `--ref`, `--check <path>`, `--relay-url`, `--room-code`, `--invite-key`, `--agent-id`,
+`--auto-pull`. It prints a paste-ready `mcpServers` block whose `command` is the absolute
+`process.execPath` - keep it absolute, GUI-launched harnesses often run with a minimal PATH.
+
+Manual equivalent, if you prefer to see every step:
+
+```bash
+curl -fLO https://raw.githubusercontent.com/AnkushDas4/sednium-cowork/<ref>/bin/cowork.cjs
+node -e "console.log(process.version)"   # >= v20
+node cowork.cjs                          # prints "Server running on stdio." then waits - that is healthy
+sha256sum cowork.cjs
+```
+
+Pin `<ref>` to a commit or branch whose bundle carries the invite key, and expect the digest to move
+with every push. While `main` lags behind this branch, an unpinned `npm i -g
+github:AnkushDas4/sednium-cowork` installs a pre-invite-key client that protected rooms reject - either
+pass `#<branch>` or merge first. `sednium-cowork` is an unused name on the npm registry and the root
+package declares no production dependencies, so `npm publish` + `npm i -g sednium-cowork` is the
+shortest long-term path if you want it.
+
+Cloning is only needed to edit TypeScript, run the tests, or use `scripts/verify-relay.mjs`; then
+`npm ci && npm run build` (workspace installs pull React/Vite/pg, which the single file avoids).
+
 The standalone bundle is `bin/cowork.cjs`; rebuild it whenever MCP source changes.
 Example harness config using a locally installed checkout:
 
@@ -136,8 +172,8 @@ Example harness config using a locally installed checkout:
 The relay URL is configurable; the legacy default is `https://cowork.sednium.com`.
 Set it explicitly when testing a branch deployment. Agents joining a protected room also need
 `COWORK_INVITE_KEY` (or `inviteKey` on `cowork_connect`); `setup-peer.sh` forwards it when it is set
-in the environment. A freshly minted room prints its key and the full invite link in the tool result. The database URL belongs only on the
-relay server; **do not give it to MCP clients**.
+in the environment. A freshly minted room prints its key and the full invite link in the tool
+result. The database URL belongs only on the relay server; **do not give it to MCP clients**.
 
 | Tool | Parameters |
 |---|---|
@@ -216,6 +252,8 @@ itself remains like any other room.
 
 ### Live smoke test (after deployment)
 
+0. `node scripts/install-mcp.mjs --check <path>` proves a downloaded bundle answers the MCP
+   handshake and advertises `inviteKey`; plain "the file exists" is not proof it runs.
 1. Create a fresh room and join from a browser plus two updated agents with distinct handles - each
    agent needs the room code **and** the invite key from the same invite link.
 2. Claim the same file simultaneously; exactly one agent must receive a conflict.
