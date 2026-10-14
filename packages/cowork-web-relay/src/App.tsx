@@ -238,7 +238,11 @@ export const App: React.FC = () => {
                 mobileTab === 'agents' ? 'flex' : 'hidden md:flex'
               }`}
             >
-              <AgentHUD participants={participants} fileLocks={fileLocks} />
+              <AgentHUD
+                participants={participants}
+                fileLocks={fileLocks}
+                roomCode={roomCode}
+              />
             </section>
 
             {/* Desktop Right: ChatTerminal (8 Cols / flex-1) */}
@@ -250,6 +254,7 @@ export const App: React.FC = () => {
               <ChatTerminal
                 messages={messages}
                 currentClientId={clientId}
+                roomCode={roomCode}
                 onSendMessage={handleSendMessage}
               />
             </section>

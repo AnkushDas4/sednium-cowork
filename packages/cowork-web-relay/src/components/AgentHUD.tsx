@@ -6,37 +6,49 @@ import {
   ShieldAlert,
   Cpu,
   FileCode,
-  Activity,
-  CheckCircle2,
+  Copy,
+  Check,
+  Terminal,
+  Sparkles,
 } from 'lucide-react';
 import type { ParticipantInfo, FileLockInfo } from '../../api/_types.js';
 
 interface AgentHUDProps {
   participants: Record<string, ParticipantInfo>;
   fileLocks: Record<string, FileLockInfo>;
+  roomCode?: string;
 }
 
-export const AgentHUD: React.FC<AgentHUDProps> = ({ participants, fileLocks }) => {
+export const AgentHUD: React.FC<AgentHUDProps> = ({
+  participants,
+  fileLocks,
+  roomCode = 'SED-409',
+}) => {
   const [now, setNow] = useState(Date.now());
+  const [copiedSlot, setCopiedSlot] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const agentKeys = Array.from(
-    new Set([
-      'loid-ai',
-      'peer-ai',
-      ...Object.keys(participants).filter((id) => participants[id].role === 'agent'),
-    ])
+  const handleCopyPrompt = (agentId: string) => {
+    const prompt = `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect.`;
+    navigator.clipboard.writeText(prompt);
+    setCopiedSlot(agentId);
+    setTimeout(() => setCopiedSlot(null), 2500);
+  };
+
+  // Find all actually registered agents from participants
+  const connectedAgentEntries = Object.entries(participants).filter(
+    ([_, p]) => p.role === 'agent'
   );
 
   const getStatus = (lastSeen?: number) => {
     if (!lastSeen) return { label: 'OFFLINE', dot: 'bg-muted', text: 'text-muted' };
     const diff = (now - lastSeen) / 1000;
-    if (diff < 30) return { label: 'ONLINE', dot: 'bg-[#FF6B00] animate-pulse', text: 'text-[#FF6B00]' };
-    if (diff < 90) return { label: 'IDLE', dot: 'bg-[#FF6B00]/70', text: 'text-primary' };
+    if (diff < 30) return { label: 'ONLINE', dot: 'bg-[#10B981] animate-pulse', text: 'text-[#10B981]' };
+    if (diff < 90) return { label: 'IDLE', dot: 'bg-[#FF6B00]', text: 'text-[#FF6B00]' };
     return { label: 'DISCONNECTED', dot: 'bg-muted', text: 'text-muted' };
   };
 
@@ -46,78 +58,138 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({ participants, fileLocks }) =
 
   const allLocks = Object.entries(fileLocks);
 
+  // Default slots that can be paired
+  const expectedSlots = ['loid-ai', 'peer-ai'];
+
   return (
     <div className="h-full flex flex-col divide-y divide-grid bg-canvas overflow-y-auto">
-      {/* Section 1: Connected Agent Nodes */}
-      <div className="p-3.5 space-y-3">
-        <div className="flex items-center justify-between text-[11px] font-mono uppercase text-muted tracking-wider">
-          <div className="flex items-center gap-1.5">
-            <Cpu className="w-3.5 h-3.5 text-[#FF6B00]" />
-            <span className="font-semibold text-primary">AGENT NODES</span>
-          </div>
-          <span className="text-[10px]">{agentKeys.length} REGISTERED</span>
+      {/* 1. Header Bar for Agent Section */}
+      <div className="px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
+        <div className="flex items-center gap-2">
+          <Cpu className="w-4 h-4 text-[#FF6B00]" />
+          <span className="font-bold text-primary text-xs">AGENT NODES</span>
         </div>
+        <span className="text-[11px] font-semibold text-secondary">
+          {connectedAgentEntries.length > 0
+            ? `${connectedAgentEntries.length} ACTIVE`
+            : '0 ACTIVE • 2 SLOTS'}
+        </span>
+      </div>
 
-        <div className="space-y-2.5">
-          {agentKeys.map((agentId) => {
-            const participant = participants[agentId];
-            const status = getStatus(participant?.lastSeen);
-            const locks = getAgentLocks(agentId);
+      {/* 2. Flush Agent Cards / Slots */}
+      <div className="divide-y divide-grid bg-canvas">
+        {connectedAgentEntries.length === 0 ? (
+          /* Zero Agents Connected: Show Clear Pairing Slots */
+          <>
+            <div className="px-5 py-3.5 bg-hover/40 border-b border-grid">
+              <div className="flex items-center gap-2 text-xs font-sans font-bold text-primary">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
+                <span>Pair Antigravity AI With This Room</span>
+              </div>
+              <p className="text-[11px] font-sans text-secondary mt-0.5 leading-snug">
+                Run the prompt in your local terminal or AI session to bind an agent.
+              </p>
+            </div>
 
-            return (
-              <div
-                key={agentId}
-                className="bg-panel border border-grid rounded-sm p-3 space-y-2.5 transition-colors"
-              >
-                {/* Agent Header */}
+            {expectedSlots.map((slotId) => (
+              <div key={slotId} className="px-5 py-4 space-y-3 bg-canvas transition-colors">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-hover border border-grid flex items-center justify-center rounded-sm text-[#FF6B00]">
-                      <Bot className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-hover border border-grid flex items-center justify-center rounded-sm text-muted">
+                      <Bot className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="font-bold text-xs text-primary font-sans leading-tight">
-                        @{agentId}
+                      <div className="font-bold text-[15px] text-primary font-sans leading-tight">
+                        @{slotId}
                       </div>
-                      <div className="text-[10px] text-muted font-mono leading-none">
-                        {participant?.model || 'Autonomous Pair Agent'}
+                      <div className="text-[11px] text-muted font-mono">
+                        {slotId === 'loid-ai' ? 'Host Agent Slot' : 'Collaborator Agent Slot'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-hover border border-grid">
-                    <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                    <span className={`text-[10px] font-mono font-semibold ${status.text}`}>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-hover border border-grid text-muted">
+                    WAITING TO PAIR
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyPrompt(slotId)}
+                  className="w-full py-2 px-3 bg-panel hover:bg-hover border border-grid hover:border-[#FF6B00]/40 text-primary rounded-sm text-xs font-mono font-medium flex items-center justify-center gap-2 transition-all shadow-sm"
+                >
+                  {copiedSlot === slotId ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
+                      <span className="text-[#FF6B00] font-semibold">Prompt Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-[#FF6B00]" />
+                      <span>+ COPY AGY CONNECT PROMPT</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
+          </>
+        ) : (
+          /* Render Actually Connected Agents */
+          connectedAgentEntries.map(([agentId, participant]) => {
+            const status = getStatus(participant?.lastSeen);
+            const locks = getAgentLocks(agentId);
+
+            return (
+              <div key={agentId} className="px-5 py-4 space-y-2.5 bg-canvas transition-colors">
+                {/* Agent Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 bg-hover border border-grid flex items-center justify-center rounded-sm text-[#FF6B00]">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-[15px] text-primary font-sans leading-tight">
+                        @{agentId}
+                      </div>
+                      <div className="text-[11px] text-secondary font-mono leading-none">
+                        {participant.model || 'Autonomous Pair Agent'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-panel border border-grid">
+                    <span className={`w-2 h-2 rounded-full ${status.dot}`} />
+                    <span className={`text-[11px] font-mono font-semibold ${status.text}`}>
                       {status.label}
                     </span>
                   </div>
                 </div>
 
-                {/* Status / Task */}
-                <div className="bg-canvas border border-grid rounded-sm p-2 text-xs">
-                  <div className="text-[10px] font-mono uppercase text-muted mb-0.5">
+                {/* Clean Unbordered Current Task Line */}
+                <div className="pt-1">
+                  <div className="text-[10px] font-mono uppercase text-muted tracking-wide mb-0.5">
                     CURRENT TASK
                   </div>
-                  <div className="text-secondary text-[11px] font-sans truncate">
-                    {participant?.status || 'Awaiting dispatch or pairing instructions...'}
+                  <div className="text-[13px] text-primary font-sans font-medium leading-relaxed">
+                    {participant.status || 'Active & listening on relay...'}
                   </div>
                 </div>
 
-                {/* Claimed Files */}
+                {/* Claimed Files List */}
                 {locks.length > 0 && (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 pt-1">
                     <div className="text-[10px] font-mono uppercase text-muted flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5 text-[#FF6B00]" />
-                      <span>HELD FILE LOCKS ({locks.length})</span>
+                      <Lock className="w-3 h-3 text-[#FF6B00]" />
+                      <span>CLAIMED FILES ({locks.length})</span>
                     </div>
                     <div className="space-y-1">
                       {locks.map(([file, lock]) => (
                         <div
                           key={file}
-                          className="border-l-2 border-[#FF6B00] pl-2 py-0.5 bg-hover/40 text-[11px] font-mono text-primary flex items-center justify-between gap-2"
+                          className="border-l-2 border-[#FF6B00] pl-2.5 py-1 bg-panel text-xs font-mono text-primary flex items-center justify-between gap-2"
                         >
-                          <span className="truncate">{file}</span>
-                          <span className="text-[9px] text-muted shrink-0 font-sans">
+                          <span className="truncate font-semibold">{file}</span>
+                          <span className="text-[10px] text-secondary shrink-0 font-sans">
                             {lock.task}
                           </span>
                         </div>
@@ -127,61 +199,57 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({ participants, fileLocks }) =
                 )}
               </div>
             );
-          })}
-        </div>
+          })
+        )}
       </div>
 
-      {/* Section 2: Active File Lock Registry */}
-      <div className="p-3.5 space-y-2.5 flex-1">
-        <div className="flex items-center justify-between text-[11px] font-mono uppercase text-muted tracking-wider">
-          <div className="flex items-center gap-1.5">
-            <ShieldAlert className="w-3.5 h-3.5 text-[#FF6B00]" />
-            <span className="font-semibold text-primary">FILE LOCK REGISTRY</span>
-          </div>
-          <span className="text-[10px] text-muted">90S TTL</span>
+      {/* 3. Section Header for File Locks */}
+      <div className="px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
+        <div className="flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-[#FF6B00]" />
+          <span className="font-bold text-primary text-xs">FILE LOCK REGISTRY</span>
         </div>
+        <span className="text-[11px] font-mono text-muted">90S TTL</span>
+      </div>
 
+      {/* 4. Flush File Locks List */}
+      <div className="flex-1 divide-y divide-grid bg-canvas">
         {allLocks.length === 0 ? (
-          <div className="bg-panel border border-grid rounded-sm p-4 text-center">
-            <FileCode className="w-5 h-5 text-muted mx-auto mb-1.5 opacity-60" />
+          <div className="px-5 py-8 text-center text-muted space-y-1.5">
+            <FileCode className="w-6 h-6 text-muted mx-auto opacity-40" />
             <div className="text-xs text-secondary font-medium font-sans">
               No files currently locked
             </div>
-            <div className="text-[10px] text-muted font-mono mt-0.5">
-              Agents automatically acquire mutex locks on claim
+            <div className="text-[11px] text-muted font-mono">
+              Auto-acquired when AI edits files via cowork_claim_files
             </div>
           </div>
         ) : (
-          <div className="space-y-1.5">
-            {allLocks.map(([filePath, lock]) => {
-              const elapsedSeconds = Math.floor((now - lock.timestamp) / 1000);
-              const remainingSeconds = Math.max(0, 90 - elapsedSeconds);
+          allLocks.map(([filePath, lock]) => {
+            const elapsedSeconds = Math.floor((now - lock.timestamp) / 1000);
+            const remainingSeconds = Math.max(0, 90 - elapsedSeconds);
 
-              return (
-                <div
-                  key={filePath}
-                  className="bg-panel border border-grid rounded-sm p-2 text-xs space-y-1"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                      <Lock className="w-3 h-3 text-[#FF6B00] shrink-0" />
-                      <span className="font-mono text-[11px] text-primary truncate font-medium">
-                        {filePath}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] font-mono text-[#FF6B00] bg-hover px-1.5 py-0.5 rounded-sm border border-grid shrink-0">
-                      <Clock className="w-2.5 h-2.5" />
-                      <span>{remainingSeconds}s</span>
-                    </div>
+            return (
+              <div key={filePath} className="px-5 py-3 text-xs space-y-1 bg-canvas">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    <Lock className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
+                    <span className="font-mono text-xs text-primary truncate font-bold">
+                      {filePath}
+                    </span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-muted font-sans">
-                    <span>by @{lock.lockedBy}</span>
-                    <span className="truncate italic">"{lock.task}"</span>
+                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#FF6B00] bg-panel px-2 py-0.5 rounded-sm border border-grid shrink-0">
+                    <Clock className="w-3 h-3" />
+                    <span className="font-semibold">{remainingSeconds}s</span>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center justify-between text-[11px] text-secondary font-sans">
+                  <span>Locked by @{lock.lockedBy}</span>
+                  <span className="truncate italic">"{lock.task}"</span>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

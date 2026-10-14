@@ -15,6 +15,8 @@ import {
   LogOut,
   Sparkles,
   X,
+  Bot,
+  Users,
 } from 'lucide-react';
 import type { CommitInfo, ParticipantInfo } from '../../api/_types.js';
 
@@ -68,107 +70,140 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const participantCount = Object.keys(participants).length;
+  const participantEntries = Object.entries(participants);
+  const isOnline = (lastSeen?: number) => {
+    if (!lastSeen) return false;
+    return (Date.now() - lastSeen) < 90000;
+  };
 
   return (
-    <header className="h-12 border-b border-grid bg-panel flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
+    <header className="h-14 border-b border-grid bg-panel flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
-      <div className="flex items-center gap-2.5 px-3 md:px-4 shrink-0">
-        <div className="w-6 h-6 bg-[#FF6B00] flex items-center justify-center rounded-sm shrink-0">
-          <Terminal className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+      <div className="flex items-center gap-3 px-4 md:px-5 shrink-0">
+        <div className="w-7 h-7 bg-[#FF6B00] flex items-center justify-center rounded-sm shrink-0 shadow-sm">
+          <Terminal className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold tracking-tight text-primary text-[11px] md:text-xs uppercase font-sans">
+          <span className="font-bold tracking-tight text-primary text-xs md:text-sm uppercase font-sans">
             SEDNIUM COWORK
           </span>
-          <span className="text-[9px] text-muted tracking-wider font-mono uppercase">
+          <span className="text-[10px] text-muted tracking-wider font-mono uppercase">
             RELAY HUD v1.0
           </span>
         </div>
       </div>
 
       {/* 2. Room Session Cell */}
-      <div className="flex items-center gap-2 px-3 shrink-0">
-        <div className="flex items-center gap-1 font-mono">
-          <Hash className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
-          <span className="font-semibold text-primary text-xs">{roomCode}</span>
+      <div className="flex items-center gap-2.5 px-4 shrink-0">
+        <div className="flex items-center gap-1.5 font-mono">
+          <Hash className="w-4 h-4 text-[#FF6B00]" strokeWidth={2.5} />
+          <span className="font-bold text-primary text-[15px] tracking-tight">{roomCode}</span>
         </div>
 
-        <button
-          onClick={handleCopy}
-          className="p-1 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
-          title="Copy invite link"
-        >
-          {copied ? (
-            <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
-          ) : (
-            <Copy className="w-3.5 h-3.5" />
-          )}
-        </button>
-
-        <button
-          onClick={() => setShowQr(true)}
-          className="p-1 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
-          title="Show mobile QR code"
-        >
-          <QrCode className="w-3.5 h-3.5" />
-        </button>
-
-        {onNewRoom && (
+        <div className="flex items-center gap-1.5 ml-1">
           <button
-            onClick={handleCreateNewRoom}
-            disabled={isGenerating}
-            className="hidden lg:flex items-center gap-1 px-1.5 py-0.5 hover:bg-hover text-muted hover:text-primary rounded-sm border border-transparent hover:border-grid transition-colors"
-            title="Generate a new collision-free room code"
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            title="Copy invite link"
           >
-            <Sparkles className="w-3 h-3 text-[#FF6B00]" />
-            <span className="text-[10px] uppercase font-mono">NEW</span>
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-[#FF6B00]" strokeWidth={2.5} />
+            ) : (
+              <Copy className="w-3.5 h-3.5 text-[#FF6B00]" />
+            )}
+            <span>{copied ? 'Copied!' : 'Copy Link'}</span>
           </button>
-        )}
+
+          <button
+            onClick={() => setShowQr(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
+            title="Show mobile QR code"
+          >
+            <QrCode className="w-3.5 h-3.5 text-secondary" />
+            <span className="hidden sm:inline">QR Code</span>
+          </button>
+
+          {onNewRoom && (
+            <button
+              onClick={handleCreateNewRoom}
+              disabled={isGenerating}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm border border-grid transition-colors text-xs font-sans font-medium disabled:opacity-50"
+              title="Generate a new collision-free room code"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span className="hidden md:inline">New Room</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 3. Git Main Status Cell */}
-      <div className="hidden md:flex flex-1 items-center px-3 gap-2 overflow-hidden">
-        <div className="flex items-center gap-1 text-[#FF6B00] shrink-0 font-mono text-[11px]">
-          <GitBranch className="w-3.5 h-3.5" strokeWidth={2.2} />
-          <span className="font-semibold">main</span>
+      <div className="hidden lg:flex flex-1 items-center px-4 gap-2.5 overflow-hidden">
+        <div className="flex items-center gap-1 text-[#FF6B00] shrink-0 font-mono text-xs">
+          <GitBranch className="w-4 h-4" strokeWidth={2.2} />
+          <span className="font-bold">main</span>
         </div>
-        <span className="text-muted text-[10px]">/</span>
+        <span className="text-muted text-xs">/</span>
         {latestCommit ? (
           <div className="flex items-center gap-2 overflow-hidden truncate">
-            <span className="font-mono text-primary bg-hover px-1.5 py-0.5 rounded-sm text-[11px] border border-grid shrink-0">
+            <span className="font-mono text-primary bg-hover px-2 py-0.5 rounded-sm text-xs border border-grid shrink-0 font-medium">
               {latestCommit.hash.slice(0, 7)}
             </span>
-            <span className="text-secondary truncate text-xs font-sans">
+            <span className="text-secondary truncate text-xs font-sans font-medium">
               {latestCommit.message}
             </span>
-            <span className="text-muted text-[10px] shrink-0 font-mono">
+            <span className="text-muted text-xs shrink-0 font-mono">
               @{latestCommit.author}
             </span>
           </div>
         ) : (
-          <span className="text-muted text-xs truncate">
+          <span className="text-muted text-xs truncate font-sans">
             Waiting for first git push on main...
           </span>
         )}
       </div>
 
-      {/* 4. Operator & Theme Switcher Cell */}
-      <div className="flex items-center gap-2 px-3 shrink-0 ml-auto md:ml-0">
-        <div className="flex items-center gap-1.5 bg-hover px-2 py-1 rounded-sm border border-grid">
-          <User className="w-3 h-3 text-[#FF6B00]" />
-          <span className="font-mono text-primary text-[11px] font-medium">@{clientId}</span>
-          <span className="text-muted text-[10px]">({participantCount})</span>
+      {/* 4. Active Room Roster & Theme Switcher Cell */}
+      <div className="flex items-center gap-2.5 px-4 shrink-0 ml-auto lg:ml-0">
+        {/* Active Participant Roster */}
+        <div className="hidden sm:flex items-center gap-1.5 py-1 px-2.5 bg-hover/80 rounded-sm border border-grid">
+          <Users className="w-3.5 h-3.5 text-muted shrink-0" />
+          <div className="flex items-center gap-2 text-xs font-mono">
+            {participantEntries.length === 0 ? (
+              <span className="text-muted text-[11px]">1 in room</span>
+            ) : (
+              participantEntries.slice(0, 3).map(([pId, p]) => (
+                <div key={pId} className="flex items-center gap-1">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isOnline(p.lastSeen) ? 'bg-[#10B981]' : 'bg-muted'
+                    }`}
+                  />
+                  <span
+                    className={`text-[11px] font-medium ${
+                      pId === clientId ? 'text-[#FF6B00] font-bold' : 'text-primary'
+                    }`}
+                  >
+                    @{pId}
+                  </span>
+                </div>
+              ))
+            )}
+            {participantEntries.length > 3 && (
+              <span className="text-muted text-[10px]">+{participantEntries.length - 3}</span>
+            )}
+          </div>
         </div>
 
+        {/* Live sync pulse */}
         <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
-          <Activity className="w-3.5 h-3.5 text-[#FF6B00] animate-pulse" />
+          <Activity className="w-4 h-4 text-[#FF6B00] animate-pulse" />
         </div>
 
         {/* Theme Toggle Button */}
         <button
           onClick={onToggleTheme}
-          className="p-1.5 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid ml-1"
+          className="p-2 hover:bg-hover text-secondary hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
           title={`Switch to ${theme === 'dark' ? 'Milk White (Light)' : 'Charcoal Black (Dark)'} mode`}
           aria-label="Toggle theme"
         >
@@ -181,10 +216,10 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
         <button
           onClick={onLeave}
-          className="p-1.5 hover:bg-hover text-muted hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
+          className="p-2 hover:bg-hover text-muted hover:text-primary rounded-sm transition-colors border border-transparent hover:border-grid"
           title="Exit Room"
         >
-          <LogOut className="w-3.5 h-3.5" />
+          <LogOut className="w-4 h-4" />
         </button>
       </div>
 
@@ -207,20 +242,20 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               </button>
             </div>
 
-            <div className="bg-white p-3.5 rounded-sm flex items-center justify-center border border-grid shadow-inner mb-4">
+            <div className="bg-white p-4 rounded-sm flex items-center justify-center border border-grid shadow-inner mb-4">
               <QRCodeSVG value={shareUrl} size={190} level="M" />
             </div>
 
-            <div className="text-center font-mono text-[11px] text-muted mb-3 break-all">
+            <div className="text-center font-mono text-xs text-secondary mb-4 break-all bg-canvas p-2 rounded-sm border border-grid">
               {shareUrl}
             </div>
 
             <button
               onClick={handleCopy}
-              className="w-full py-2 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-[#FF6B00] hover:bg-[#E66000] text-white text-xs font-semibold rounded-sm transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'LINK COPIED' : 'COPY SHARE LINK'}
+              <span>{copied ? 'LINK COPIED' : 'COPY SHARE LINK'}</span>
             </button>
           </div>
         </div>
