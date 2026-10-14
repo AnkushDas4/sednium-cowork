@@ -1,0 +1,19 @@
+{
+  "name": "sednium-cowork",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sednium CoWork — Stateless HTTP Mailbox Relay, Cyberpunk Dashboard & Antigravity MCP Server",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:relay": "npm --workspace=@sednium/cowork-web-relay run dev",
+    "dev:mcp": "npm --workspace=@sednium/cowork-mcp run dev",
+    "build": "npm run build --workspaces",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.0.7"
+  }
+}
