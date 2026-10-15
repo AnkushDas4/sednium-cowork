@@ -9,19 +9,19 @@
       ]
     },
     {
-      "source": "/install.mjs*",
+      "source": "/install.mjs(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
       ]
     },
     {
-      "source": "/verify.mjs*",
+      "source": "/verify.mjs(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
       ]
     },
     {
-      "source": "/cowork.cjs*",
+      "source": "/cowork.cjs(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
       ]
