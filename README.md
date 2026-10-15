@@ -26,7 +26,7 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 
 | Part | Path | Responsibility |
 |---|---|---|
-| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, **live activity rail** (what each agent is doing, which files it is touching, its reasoning under Show more/less), **notification centre** (bell, banners, device alerts), roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
+| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, **live activity rail** (what each agent is doing, which files it is touching, its reasoning under Show more/less), **notification centre** (bell, banners, device alerts), **Room Repository card** (the one git remote every agent must work in), roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
 | **Relay API** | `packages/cowork-web-relay/api/` | Two serverless endpoints (`/api/presence`, `/api/send`) that do *everything*: room creation, auth, presence, acked delivery, lock claims. No sockets, no timers. |
 | **Store** | `api/_store.ts` | One Postgres table (`public.cowork_rooms`: `room_code`, `state JSONB`). Every mutation is a `SELECT … FOR UPDATE` transaction on the room row, so two agents can't both win a lock. |
 | **TLS policy** | `api/_tls.ts` | Decides how the relay verifies the database certificate (`verify-full` / `verify-pinned-ca` / `no-verify`), and strips `ssl*` params from the URL so a DSN can't silently downgrade it. |
@@ -35,18 +35,18 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 | **Release bundle** | `bin/cowork.cjs` | `packages/cowork-mcp` inlined by esbuild into **one self-contained file** (every dependency inside). Committed, so a client machine needs only Node ≥ 20 and this file. |
 | **Client assets** | `packages/cowork-web-relay/public/` | Generated at build time: `cowork.cjs`, `install.mjs`, `verify.mjs`, each with a `.sha256`. This is why an install is one short URL instead of a repo clone. |
 | **Installer** | `scripts/install-mcp.mjs` | Downloads the bundle, **verifies it with a real MCP handshake**, installs to `~/.local/lib/sednium-cowork/cowork.cjs`, prints a paste-ready harness config. |
-| **Live verifier** | `scripts/verify-relay.mjs` | 15 checks against a running relay: invite keys, atomic claims, token-bound handles, redelivery, the live activity stream, malformed input, leak checks. Zero dependencies. |
+| **Live verifier** | `scripts/verify-relay.mjs` | 21 checks against a running relay: invite keys, atomic claims, token-bound handles, redelivery, the live activity stream, the one-repository rule, malformed input, leak checks. Zero dependencies. |
 | **Peer setup** | `setup-peer.sh` | Builds from a clone and writes `mcpServers.cowork` into whichever harness configs already exist on that machine. |
 
 ```
 packages/cowork-web-relay/
-  api/{presence,send}.ts _store.ts _validation.ts _tls.ts _types.ts   # relay (serverless)
-  src/{App.tsx,relay.ts,index.css} src/components/*.tsx               # dashboard
+  api/{presence,send}.ts _store.ts _validation.ts _tls.ts _types.ts _repo.ts   # relay (serverless)
+  src/{App.tsx,relay.ts,index.css} src/components/*.tsx               # dashboard (incl. RepoCard, NotificationCenter)
   src/{notifications.ts,notifyChannels.ts,useNotificationCenter.ts}   # alert rules, channels, state
   public/sw-notifications.js                                           # notification worker (no fetch handler)
   server.ts                                                            # express runner for local dev
 packages/cowork-mcp/
-  src/{index.ts,poller.ts,activity.ts,git.ts,identity.ts,invite.ts,types.ts}   # MCP server source
+  src/{index.ts,poller.ts,activity.ts,git.ts,repo.ts,identity.ts,invite.ts,types.ts}   # MCP server source
 bin/cowork.cjs              # built single-file client (committed)
 scripts/{install-mcp,verify-relay,sync-client-assets}.mjs
 setup-peer.sh               test/e2e.test.ts
@@ -73,8 +73,9 @@ setup-peer.sh               test/e2e.test.ts
    agent stops beating. An agent that never calls `cowork_report` still gets a state derived from its
    tool calls plus `git status`, so the stream is never empty by accident.
 7. **Hand off.** `cowork_sync_main` commits the named files, pushes `HEAD:refs/heads/<branch>`, then
-   broadcasts `GIT_PUSH` with the hash. Only peers with `autoPull` enabled pull, and a pull refuses a
-   dirty tree.
+   broadcasts `GIT_PUSH` with the hash and the remote it used. Only peers with `autoPull` enabled pull,
+   and a pull refuses a dirty tree. If the room already bound a repository, a push aimed at any other
+   one is refused; if none is bound, this push becomes the room's answer to "which repo?" — for good.
 
 Nothing is pushed **into** an agent's context: peers' messages sit in an inbox until the agent calls
 `cowork_check_inbox` (or waits in `cowork_watch_loop`). See [What an agent can and cannot see](#what-an-agent-can-and-cannot-see).
@@ -95,7 +96,7 @@ Already have a relay? Steps 3–4 are the whole client side.
 curl -fLO https://your-relay/install.mjs
 node install.mjs --link "paste-the-invite-link-here"
 
-# 4. Verify the deployment end to end (15 live checks, no dependencies to install)
+# 4. Verify the deployment end to end (21 live checks, no dependencies to install)
 curl -fL https://your-relay/verify.mjs -o /tmp/verify.mjs && node /tmp/verify.mjs https://your-relay
 ```
 
@@ -181,7 +182,7 @@ node /tmp/cowork-install.mjs --check ~/.local/lib/sednium-cowork/cowork.cjs
 ```
 
 Flags: `--link`, `--out`, `--url`, `--ref`, `--check`, `--relay-url`, `--room-code`, `--invite-key`,
-`--agent-id`, `--auto-pull`. Before installing it spawns the download, runs a real
+`--agent-id`, `--auto-pull`, `--repo`. Before installing it spawns the download, runs a real
 `initialize` → `tools/list` exchange, prints the tool list (eight entries today, one of them the
 `cowork_sync` alias, so a stale bundle is obvious at a glance), cross-checks the published `.sha256`,
 rejects an HTML page or truncated body, and refuses a bundle whose `cowork_connect` has no
@@ -261,6 +262,8 @@ screenshot and CI log. Hand out the original link instead.
 | `COWORK_AGENT_ID` | detected harness + `-ai` | handle shown in the room |
 | `COWORK_REPO_PATH` | cwd | repo the git tools may touch |
 | `COWORK_BRANCH` / `COWORK_REMOTE` | `main` / `origin` | expected branch and remote |
+| `COWORK_GIT_REPO` | — (also `&repo=` on an invite link) | repository this room must push and clone; if the room already bound another one, **the room wins** and the agent is told |
+| `COWORK_CLONE_REPO` | `1` | `0` = never clone on connect; print the command instead. A clone only ever targets an **empty** directory |
 | `COWORK_AUTO_PULL` | `false` | `true` = pull automatically on peer pushes |
 | `COWORK_ACTIVITY` | `full` | what the agent streams about its own work: `full` (state, summary, reasoning, inferred file paths), `state` (state + summary only, no reasoning or paths), `off` (nothing) |
 | `COWORK_PARTICIPANT_TOKEN` | file at `~/.config/sednium-cowork/participant-token` (`0600`) | persistent identity |
@@ -269,13 +272,13 @@ screenshot and CI log. Hand out the original link instead.
 
 | Tool | Parameters | What it does |
 |---|---|---|
-| `cowork_connect` | all optional: `agentId`, `roomCode`, `inviteKey`, `inviteLink`, `repoPath`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` | Joins (or mints) a room, starts the 2s loop, prints the link + QR. With no room it creates one and shows its key once |
+| `cowork_connect` | all optional: `agentId`, `roomCode`, `inviteKey`, `inviteLink`, `repoPath`, `repoUrl`, `cloneIfMissing`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` | Joins (or mints) a room, starts the 2s loop, prints the link + QR, then **settles the repository question**: links `repoUrl` if the room has none, obeys the room if it has one, clones into an empty `repoPath` when pointed elsewhere. With no room it creates one and shows its key once |
 | `cowork_report` | `state`, `summary`, `detail`, `files`, `tool` | Publish what you are doing to the room's live rail. Rides the next heartbeat (forced immediately, so it appears at once), never becomes a chat message. `state` is one of `idle`, `thinking`, `reading`, `editing`, `testing`, `debugging`, `syncing`, `reviewing`, `blocked`, `done`, `error`; `detail` is what the UI folds behind Show more |
 | `cowork_claim_files` | **`files`**, **`taskDescription`** | Claims live leases (≤100 paths). A 409 names the holder and their task. Locks free when `cowork_sync_main` succeeds, or expire after 90s of silence |
 | `cowork_message_peer` | **`targetId`**, **`message`**, `contentType` | Sends to one handle or `all`; returns any pending unread messages too |
-| `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages only those files, commits, pushes `HEAD:refs/heads/<branch>`, broadcasts `GIT_PUSH`, frees locks. Never `git add -A` |
+| `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages only those files, commits, pushes `HEAD:refs/heads/<branch>`, broadcasts `GIT_PUSH` with the remote it used, frees locks. Refuses *before* committing if the room is bound to a different repository. Never `git add -A` |
 | `cowork_sync` | as `cowork_sync_main` | Alias of `cowork_sync_main`, for a harness that reaches for the shorter name |
-| `cowork_check_inbox` | `waitForSeconds` | Reads and **clears** the inbox; includes the live lock table, latest commit and one line per peer that is narrating right now |
+| `cowork_check_inbox` | `waitForSeconds` | Reads and **clears** the inbox; includes the live lock table, latest commit, the room's repository rule, and one line per peer that is narrating right now |
 | `cowork_watch_loop` | `durationSeconds` (30) | Blocks until a message arrives, so an agent can wait instead of idling |
 
 ### Message types and limits
@@ -286,7 +289,8 @@ screenshot and CI log. Hand out the original link instead.
 | `AGENT_SYNC` | agent → agent status/instruction |
 | `CROSS_PROMPT` | a prompt handed to the peer agent to run. A `CHAT` containing `@handle` is routed to that participant and reclassified as this |
 | `FILE_LOCK` / `FILE_UNLOCK` | lease claims and releases |
-| `GIT_PUSH` | "main moved", with commit hash and author |
+| `GIT_PUSH` | "main moved", with commit hash, author and the remote it went to |
+| `GIT_REPO` | links the room to one repository, once. Stored as a canonical remote; the history line is that canonical form, never what was typed |
 | `STATUS` | presence/heartbeat noise-reduced |
 
 | Limit | Value |
@@ -302,6 +306,7 @@ screenshot and CI log. Hand out the original link instead.
 | Activity lifetime | overwritten by that agent's next heartbeat (2 s); pruned 30 min after its last beat; never stored in history or an inbox |
 | Inboxes per room / pending per inbox | 100 (`429`) / 1000 (`429`, never silently dropped) |
 | Room code / invite key | 128-bit / 48 hex (192-bit), digest stored |
+| Room repository | ≤ 512 chars, one per room, credential stripped, `409 GIT_REPO_TAKEN` on a competing claim, `409 GIT_REPO_MISMATCH` on a push elsewhere |
 
 ---
 
@@ -332,7 +337,8 @@ wait for my approval. Never touch a file another handle has locked; cowork_claim
 
 # Execute (only where every member is you or a trusted teammate)
 Between steps, call cowork_check_inbox. A message addressed to you is a work order: claim the files
-you need, do the work, then cowork_sync_main with only those files. Still ask before deleting,
+you need, do the work, then cowork_sync_main with only those files (push only to the repository this
+room linked - if your checkout points elsewhere, tell me instead of repointing it silently). Ask before deleting,
 publishing or changing dependencies, and stop if a lock is held by someone else.
 ```
 
@@ -405,7 +411,37 @@ Active File Locks (1):
 - A push that succeeded while the relay notification failed is reported as partial success — verify
   the remote instead of repeating the commit.
 - `cowork_sync_main` is a historical name; it uses the configured branch. All peers must agree on
-  repo, branch and remote.
+  branch and remote; the **repository** is no longer something each laptop decides — see below.
+
+### One repository per room
+
+A room binds exactly one git remote, so "which repo is this work for?" cannot be an open question
+halfway through a session:
+
+- **If nobody links one, the first push decides it, permanently.** `cowork_sync_main` reports the
+  remote it actually pushed to, and the room records that as its rule. Anyone who prefers to choose up
+  front links one: the dashboard's **Room Repository** card, `repoUrl` on `cowork_connect`,
+  `COWORK_GIT_REPO` on every peer machine, or `&repo=owner/name` on the invite link (which is why the
+  header's copy-link carries the repo once one is bound).
+- **Once bound, the room outranks local config.** A client that points elsewhere is refused *before*
+  it commits — the guard runs in the MCP (`src/repo.ts`) and again in the relay (`api/_repo.ts`), so a
+  stale or rogue client cannot make a commit the room will not look at. The refusal names the fix:
+  `git remote set-url origin <room url>`.
+- **Spelling does not matter; identity does.** `acme/app`, `https://github.com/acme/app.git`,
+  `git@github.com:acme/app` and `ssh://git@github.com:22/acme/app` are one repository. `owner/repo`
+  means github.com; ≥ 2 path segments are required, so `github.com/acme` is refused rather than guessed.
+- **A credential in a remote is never kept.** Room state is readable by every member, so userinfo and
+  query tokens are stripped before anything is stored, echoed or put in a history line. The canonical
+  form is what a clone command gets, and `git@` is the only user that survives — it is ssh protocol,
+  not a secret.
+- **Cloning is offered, never forced onto a non-empty directory.** On connect, a room with a bound repo
+  and an empty `repoPath` clones into it; anything else gets the command to run by hand.
+- **Immutable on purpose.** A member who could re-link the room could send every peer's client to their
+  own fork, so there is no "unlink" button; a room that needs another repository is a new room.
+
+The mirrored rules are held together by tests: `test/repo-normalize.test.ts` + `test/repo-room.test.ts`
+on the relay, `test/repo-parity.test.ts` (both copies, same inputs, must agree) and
+`test/room-repo-guard.test.ts` / `test/room-repo.test.ts` on the agent side.
 
 ---
 
@@ -462,6 +498,11 @@ deploy except the page.
   under 400px and keep a fixed gutter so the column doesn't jitter while polling
 - `.scroll-panel` (`overscroll-behavior: contain`) stops a flick inside a list from dragging the
   page; `touch-action: manipulation` removes tap delay
+**Room Repository** is a card at the top of the agents/locks rail (so it is reachable on a phone):
+the bound remote, who decided it and when, a copyable `git clone` line, and — while the room is still
+unbound — one input that says what will be stored before you submit it. A competing claim is answered
+with the room's own words inline, not a toast that vanishes.
+
 - `manifest.webmanifest` + `icon.svg` make "Add to Home Screen" a standalone shell. The **only**
   service worker is `sw-notifications.js`, and it never intercepts a fetch: an installed CoWork is
   online-only, which is correct for a live relay
@@ -487,7 +528,7 @@ node scripts/install-mcp.mjs --check <path>          # proves a downloaded bundl
 Then against the running relay (also `curl`-able: `/verify.mjs`, zero dependencies):
 
 ```bash
-npm run verify:relay -- https://your-relay          # 15 checks
+npm run verify:relay -- https://your-relay          # 21 checks
 npm run verify:relay -- https://your-relay --slow    # adds ~4 min of lease renewal/expiry
 ```
 
@@ -533,6 +574,8 @@ and manifest are committed while the relay assets are not — no 1 MB duplicate 
 | Agent: `Presence failed (401)` | client is too old to send a token or key. Reinstall the bundle (`install.mjs`) and restart that harness |
 | Agent: `403 Invalid invite key` | wrong key for that room. Re-open the original link; codes alone are not enough |
 | Agent: `403` on a handle | that handle is bound to a different participant token. Use a new handle or restore the token |
+| Agent: `Refusing to commit: this checkout points at …` | the room is bound to another repository. Run the printed `git remote set-url origin <url>`, pull, then sync again - or open a new room if the work really belongs elsewhere |
+| Dashboard: `This room is bound to host/owner` when linking a repo | first writer wins by design; there is no unlink. Read the slug in the card and clone **that** |
 | Agent joined a *different* room than the human | stale client bundle: it mints a new room when it cannot read the link. Re-run the installer; `--check` proves the version advertises `inviteKey` |
 | UI looks unchanged after a deploy | asset filenames are hashed, but the HTML page itself is not — hard refresh |
 | **Bell shows nothing / no banners** | the alert rules only fire for what this client has not seen, so a first poll is silent by design. Check snooze (the bell becomes a crossed-out bell) and the per-kind switches in the panel's Settings tab |
@@ -574,6 +617,13 @@ imported; existing `cowork_rooms` rows stay intact and no migration touches unre
   own edits), and an agent that never calls `cowork_report` shows a derived state without reasoning.
 - Dashboard history is the last 100 events (50 fetched). Nothing is archived; delete rows you don't
   want found.
+- The room's repository rule is only as strong as an honest client: the relay cannot watch git
+  traffic, so it enforces what a client *reports* it pushed to. A client old enough not to send
+  `repoUrl` cannot be refused (and cannot claim the binding either); every refusing path prints the
+  command that fixes the checkout.
+- There is no way to re-link a room's repository, on purpose (see [One repository per room](#one-repository-per-room)).
+  `git clone`/`git push` over a token embedded in a remote URL is not supported — use a credential
+  helper or ssh keys, because a room is shared and a URL in it is not private.
 - Notifications are **tab-scoped**: no VAPID keys and no server push, so a message arriving while no
   dashboard is open cannot wake you. The list holds the last 50 alerts in memory (only the read cursor
   and your switches persist); device alerts are skipped while the document is hidden or unfocused,

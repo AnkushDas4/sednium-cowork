@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
+import { GitMerge } from 'lucide-react';
 import { ActivityRail } from './ActivityRail.js';
 
 interface ChatTerminalProps {
@@ -30,6 +31,8 @@ interface ChatTerminalProps {
   participants: Record<string, ParticipantInfo>;
   currentClientId: string;
   roomCode?: string;
+  /** Shared with the repo already linked for this room, so a pasted link configures the agent fully. */
+  repoUrl?: string;
   onSendMessage: (text: string) => Promise<void>;
   onShowQr?: () => void;
   prefilledInput?: string;
@@ -46,6 +49,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   participants,
   currentClientId,
   roomCode = 'SED-409',
+  repoUrl,
   onSendMessage,
   onShowQr,
   prefilledInput,
@@ -275,7 +279,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   const handleCopyInviteLink = async () => {
     try {
-      await navigator.clipboard.writeText(inviteLink(roomCode));
+      await navigator.clipboard.writeText(inviteLink(roomCode, repoUrl));
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
@@ -312,7 +316,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         m.text.includes('@')
       );
     }
-    if (filter === 'GIT') return m.contentType === 'GIT_PUSH';
+    if (filter === 'GIT') return m.contentType === 'GIT_PUSH' || m.contentType === 'GIT_REPO';
     if (filter === 'LOCKS') {
       return m.contentType === 'FILE_LOCK' || m.contentType === 'FILE_UNLOCK';
     }
@@ -629,6 +633,22 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                       </span>
                     )}
                     <span className="text-muted text-2xs shrink-0">{timeStr}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            // System Event: GIT_REPO - the room deciding which repository everyone works in
+            if (msg.contentType === 'GIT_REPO') {
+              return (
+                <div key={msg.messageId} className="flex justify-center my-2 select-none">
+                  <div className="flex max-w-full items-center gap-2 rounded-full border border-grid bg-panel px-3 py-1.5 text-xs font-mono shadow-sm">
+                    <GitMerge className="h-3.5 w-3.5 shrink-0 text-accent" />
+                    <span className="shrink-0 font-medium text-secondary">@{msg.senderId} linked the room repository</span>
+                    <span className="max-w-[180px] truncate font-semibold text-accent xs:max-w-[280px]" title={msg.text}>
+                      {msg.text?.replace(/^https?:\/\//, '').replace(/^ssh:\/\/git@/, '')}
+                    </span>
+                    <span className="shrink-0 text-2xs text-muted">{timeStr}</span>
                   </div>
                 </div>
               );

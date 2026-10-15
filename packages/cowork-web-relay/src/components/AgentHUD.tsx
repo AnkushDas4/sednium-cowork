@@ -8,13 +8,17 @@ import {
   FileCode,
   MessageSquare,
 } from 'lucide-react';
-import type { ParticipantInfo, FileLockInfo } from '../../api/_types.js';
+import type { ParticipantInfo, FileLockInfo, GitRepoBinding } from '../../api/_types.js';
+import { RepoCard } from './RepoCard.js';
 
 interface AgentHUDProps {
   participants: Record<string, ParticipantInfo>;
   fileLocks: Record<string, FileLockInfo>;
   roomCode?: string;
   onDirectMessage?: (agentId: string) => void;
+  /** The repository every agent in this room must use. Null until it is decided. */
+  gitRepo?: GitRepoBinding | null;
+  onLinkRepo?: (repo: string) => Promise<string | void>;
 }
 
 export const AgentHUD: React.FC<AgentHUDProps> = ({
@@ -22,6 +26,8 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
   fileLocks,
   roomCode,
   onDirectMessage,
+  gitRepo = null,
+  onLinkRepo,
 }) => {
   const [now, setNow] = useState(Date.now());
 
@@ -51,6 +57,9 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
 
   return (
     <div className="h-full flex flex-col divide-y divide-grid bg-canvas overflow-y-auto scroll-panel">
+      {/* 0. The repository this room works in - decided once, obeyed by everyone */}
+      <RepoCard gitRepo={gitRepo} onLink={onLinkRepo} />
+
       {/* 1. Header Bar for Agent Section */}
       <div className="px-4 xs:px-5 py-3.5 bg-panel flex items-center justify-between text-xs font-mono uppercase text-muted tracking-wider shrink-0">
         <div className="flex items-center gap-2">

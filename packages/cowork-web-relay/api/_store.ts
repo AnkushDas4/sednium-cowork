@@ -109,7 +109,7 @@ export function cleanExpiredLocks(room: RoomState): boolean {
 }
 
 export function createDefaultRoom(roomCode: string, inviteHash?: string): RoomState {
-  return { roomCode, inviteHash, createdAt: Date.now(), latestCommit: null,
+  return { roomCode, inviteHash, createdAt: Date.now(), latestCommit: null, gitRepo: null,
     participants: {}, fileLocks: {}, inboxes: {}, history: [], participantKeys: {} };
 }
 

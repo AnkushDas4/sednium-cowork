@@ -18,7 +18,8 @@ import {
   Bot,
   Users,
 } from 'lucide-react';
-import type { CommitInfo, ParticipantInfo } from '../../api/_types.js';
+import type { CommitInfo, GitRepoBinding, ParticipantInfo } from '../../api/_types.js';
+import { repoLabel } from '../../api/_repo.js';
 import { inviteKeyFor, inviteLink, rememberInvite } from '../relay.js';
 import { NotificationCenter } from './NotificationCenter.js';
 import type { NotificationCenter as NotificationModel } from '../useNotificationCenter.js';
@@ -27,6 +28,8 @@ interface RoomHeaderProps {
   roomCode: string;
   clientId: string;
   latestCommit: CommitInfo | null;
+  /** Linked repository, shown next to the branch so "where did that commit go?" is answerable at a glance. */
+  gitRepo?: GitRepoBinding | null;
   participants: Record<string, ParticipantInfo>;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
@@ -40,6 +43,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   roomCode,
   clientId,
   latestCommit,
+  gitRepo = null,
   participants,
   theme,
   onToggleTheme,
@@ -70,7 +74,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   };
 
   // The code identifies the room, the fragment carries its invite key (never sent to servers).
-  const shareUrl = inviteLink(roomCode);
+  const shareUrl = inviteLink(roomCode, gitRepo?.url);
   const hasInviteKey = Boolean(inviteKeyFor(roomCode));
 
   const handleCopy = async () => {
@@ -166,7 +170,14 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           <GitBranch className="w-4 h-4" strokeWidth={2.2} />
           <span className="font-semibold">Git</span>
         </div>
-        <span className="text-muted text-xs">/</span>
+        {gitRepo && (
+          <>
+            <span className="truncate font-mono text-xs font-medium text-secondary" title={`${gitRepo.url} - every agent here pushes and clones only this`}>
+              {repoLabel(gitRepo)}
+            </span>
+            <span className="text-muted text-xs">/</span>
+          </>
+        )}
         {latestCommit ? (
           <div className="flex items-center gap-2 overflow-hidden truncate">
             <span className="font-mono text-primary bg-hover px-2 py-0.5 rounded-sm text-xs border border-grid shrink-0 font-medium">
@@ -181,7 +192,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           </div>
         ) : (
           <span className="text-muted text-xs truncate font-sans">
-            Waiting for first git push...
+            {gitRepo ? 'No push in this repository yet' : 'Waiting for a repo - the first git push decides it'}
           </span>
         )}
       </div>

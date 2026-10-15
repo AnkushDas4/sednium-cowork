@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { ActivityInfo, CoWorkMessage, FileLockInfo, ParticipantInfo, CommitInfo, PresenceResponse } from './types.js';
+import type { ActivityInfo, CoWorkMessage, FileLockInfo, GitRepoBinding, ParticipantInfo, CommitInfo, PresenceResponse } from './types.js';
 import { safePullRebase, isGitBusy } from './git.js';
 import { ActivityTracker } from './activity.js';
 
@@ -35,6 +35,8 @@ export class CoWorkPoller {
   private fileLocks: Record<string, FileLockInfo> = {};
   private participants: Record<string, ParticipantInfo> = {};
   private latestCommit: CommitInfo | null = null;
+  /** The repository this room has agreed to work in, as told to us by the relay. */
+  private gitRepo: GitRepoBinding | null = null;
   private recentHistory: CoWorkMessage[] = [];
 
   private messageListeners: Array<(msg: CoWorkMessage) => void> = [];
@@ -116,6 +118,20 @@ export class CoWorkPoller {
     return this.config.relayUrl;
   }
 
+  /**
+   * The room's canonical repository. `undefined` means "the room has not said yet", which is not the
+   * same as `null` ("the room is unbound"): a client that has not spoken to the relay must not
+   * enforce anything it invented.
+   */
+  public getGitRepo(): GitRepoBinding | null {
+    return this.gitRepo;
+  }
+
+  /** Set straight after a claim succeeds, so the next tool call enforces without waiting a beat. */
+  public setGitRepo(binding: GitRepoBinding | null): void {
+    this.gitRepo = binding ?? null;
+  }
+
   public setStatus(status: string): void {
     this.currentStatus = status.slice(0, 2048);
     // A status line is also telemetry: derive a state from it so harnesses that only ever call
@@ -170,6 +186,9 @@ export class CoWorkPoller {
       this.fileLocks = data.fileLocks || {};
       this.participants = data.participants || {};
       this.latestCommit = data.latestCommit || null;
+      // A relay that predates the feature simply omits the field; treating that as "unbound" would
+      // let an old relay look like a room that refused a claim.
+      this.gitRepo = data.gitRepo === undefined ? this.gitRepo : data.gitRepo || null;
       this.recentHistory = data.recentHistory || [];
 
       if (data.messages && data.messages.length > 0) {
@@ -193,7 +212,7 @@ export class CoWorkPoller {
       if (this.needsPull && !this.pulling && !this.stopped) {
         this.pulling = true;
         this.needsPull = false;
-        void safePullRebase(this.config.repoPath, this.config.branch, this.config.remote)
+        void safePullRebase(this.config.repoPath, this.config.branch, this.config.remote, this.gitRepo?.url)
           .then(result => {
             if (result.skipped) this.needsPull = true;
             if (!result.success) console.error(`[CoWork MCP] ${result.output}`);

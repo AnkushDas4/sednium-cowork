@@ -1,4 +1,5 @@
 import { relayRequest, captureInviteFromUrl, inviteKeyFor, lastHandle } from './relay.js';
+import { parseRepoUrl } from '../api/_repo.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
@@ -13,6 +14,7 @@ import type {
   FileLockInfo,
   CommitInfo,
   CoWorkMessage,
+  GitRepoBinding,
   PresenceResponse,
 } from '../api/_types.js';
 
@@ -58,6 +60,8 @@ export const App: React.FC = () => {
   const [participants, setParticipants] = useState<Record<string, ParticipantInfo>>({});
   const [fileLocks, setFileLocks] = useState<Record<string, FileLockInfo>>({});
   const [latestCommit, setLatestCommit] = useState<CommitInfo | null>(null);
+  /** The repository this room works in. Null until a human links one or the first push decides it. */
+  const [gitRepo, setGitRepo] = useState<GitRepoBinding | null>(null);
   const [messages, setMessages] = useState<CoWorkMessage[]>([]);
   const pollTriggerRef = useRef<(() => void) | null>(null);
 
@@ -111,6 +115,7 @@ export const App: React.FC = () => {
         setParticipants(data.participants || {});
         setFileLocks(data.fileLocks || {});
         setLatestCommit(data.latestCommit || null);
+        setGitRepo(data.gitRepo ?? null);
 
         // Only the messages drained by this beat: recentHistory is replayed on mount and must never
         // turn into a wall of alerts about what happened before this tab existed.
@@ -183,7 +188,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleJoin = (joinedRoom: string, joinedId: string) => {
-    setMessages([]); setParticipants({}); setFileLocks({}); setLatestCommit(null);
+    setMessages([]); setParticipants({}); setFileLocks({}); setLatestCommit(null); setGitRepo(null);
     setConnectionError(''); setInviteNotice('');
     setRoomCode(joinedRoom);
     setClientId(joinedId);
@@ -203,11 +208,32 @@ export const App: React.FC = () => {
     setConnected(false);
     setRoomCode('');
     setMessages([]);
+    setGitRepo(null);
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.delete('room');
       url.searchParams.delete('as');
       window.history.pushState({}, '', url.toString());
+    }
+  };
+
+  /**
+   * Links the room's repository. A refusal comes back as text instead of throwing, because "this room
+   * is already bound to X" is something the human should read where they typed it.
+   */
+  const handleLinkRepo = async (repo: string): Promise<string | void> => {
+    if (!roomCode || !clientId) return 'Join a room first.';
+    const parsed = parseRepoUrl(repo);
+    if (!parsed) return 'That is not a repository. Use owner/repo or a full URL.';
+    try {
+      const res = await relayRequest<{ ok: boolean; gitRepo?: GitRepoBinding | null }>('/api/send', {
+        roomCode, senderId: clientId, targetId: 'all', contentType: 'GIT_REPO', text: parsed.url,
+      }, roomCode);
+      if (res.gitRepo !== undefined) setGitRepo(res.gitRepo ?? null);
+      setTimeout(() => pollTriggerRef.current?.(), 150);
+      return;
+    } catch (err) {
+      return err instanceof Error ? err.message : 'The relay refused that repository.';
     }
   };
 
@@ -270,6 +296,7 @@ export const App: React.FC = () => {
             roomCode={roomCode}
             clientId={clientId}
             latestCommit={latestCommit}
+            gitRepo={gitRepo}
             participants={participants}
             theme={theme}
             center={center}
@@ -353,6 +380,8 @@ export const App: React.FC = () => {
                 participants={participants}
                 fileLocks={fileLocks}
                 roomCode={roomCode}
+                gitRepo={gitRepo}
+                onLinkRepo={handleLinkRepo}
                 onDirectMessage={(agentId) => {
                   setPrefilledMessage(`@${agentId} `);
                   setMobileTab('stream');
@@ -372,6 +401,7 @@ export const App: React.FC = () => {
                 messages={messages}
                 currentClientId={clientId}
                 roomCode={roomCode}
+                repoUrl={gitRepo?.url}
                 onSendMessage={handleSendMessage}
                 prefilledInput={prefilledMessage}
                 onClearPrefill={() => setPrefilledMessage('')}

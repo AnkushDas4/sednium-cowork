@@ -217,11 +217,108 @@ await check('GIT_PUSH with an @mention still reaches every peer', async () => {
   return 'broadcast kept, sender locks released';
 });
 
+/** One repository per room: linked once (or decided by the first push), then enforced. */
+const vfyRepo = `vfy${id()}/alpha`;
+const vfyOther = `vfy${id()}/beta`;
+
+await check('a room starts unbound and links exactly one repository', async () => {
+  const before = await presence({ roomCode: room, clientId: a.handle }, a.token);
+  expect(before.body.gitRepo === null || before.body.gitRepo === undefined,
+    `a fresh room already reports a repo: ${JSON.stringify(before.body.gitRepo)}`);
+  const link = await send({ roomCode: room, senderId: a.handle, contentType: 'GIT_REPO', text: vfyRepo }, a.token);
+  expect(link.status === 200, `link returned ${link.status}: ${JSON.stringify(link.body)}`);
+  expect(link.body.gitRepo?.url === `https://github.com/${vfyRepo}`, `stored as ${JSON.stringify(link.body.gitRepo)}`);
+  expect(link.body.gitRepo?.source === 'linked', `source was ${link.body.gitRepo?.source}`);
+  const after = await presence({ roomCode: room, clientId: b.handle }, b.token);
+  expect(after.body.gitRepo?.slug === vfyRepo, `peer heartbeat does not carry the binding: ${JSON.stringify(after.body.gitRepo)}`);
+  return `bound to ${link.body.gitRepo.url}, and every heartbeat repeats it`;
+});
+
+await check('a credential inside a claimed remote is stripped before it is stored', async () => {
+  const r = await send({
+    roomCode: room, senderId: b.handle, contentType: 'GIT_REPO',
+    text: `https://oauth2:vfySecretDoNotStore@github.com/${vfyRepo}`,
+  }, b.token);
+  expect(r.status === 200, `re-link of the same repo returned ${r.status}`);
+  expect(r.body.code === 'GIT_REPO_ALREADY_LINKED', `expected an idempotent no-op, got ${JSON.stringify(r.body).slice(0, 160)}`);
+  const peek = await presence({ roomCode: room, clientId: a.handle }, a.token);
+  expect(!JSON.stringify(peek.body).includes('vfySecretDoNotStore'), 'the credential came back in the room state');
+  expect(!JSON.stringify(r.body).includes('oauth2'), 'the raw remote was echoed');
+  return 'same repository, different spelling: accepted as a no-op, credential never stored';
+});
+
+await check('a second, different repository is refused (409) and the binding holds', async () => {
+  const r = await send({ roomCode: room, senderId: b.handle, contentType: 'GIT_REPO', text: `git@github.com:${vfyOther}.git` }, b.token);
+  expect(r.status === 409, `competing link returned ${r.status}`);
+  expect(r.body?.code === 'GIT_REPO_TAKEN', `code was ${r.body?.code}`);
+  expect((r.body?.error || '').includes(vfyRepo), `message does not name the bound repo: ${r.body?.error}`);
+  const peek = await presence({ roomCode: room, clientId: b.handle }, b.token);
+  expect(peek.body.gitRepo?.slug === vfyRepo, `the binding moved: ${peek.body.gitRepo?.slug}`);
+  return 'immutable by design; a new room is the way to change it';
+});
+
+await check('a push to another repository is refused, leaving locks and history untouched', async () => {
+  const held = `src/vfy-repo-${id()}.ts`;
+  const claim = await send({ roomCode: room, senderId: b.handle, contentType: 'FILE_LOCK', files: [held], text: 'vfy repo guard' }, b.token);
+  expect(claim.status === 200, `claim returned ${claim.status}`);
+  const commitBefore = (await presence({ roomCode: room, clientId: b.handle }, b.token)).body.latestCommit;
+  const r = await send({
+    roomCode: room, senderId: b.handle, contentType: 'GIT_PUSH', text: 'feat: to the wrong place',
+    commitHash: 'abcdef1234567', repoUrl: `https://github.com/${vfyOther}.git`,
+  }, b.token);
+  expect(r.status === 409, `mismatched push returned ${r.status}`);
+  expect(r.body?.code === 'GIT_REPO_MISMATCH', `code was ${r.body?.code}`);
+  const after = await presence({ roomCode: room, clientId: a.handle, ack: [] }, a.token);
+  expect(JSON.stringify(after.body.latestCommit) === JSON.stringify(commitBefore), 'a refused push still moved latestCommit');
+  expect(after.body.fileLocks[held], 'a refused push released the sender lock');
+  await send({ roomCode: room, senderId: b.handle, contentType: 'FILE_UNLOCK', files: [held] }, b.token);
+  return '409 with an actionable hint; no half-applied state';
+});
+
+await check('a push to the room repository is accepted however it is spelled', async () => {
+  const r = await send({
+    roomCode: room, senderId: a.handle, contentType: 'GIT_PUSH', text: 'feat: vfy room repo',
+    commitHash: '1234abcd5678', repoUrl: `git@github.com:${vfyRepo}.git`,
+  }, a.token);
+  expect(r.status === 200, `matching push returned ${r.status}: ${JSON.stringify(r.body)}`);
+  expect(r.body.gitRepo?.slug === vfyRepo, `binding changed on a good push: ${JSON.stringify(r.body.gitRepo)}`);
+  return 'ssh form matched the https binding - comparison is on repositories, not strings';
+});
+
+await check('with nobody linked, the first push decides the repository for good', async () => {
+  const side = await api('/api/presence?action=new-room');
+  expect(side.status === 200 && side.body.roomCode, `cannot mint a side room: ${side.status}`);
+  const sideRoom = side.body.roomCode;
+  // api() authenticates with the module-level key, so the side room has to borrow the slot.
+  const savedKey = inviteKey;
+  inviteKey = typeof side.body.inviteKey === 'string' ? side.body.inviteKey : '';
+  const sideSend = (payload, auth) => api('/api/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': auth },
+    body: JSON.stringify({ roomCode: sideRoom, ...payload }),
+  });
+  const who = `vfy-c-${id()}`;
+  const whoToken = token(); // one handle, one token: a second token for the same handle is a 403 by design
+  try {
+    const first = await sideSend({ senderId: who, contentType: 'GIT_PUSH', text: 'chore: first', commitHash: 'ffff0000aaaa', repoUrl: `https://gitlab.com/${vfyOther}` }, whoToken);
+    expect(first.status === 200, `first push returned ${first.status}: ${JSON.stringify(first.body)}`);
+    expect(first.body.gitRepo?.slug === vfyOther, `no adoption: ${JSON.stringify(first.body.gitRepo)}`);
+    expect(first.body.gitRepo?.source === 'push' && first.body.gitRepo?.by === who, `adoption not attributed: ${JSON.stringify(first.body.gitRepo)}`);
+    const late = await sideSend({ senderId: who, contentType: 'GIT_REPO', text: `github.com/${vfyRepo}` }, whoToken);
+    expect(late.status === 409 && late.body.code === 'GIT_REPO_TAKEN', `a later link was not refused: ${late.status}`);
+    return `${vfyOther} claimed by the pusher; a later link is refused`;
+  } finally {
+    inviteKey = savedKey;
+  }
+  return `${vfyOther} claimed by the pusher; a later link is refused`;
+});
+
 await check('malformed payloads are rejected (400), never a crash', async () => {
   const cases = [
     { text: 123 }, { targetId: 'constructor' }, { senderId: '__proto__' },
     { contentType: 'NOT_A_TYPE' }, { files: 'src/a.ts' }, { commitHash: 42 },
     { contentType: 'FILE_LOCK', files: ['../../etc/passwd'] }, { contentType: 'FILE_LOCK', files: [] },
+    { contentType: 'GIT_REPO', text: '/home/dev/checkout' }, { contentType: 'GIT_REPO', text: 'https://github.com/onlyowner' },
   ];
   for (const payload of cases) {
     const r = await send({ roomCode: room, senderId: a.handle, ...payload }, a.token);

@@ -1,9 +1,13 @@
 import path from 'node:path';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { parseRepoUrl, type RepoRef } from './_repo.js';
 import type { ActivityInfo, ActivityState, RoomState } from './_types.js';
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  /** A machine-readable code lets a client branch instead of matching on prose. */
+  constructor(public status: number, message: string, public code?: string, public hint?: string) {
+    super(message);
+  }
 }
 export function text(value: unknown, name: string, max = 256): string {
   if (typeof value !== 'string' || !value.trim() || value.length > max) {
@@ -91,6 +95,22 @@ export function activityInfo(value: unknown): ActivityInfo | null | undefined {
   return out;
 }
 
+/**
+ * Validate a claimed repository remote. Anything unusable is a 400 with the accepted spellings in
+ * the message, because the agent that hits this has to fix a git config, not retry.
+ */
+export function repoRef(value: unknown, name = 'repo'): RepoRef {
+  const parsed = parseRepoUrl(value);
+  if (!parsed) {
+    throw new ApiError(
+      400,
+      `Invalid ${name}: expected owner/repo, https://host/owner/repo or git@host:owner/repo.git (a credential is stripped, never stored).`,
+      'GIT_REPO_INVALID',
+    );
+  }
+  return parsed;
+}
+
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
 /** Mint a room's invite key: the secret that authorises the room code. */
@@ -147,7 +167,9 @@ const STORAGE_HINTS: Record<string, string> = {
 };
 
 export function errorResponse(err: unknown): { status: number; body: Record<string, unknown> } {
-  if (err instanceof ApiError) return { status: err.status, body: { ok: false, error: err.message } };
+  if (err instanceof ApiError) {
+    return { status: err.status, body: { ok: false, error: err.message, code: err.code, hint: err.hint } };
+  }
   const e = err as { message?: string; code?: string; errno?: string };
   if (typeof e?.message === 'string' && e.message.startsWith('DATABASE_URL')) {
     return { status: 503, body: { ok: false, error: 'Relay storage misconfigured', code: 'DATABASE_URL_INVALID', hint: e.message } };

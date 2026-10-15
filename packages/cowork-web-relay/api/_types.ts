@@ -7,6 +7,7 @@ export type ContentType =
   | "FILE_LOCK" 
   | "FILE_UNLOCK" 
   | "GIT_PUSH" 
+  | "GIT_REPO" 
   | "STATUS";
 
 export interface CoWorkMessage {
@@ -71,6 +72,28 @@ export interface ParticipantInfo {
   activity?: ActivityInfo;
 }
 
+/**
+ * The one git remote a room agrees to work in. Linked once and then immutable: "the first push
+ * decides it, always" is only a rule if nothing can quietly change it afterwards, and a room whose
+ * members disagree about the repository is a new room, not a reconfiguration.
+ *
+ * `url` is canonical and credential-free - see `api/_repo.ts`. A room's state is readable by every
+ * participant in it, so a remote that arrived as `https://user:tok@host/x/y` is stored without the
+ * user, and every error message quotes the stored form rather than what the client sent.
+ */
+export interface GitRepoBinding {
+  url: string;
+  /** host[:port], lower case. */
+  host: string;
+  /** `owner/repo`, or `group/sub/repo` on a server that nests. */
+  slug: string;
+  /** Handle that linked it - a peer's handle, never a token. */
+  by: string;
+  at: number;
+  /** How the rule arrived: someone linked it, or the first push decided it. */
+  source: 'linked' | 'push';
+}
+
 export interface CommitInfo {
   hash: string;
   message: string;
@@ -85,6 +108,7 @@ export interface RoomState {
   roomCode: string;
   createdAt: number;
   latestCommit: CommitInfo | null;
+  gitRepo?: GitRepoBinding | null;
   participants: Record<string, ParticipantInfo>;
   fileLocks: Record<string, FileLockInfo>; // filePath -> lock info
   inboxes: Record<string, CoWorkMessage[]>; // clientId -> queued unread messages
@@ -95,6 +119,10 @@ export interface SendMessageResponse {
   ok: boolean;
   messageId?: string;
   error?: string;
+  /** Set by the relay for a machine-readable outcome that is not an error (e.g. `already-linked`). */
+  code?: string;
+  note?: string;
+  gitRepo?: GitRepoBinding | null;
   lockedBy?: string;
   conflictingFiles?: string[];
   roomStateSummary?: {
@@ -102,6 +130,7 @@ export interface SendMessageResponse {
     activeFileLocks: number;
     participantCount: number;
     latestCommit: CommitInfo | null;
+    gitRepo: GitRepoBinding | null;
   };
 }
 
@@ -112,5 +141,6 @@ export interface PresenceResponse {
   fileLocks: Record<string, FileLockInfo>;
   participants: Record<string, ParticipantInfo>;
   latestCommit: CommitInfo | null;
+  gitRepo: GitRepoBinding | null;
   recentHistory: CoWorkMessage[];
 }

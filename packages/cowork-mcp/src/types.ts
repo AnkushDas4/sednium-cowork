@@ -7,6 +7,7 @@ export type ContentType =
   | "FILE_LOCK" 
   | "FILE_UNLOCK" 
   | "GIT_PUSH" 
+  | "GIT_REPO" 
   | "STATUS";
 
 export interface CoWorkMessage {
@@ -57,6 +58,16 @@ export interface ParticipantInfo {
   activity?: ActivityInfo;
 }
 
+/** Mirrors the relay's binding of one canonical git remote to a room. See `api/_repo.ts`. */
+export interface GitRepoBinding {
+  url: string;
+  host: string;
+  slug: string;
+  by: string;
+  at: number;
+  source: 'linked' | 'push';
+}
+
 export interface CommitInfo {
   hash: string;
   message: string;
@@ -71,6 +82,7 @@ export interface RoomState {
   roomCode: string;
   createdAt: number;
   latestCommit: CommitInfo | null;
+  gitRepo?: GitRepoBinding | null;
   participants: Record<string, ParticipantInfo>;
   fileLocks: Record<string, FileLockInfo>;
   inboxes: Record<string, CoWorkMessage[]>;
@@ -88,6 +100,7 @@ export interface SendMessageResponse {
     activeFileLocks: number;
     participantCount: number;
     latestCommit: CommitInfo | null;
+    gitRepo: GitRepoBinding | null;
   };
 }
 
@@ -98,5 +111,6 @@ export interface PresenceResponse {
   fileLocks: Record<string, FileLockInfo>;
   participants: Record<string, ParticipantInfo>;
   latestCommit: CommitInfo | null;
+  gitRepo: GitRepoBinding | null;
   recentHistory: CoWorkMessage[];
 }

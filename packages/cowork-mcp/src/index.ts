@@ -12,8 +12,9 @@ import path from 'node:path';
 import { CoWorkPoller } from './poller.js';
 import type { ParticipantInfo } from './types.js';
 import { parseInviteLink } from './invite.js';
-import { safeCommitAndPush, getLatestCommit, getGit } from './git.js';
-import type { ContentType, CoWorkMessage } from './types.js';
+import { safeCommitAndPush, getLatestCommit, getGit, getRemoteUrl, cloneRepo } from './git.js';
+import { cloneCommand, parseRepoUrl, sameRepo } from './repo.js';
+import type { ContentType, CoWorkMessage, GitRepoBinding } from './types.js';
 
 let activePoller: CoWorkPoller | null = null;
 
@@ -27,6 +28,8 @@ const activityModeFrom = (raw: string): 'full' | 'state' | 'off' => {
   return v === 'off' || v === 'state' ? v : 'full';
 };
 const slug = (v: string): string => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'agent';
+/** Opt-out flags: only an explicit 0/false/off/no counts, because silence means "do the safe thing". */
+const falsy = (v: string): boolean => ['0', 'false', 'off', 'no'].includes(v.trim().toLowerCase());
 
 /**
  * Everyone in a room is an author of instructions for everyone else's agent. The relay proves a
@@ -160,6 +163,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             repoPath: {
               type: 'string',
               description: 'Local filesystem absolute path to the git repository (defaults to current working directory).',
+            },
+            repoUrl: {
+              type: 'string',
+              description:
+                'Optional GitHub (or any git) repository this room must use, e.g. "acme/app" or git@github.com:acme/app.git. ' +
+                'If the room has no repository yet, this links it; if it already has one, the room wins and this is reported as a mismatch. ' +
+                'A credential in the URL is stripped before anything is stored. Defaults to COWORK_GIT_REPO or the &repo= part of an invite link.',
+            },
+            cloneIfMissing: {
+              type: 'boolean',
+              description:
+                'When the room has a repository and this directory is empty, clone it here (default true: an empty directory has nothing to lose). ' +
+                'Set false, or COWORK_CLONE_REPO=0, to be told the command instead.',
             },
             relayUrl: {
               type: 'string',
@@ -334,13 +350,101 @@ async function getAsciiQr(url: string): Promise<string> {
  */
 async function sendToRelay(poller: CoWorkPoller, init: RequestInit, expectedStatuses: number[] = [200]): Promise<Response> {
   const response = await fetch(`${poller.getRelayUrl()}/api/send`, { ...init, signal: AbortSignal.timeout(10_000) });
-  let data: { ok?: boolean; error?: string } = {};
+  let data: { ok?: boolean; error?: string; code?: string; hint?: string } = {};
   try { data = await response.clone().json() as typeof data; } catch { /* non-JSON relay/proxy response */ }
-  if (!expectedStatuses.includes(response.status)) {
-    throw new Error(data.error || `Relay rejected request (${response.status})`);
+  if (!expectedStatuses.includes(response.status) || (response.status === 200 && !data.ok)) {
+    // The code rides along so a caller can act on a refusal instead of parsing prose for it.
+    throw Object.assign(
+      new Error(data.error || `Relay rejected request (${response.status})`),
+      { relayCode: data.code, relayHint: data.hint, relayStatus: response.status },
+    );
   }
-  if (response.status === 200 && !data.ok) throw new Error(data.error || 'Relay did not accept request');
   return response;
+}
+
+/** Read a JSON body without letting a bad response become a second error. */
+async function readBody<T>(response: Response): Promise<Partial<T>> {
+  try { return (await response.json()) as T; } catch { return {}; }
+}
+
+interface RepoPlan {
+  binding: GitRepoBinding | null;
+  /** What the room's rule is, for the connect output. */
+  line: string;
+  /** The working copy disagrees with the room. Never auto-fixed: rewriting someone's remote is theirs to do. */
+  warning: string;
+  cloned: string;
+}
+
+/**
+ * One repository per room. A human (or this agent's config) can name it; if nobody has, the first
+ * push decides it, permanently. Resolved at connect time so an agent learns the rule before it edits
+ * anywhere, and the only filesystem action taken is a clone into a directory that is already empty.
+ */
+async function resolveRoomRepo(
+  poller: CoWorkPoller,
+  opts: { configured?: string; cloneIfMissing: boolean; repoPath: string; remote: string },
+): Promise<RepoPlan> {
+  let binding = poller.getGitRepo();
+  let refused = '';
+
+  if (!binding && opts.configured) {
+    const wanted = parseRepoUrl(opts.configured);
+    if (!wanted) {
+      refused = `Ignored the configured repo "${String(opts.configured).slice(0, 80)}": not a repository remote. Use owner/repo or a full URL.`;
+    } else {
+      try {
+        const response = await sendToRelay(poller, {
+          method: 'POST',
+          headers: poller.getHeaders(),
+          body: JSON.stringify({
+            roomCode: poller.getRoomCode(),
+            senderId: poller.getAgentId(),
+            targetId: 'all',
+            contentType: 'GIT_REPO',
+            text: wanted.url,
+          }),
+        }, [200, 409]);
+        const body = await readBody<{ gitRepo?: GitRepoBinding | null; note?: string; code?: string; hint?: string }>(response);
+        if (body.gitRepo) {
+          binding = body.gitRepo;
+          poller.setGitRepo(body.gitRepo);
+        } else if (body.code === 'GIT_REPO_TAKEN') {
+          refused = body.hint || '';
+          await poller.poll().catch(() => undefined); // whatever won, we must obey it
+          binding = poller.getGitRepo();
+        }
+      } catch (err: any) {
+        refused = `Could not link the repository to this room: ${err?.message || String(err)}`;
+      }
+    }
+  }
+
+  const local = parseRepoUrl(getRemoteUrl(opts.repoPath, opts.remote));
+  const plan: RepoPlan = { binding, line: '', warning: refused, cloned: '' };
+
+  if (binding) {
+    plan.line = `🔗 Room repository: ${binding.host}/${binding.slug} (${binding.url}) — ` +
+      (binding.source === 'push' ? `decided by @${binding.by}'s first push` : `linked by @${binding.by}`).toString() +
+      `. Push and clone only here; cowork_sync refuses any other remote.`;
+    if (!local) {
+      if (opts.cloneIfMissing) {
+        const outcome = await cloneRepo(binding.url, opts.repoPath);
+        if (outcome.success) plan.cloned = outcome.output;
+        else plan.warning = `${plan.warning ? plan.warning + '\n' : ''}Not a git repository here, and cloning was refused: ${outcome.output}`;
+      } else {
+        plan.warning = `${plan.warning ? plan.warning + '\n' : ''}This directory is not a git repository. Get the room's code with: ${cloneCommand(binding)}`;
+      }
+    } else if (!sameRepo(local.url, binding.url)) {
+      plan.warning = `${plan.warning ? plan.warning + '\n' : ''}This checkout points at ${local.slug}, not the room's ${binding.slug}. ` +
+        `Fix it with: git remote set-url ${opts.remote} ${binding.url} — until then a push from here is refused.`;
+    }
+  } else if (local) {
+    plan.line = `🔗 No repository linked for this room yet: your first push (${local.slug}) decides it for everyone, permanently.`;
+  } else {
+    plan.line = `🔗 No repository linked for this room, and this directory is not a git repository. Pass repoUrl to cowork_connect to pick one.`;
+  }
+  return plan;
 }
 
 // Tool Execution Handler
@@ -450,6 +554,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         activePoller.start();
         activePoller.setActivity({ state: 'idle', summary: `Connected as @${agentId} via ${harness}`, tool: 'cowork_connect' });
 
+        const repoPlan = await resolveRoomRepo(activePoller, {
+          configured: String(args?.repoUrl || env('COWORK_GIT_REPO') || invite.repo || '') || undefined,
+          cloneIfMissing: args?.cloneIfMissing === undefined ? !falsy(env('COWORK_CLONE_REPO')) : args.cloneIfMissing === true,
+          repoPath,
+          remote: String(args?.remote || env('COWORK_REMOTE') || 'origin'),
+        });
+
         const joinKey = activePoller.getInviteKey();
         // Only the agent that just minted the room gets to broadcast the credential. A joiner was
         // *given* the key; repeating it here would leak the room's bearer secret into model
@@ -476,6 +587,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `📱 Scan QR on phone:\n${asciiQr}\n\n` +
                     `📁 Repository Path: ${repoPath}\n` +
                     `🌿 Git Branch: ${branch} (${activePoller.getRemote()})\n` +
+                    `${repoPlan.line}\n` +
+                    (repoPlan.cloned ? `📥 ${repoPlan.cloned}\n` : '') +
+                    (repoPlan.warning ? `⚠️ ${repoPlan.warning}\n` : '') +
                     `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`,
             },
           ],
@@ -599,7 +713,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         activePoller.setStatus(`Syncing git to ${targetBranch}`);
 
-        const gitRes = await safeCommitAndPush(activePoller.getRepoPath(), commitMessage, targetBranch, activePoller.getRemote(), args?.files as string[]);
+        // The room's repository, when it has one, is the only allowed target - checked before the
+        // commit, so work never lands somewhere the rest of the room will never look.
+        const roomRepo = activePoller.getGitRepo();
+        const gitRes = await safeCommitAndPush(
+          activePoller.getRepoPath(),
+          commitMessage,
+          targetBranch,
+          activePoller.getRemote(),
+          args?.files as string[],
+          roomRepo?.url,
+        );
 
         if (!gitRes.success) {
           activePoller.setStatus('Git sync failed');
@@ -615,8 +739,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         // A notification failure must not be reported as a successful sync.
+        let pushNote = '';
         try {
-          await sendToRelay(activePoller, {
+          const response = await sendToRelay(activePoller, {
             method: 'POST',
             headers: activePoller.getHeaders(),
             body: JSON.stringify({
@@ -628,10 +753,30 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               commitHash: gitRes.hash,
               senderModel: activePoller.getModel(),
               senderHarness: activePoller.getHarness(),
+              // What this checkout actually pushes to. Unlinks nothing that is already linked, and
+              // claims the room's repository when nobody has - the rule the human asked for.
+              repoUrl: getRemoteUrl(activePoller.getRepoPath(), activePoller.getRemote()) || undefined,
             }),
-          });
-
-        } catch {
+          }, [200, 409]);
+          const body = await readBody<{ note?: string; gitRepo?: GitRepoBinding | null }>(response);
+          if (body.gitRepo) activePoller.setGitRepo(body.gitRepo);
+          if (body.note) pushNote = `\n${body.note}`;
+        } catch (err: any) {
+          if (err?.relayCode === 'GIT_REPO_MISMATCH') {
+            activePoller.setStatus('Git push refused by the room: wrong repository');
+            return {
+              isError: true,
+              content: [
+                {
+                  type: 'text',
+                  text: `❌ The room rejected this push: ${err.message}\n` +
+                    `${err.relayHint || ''}\n` +
+                    `Commit ${gitRes.hash} exists locally and was pushed to your remote, so nothing is lost - ` +
+                    `but peers will not pull it, and your file locks are still held. Fix the remote and push again.`,
+                },
+              ],
+            };
+          }
           activePoller.setStatus('Git pushed; relay notification failed');
           throw new Error(`Git commit ${gitRes.hash} was pushed, but relay notification failed. Locks may remain held and peers were not notified. Do not blindly repeat the commit.`);
         }
@@ -645,7 +790,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `  Hash: ${gitRes.hash || 'HEAD'}\n` +
                     `  Message: "${commitMessage}"\n\n` +
                     `🔓 All file locks held by @${activePoller.getAgentId()} have been liberated.\n` +
-                    `📡 Peers have been notified; only peers with autoPull enabled will pull.`,
+                    `📡 Peers have been notified; only peers with autoPull enabled will pull.` +
+                    pushNote,
             },
           ],
         };
@@ -686,6 +832,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                           .map(([f, l]) => `  - ${f} (locked by @${l.lockedBy}: "${l.task}")`)
                           .join('\n') + '\n') +
                     (latestCommit ? `\nLatest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${latestCommit.author}` : '') +
+                    (() => {
+                      const repo = activePoller.getGitRepo();
+                      return repo
+                        ? `\nRoom repository: ${repo.host}/${repo.slug} (${repo.url}) — push and clone only here.`
+                        : `\nRoom repository: none linked yet. The first push decides it for everyone.`;
+                    })() +
                     renderRoster(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],

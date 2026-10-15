@@ -53,11 +53,16 @@ export function captureInviteFromUrl(): { roomCode: string; inviteKey: string; h
   return { roomCode, inviteKey: inviteKey || inviteKeyFor(roomCode), hadInvite: Boolean(inviteKey) };
 }
 
-/** Invite link for sharing: code as a query param (identifies the room), key as a fragment (authorises it). */
-export function inviteLink(roomCode: string): string {
+/**
+ * Invite link for sharing: code as a query param (identifies the room), key as a fragment (authorises
+ * it). A linked repository rides along as `&repo=` so an agent told only "join this link" is configured
+ * for the right repository before its first push - the room still wins if the binding says otherwise.
+ */
+export function inviteLink(roomCode: string, repoUrl?: string): string {
   const key = inviteKeyFor(roomCode);
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://cowork.sednium.com';
-  return `${origin}/?room=${encodeURIComponent(roomCode)}${key ? `#k=${key}` : ''}`;
+  const repo = repoUrl ? `&repo=${encodeURIComponent(repoUrl)}` : '';
+  return `${origin}/?room=${encodeURIComponent(roomCode)}${repo}${key ? `#k=${key}` : ''}`;
 }
 
 export class RelayError extends Error {

@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { mutateRoom, enqueue } from './_store.js';
-import { ApiError, id, text as validateText, files as validateFiles, authorize, authorizeInvite, errorResponse } from './_validation.js';
-import type { CoWorkMessage, SendMessageResponse, ContentType } from './_types.js';
+import { ApiError, id, text as validateText, files as validateFiles, repoRef, authorize, authorizeInvite, errorResponse } from './_validation.js';
+import { sameRepo, type RepoRef } from './_repo.js';
+import type { CoWorkMessage, GitRepoBinding, RoomState, SendMessageResponse, ContentType } from './_types.js';
 
 export interface SendPayload {
   roomCode: string;
@@ -15,7 +16,30 @@ export interface SendPayload {
   commitHash?: string;
   senderModel?: string;
   senderHarness?: string;
+  /**
+   * The remote this client actually pushed to, for GIT_PUSH. Optional because an older client cannot
+   * supply it - and its push is then accepted without a claim on the room's binding rather than
+   * rejected for a fact it never sent.
+   */
+  repoUrl?: string;
 }
+
+const roomSummary = (room: RoomState) => ({
+  roomCode: room.roomCode,
+  activeFileLocks: Object.keys(room.fileLocks).length,
+  participantCount: Object.keys(room.participants).length,
+  latestCommit: room.latestCommit,
+  gitRepo: room.gitRepo ?? null,
+});
+
+const bind = (repo: RepoRef, by: string, source: GitRepoBinding['source']): GitRepoBinding => ({
+  url: repo.url,
+  host: repo.host,
+  slug: repo.slug,
+  by,
+  at: Date.now(),
+  source,
+});
 
 /**
  * Pure business logic for POST /api/send
@@ -26,17 +50,22 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
   const senderId = id(payload.senderId, 'senderId');
   let targetId = id(payload.targetId ?? 'all', 'targetId');
   let contentType: ContentType = payload.contentType ?? 'CHAT';
-  if (!['CHAT','CROSS_PROMPT','AGENT_SYNC','FILE_LOCK','FILE_UNLOCK','GIT_PUSH','STATUS'].includes(contentType)) throw new ApiError(400, 'Invalid contentType');
+  if (!['CHAT','CROSS_PROMPT','AGENT_SYNC','FILE_LOCK','FILE_UNLOCK','GIT_PUSH','GIT_REPO','STATUS'].includes(contentType)) throw new ApiError(400, 'Invalid contentType');
   const text = payload.text === undefined || payload.text === '' ? '' : validateText(payload.text, 'text', 16000);
   const files = validateFiles(payload.files);
   if (contentType === 'FILE_LOCK' && !files.length) throw new ApiError(400, 'At least one file is required');
   const commitHash = payload.commitHash === undefined ? undefined : validateText(payload.commitHash, 'commitHash', 64);
+  // A repository claim is validated like any other input - before the write - but only applied under
+  // the room lock below, because "first one wins" has to mean something with two members racing.
+  const claimedRepo = contentType === 'GIT_REPO' ? repoRef(payload.text, 'repo') : undefined;
+  const pushedTo = contentType === 'GIT_PUSH' && payload.repoUrl !== undefined ? repoRef(payload.repoUrl, 'repoUrl') : undefined;
   if (commitHash && !/^[a-fA-F0-9]{7,64}$/.test(commitHash)) throw new ApiError(400, 'Invalid commitHash');
   const senderModel = payload.senderModel === undefined ? undefined : validateText(payload.senderModel, 'model');
   const senderHarness = payload.senderHarness === undefined ? undefined : validateText(payload.senderHarness, 'harness');
 
   // 1. Multiple Mentions Parsing & High Priority Tagging: e.g., "@antigravity-ai @peer-ai fix the tests"
-  const allMentions = [...new Set([...text.matchAll(/@([a-zA-Z0-9_-]+)/g)].map(m => m[1]))];
+  // A repo claim's text is a URL; `git@github.com` must not be read as a mention of someone named github.
+  const allMentions = contentType === 'GIT_REPO' ? [] : [...new Set([...text.matchAll(/@([a-zA-Z0-9_-]+)/g)].map(m => m[1]))];
   const isPriority = allMentions.length > 0 || (targetId && targetId !== 'all') || contentType === 'CROSS_PROMPT';
   if (allMentions.length > 0 && contentType === 'CHAT') {
     contentType = 'CROSS_PROMPT';
@@ -50,6 +79,25 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
     authorizeInvite(room, inviteKey ?? payload.inviteKey);
     authorize(room, senderId, token);
     if (!room.participants[senderId] && Object.keys(room.participants).length >= 100) throw new ApiError(429, 'Room participant limit reached');
+
+    // 0. The room's repository: linked once, then it is the rule for everyone in the room.
+    let boundHere = false;
+    if (contentType === 'GIT_REPO' && claimedRepo) {
+      if (room.gitRepo) {
+        if (sameRepo(room.gitRepo, claimedRepo)) {
+          // Same repository, different spelling: a no-op, not a second event in the stream.
+          return { status: 200, body: { ok: true, code: 'GIT_REPO_ALREADY_LINKED', note: `This room already works in ${room.gitRepo.host}/${room.gitRepo.slug}; nothing changed.`, gitRepo: room.gitRepo, roomStateSummary: roomSummary(room) } };
+        }
+        throw new ApiError(
+          409,
+          `This room is bound to ${room.gitRepo.host}/${room.gitRepo.slug} (linked by @${room.gitRepo.by}), not ${claimedRepo.host}/${claimedRepo.slug}.`,
+          'GIT_REPO_TAKEN',
+          "Push and clone the room's repository. It is deliberately immutable - a member who could swap it could send every peer's client to their own fork - so to work elsewhere, open a new room.",
+        );
+      }
+      room.gitRepo = bind(claimedRepo, senderId, 'linked');
+      boundHere = true;
+    }
 
     // Update sender presence timestamp & model recognition
     if (!room.participants[senderId]) {
@@ -91,12 +139,7 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
             error: 'FILE_LOCKED',
             lockedBy: lockedByAgent,
             conflictingFiles,
-            roomStateSummary: {
-              roomCode: room.roomCode,
-              activeFileLocks: Object.keys(room.fileLocks).length,
-              participantCount: Object.keys(room.participants).length,
-              latestCommit: room.latestCommit,
-            }
+            roomStateSummary: roomSummary(room)
           }
         };
       }
@@ -131,6 +174,21 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
 
     // 4. Handle GIT_PUSH: automatically unlock files held by sender & record commit
     if (contentType === 'GIT_PUSH') {
+      // Enforcement first: a commit that landed in the wrong repository must not become the commit
+      // peers pull, and must not quietly release the locks its author still needs.
+      if (room.gitRepo && pushedTo && !sameRepo(room.gitRepo, pushedTo)) {
+        throw new ApiError(
+          409,
+          `Refused: this room works in ${room.gitRepo.host}/${room.gitRepo.slug}, but this push went to ${pushedTo.host}/${pushedTo.slug}.`,
+          'GIT_REPO_MISMATCH',
+          `Re-point this checkout at the room's repository (git remote set-url origin ${room.gitRepo.url}) and push again. File locks are still yours.`,
+        );
+      }
+      if (!room.gitRepo && pushedTo) {
+        // Nobody linked a repository, so the first push decides it - for good.
+        room.gitRepo = bind(pushedTo, senderId, 'push');
+        boundHere = true;
+      }
       for (const [file, lock] of Object.entries(room.fileLocks)) {
         if (lock.lockedBy === senderId) {
           delete room.fileLocks[file];
@@ -155,7 +213,9 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       senderId,
       targetId,
       contentType,
-      text,
+      // A repo claim is stored as the canonical remote, so a credential that rode in on the raw
+      // value never reaches the room's history.
+      text: contentType === 'GIT_REPO' && claimedRepo ? claimedRepo.url : text,
       files: files.length > 0 ? files : undefined,
       commitHash,
       senderModel,
@@ -206,12 +266,14 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       body: {
         ok: true,
         messageId,
-        roomStateSummary: {
-          roomCode: room.roomCode,
-          activeFileLocks: Object.keys(room.fileLocks).length,
-          participantCount: Object.keys(room.participants).length,
-          latestCommit: room.latestCommit,
-        }
+        gitRepo: room.gitRepo ?? null,
+        // Only say it when this request is what changed the rule.
+        note: boundHere && room.gitRepo
+          ? contentType === 'GIT_REPO'
+            ? `This room now pushes and clones ${room.gitRepo.host}/${room.gitRepo.slug}.`
+            : `Linked ${room.gitRepo.host}/${room.gitRepo.slug} as this room's repository - the first push decided it.`
+          : undefined,
+        roomStateSummary: roomSummary(room)
       }
     };
   });

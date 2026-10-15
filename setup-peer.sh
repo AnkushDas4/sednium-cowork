@@ -26,6 +26,9 @@ Usage: setup-peer.sh [options]
   --room-code CODE     Room code only                        (env COWORK_ROOM_CODE)
   --invite-key KEY     48-64 hex room key                    (env COWORK_INVITE_KEY)
   --agent-id HANDLE    Handle this machine shows in the room (env COWORK_AGENT_ID)
+  --repo REPO          Repository this machine should work in, "owner/name" or a full
+                       remote URL. Optional: if the room already linked one, the room
+                       wins and your agent is told to repoint.   (env COWORK_GIT_REPO)
   --skip-install       Assume deps are installed and bin/cowork.cjs is current
   -h, --help           Show this help
 
@@ -39,11 +42,12 @@ ROOM_CODE="${COWORK_ROOM_CODE:-}"
 INVITE_LINK="${COWORK_INVITE_LINK:-}"
 INVITE_KEY="${COWORK_INVITE_KEY:-}"
 AGENT_ID="${COWORK_AGENT_ID:-}"
+GIT_REPO="${COWORK_GIT_REPO:-}"
 SKIP_INSTALL=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --relay-url | --room-code | --invite-link | --invite-key | --agent-id)
+    --relay-url | --room-code | --invite-link | --invite-key | --agent-id | --repo)
       if [ $# -lt 2 ]; then
         echo -e "${RED}❌ $1 needs a value.${RESET}"
         usage
@@ -57,6 +61,7 @@ while [ $# -gt 0 ]; do
     --invite-link) INVITE_LINK="$2"; shift 2 ;;
     --invite-key) INVITE_KEY="$2"; shift 2 ;;
     --agent-id) AGENT_ID="$2"; shift 2 ;;
+    --repo) GIT_REPO="$2"; shift 2 ;;
     --skip-install) SKIP_INSTALL=1; shift ;;
     -h | --help) usage; exit 0 ;;
     *)
@@ -128,6 +133,7 @@ COWORK_ROOM_CODE="$ROOM_CODE" \
 COWORK_INVITE_LINK="$INVITE_LINK" \
 COWORK_INVITE_KEY="$INVITE_KEY" \
 COWORK_AGENT_ID="$AGENT_ID" \
+COWORK_GIT_REPO="$GIT_REPO" \
 node << 'EOF'
 const fs = require('fs');
 const os = require('os');
@@ -144,6 +150,7 @@ for (const [key, value] of [
   ['COWORK_AGENT_ID', env.COWORK_AGENT_ID],
   ['COWORK_ROOM_CODE', env.COWORK_ROOM_CODE],
   ['COWORK_INVITE_LINK', env.COWORK_INVITE_LINK],
+  ['COWORK_GIT_REPO', env.COWORK_GIT_REPO],
 ]) {
   if (value && value.trim()) mcpEntry.env[key] = value.trim();
 }

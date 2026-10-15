@@ -99,6 +99,9 @@ export async function handlePresence(params: PresenceParams, token?: unknown, in
         fileLocks: room.fileLocks,
         participants: room.participants,
         latestCommit: room.latestCommit,
+        // Every client learns the room's repository from the heartbeat it already makes: the binding
+        // is a rule to obey, not news to subscribe to.
+        gitRepo: room.gitRepo ?? null,
         recentHistory: room.history.slice(-50),
       }
     };

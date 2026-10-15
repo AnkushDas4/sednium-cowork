@@ -9,6 +9,8 @@ export interface InviteParts {
   relayUrl?: string;
   roomCode?: string;
   inviteKey?: string;
+  /** `&repo=owner/name` - the repository a human wants this room to work in, if any. */
+  repo?: string;
 }
 
 const ROOM_RE = /^SED-[0-9a-fA-F]{8,64}$/;
@@ -38,6 +40,11 @@ export function parseInviteLink(raw: string | undefined | null): InviteParts {
   if (room.trim()) parts.roomCode = room.trim().toUpperCase();
 
   // Fragment first: it is the transport the dashboard uses, and query params can leak into logs.
+  // A repo in a query param is not a secret, so unlike the key it lives in the query where any
+  // client (including an older one reading the link by hand) can see it.
+  const repo = (url.searchParams.get('repo') || '').trim();
+  if (repo) parts.repo = repo;
+
   const hash = url.hash.replace(/^#/, '');
   const keyed = /(?:^|[&;])k(?:ey)?=([^&;]+)/i.exec(hash);
   const candidate = (keyed?.[1] || url.searchParams.get('key') || '').trim();
@@ -52,5 +59,6 @@ export function redactInvite(parts: InviteParts): string {
   if (parts.relayUrl) bits.push(`relay=${parts.relayUrl}`);
   if (parts.roomCode) bits.push(`room=${parts.roomCode}`);
   bits.push(parts.inviteKey ? `key=${parts.inviteKey.slice(0, 6)}…(${parts.inviteKey.length} hex)` : 'key=none');
+  if (parts.repo) bits.push(`repo=${parts.repo}`);
   return bits.join(' ');
 }

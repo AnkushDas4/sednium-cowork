@@ -79,7 +79,7 @@ function assess(tools) {
   const names = tools.map((t) => t.name);
   const connect = tools.find((t) => t.name === 'cowork_connect');
   const props = connect?.inputSchema?.properties || {};
-  return { names, hasInviteKey: 'inviteKey' in props };
+  return { names, hasInviteKey: 'inviteKey' in props, hasRepo: 'repoUrl' in props };
 }
 
 function configSnippet() {
@@ -89,6 +89,10 @@ function configSnippet() {
   const env = { COWORK_RELAY_URL: relayUrl, COWORK_AGENT_ID: agent };
   if (room) env.COWORK_ROOM_CODE = room;
   if (invite) env.COWORK_INVITE_KEY = invite;
+  // A configured repo is a *request*: if the room already bound another one, the room wins and the
+  // agent is told. Writing it here is what lets a whole team start pointed at the same place.
+  const repo = flag('repo', process.env.COWORK_GIT_REPO || link.repo || '');
+  if (repo) env.COWORK_GIT_REPO = repo;
   const autoPull = flag('auto-pull', 'false');
   if (autoPull !== 'false') env.COWORK_AUTO_PULL = autoPull;
   return JSON.stringify({
@@ -102,12 +106,13 @@ if (has('check')) {
   const digest = createHash('sha256').update(readFileSync(target)).digest('hex');
   ok(`${target} sha256 ${digest.slice(0, 16)}…`);
   const tools = await probe(target);
-  const { names, hasInviteKey } = assess(tools);
+  const { names, hasInviteKey, hasRepo } = assess(tools);
   ok(`handshake answered, ${names.length} tools: ${names.join(', ')}`);
   if (!hasInviteKey) {
     console.warn('  ! this build has no inviteKey parameter on cowork_connect - it predates room');
     console.warn('    invite keys and will be refused (401) by protected rooms. Re-download it.');
   }
+  if (!hasRepo) console.warn('  ! no repoUrl on cowork_connect: this build cannot link or honour a room repository');
   process.exit(0);
 }
 
@@ -152,7 +157,7 @@ const tmp = `${out}.part`;
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(tmp, body);
 const tools = await probe(tmp); // verify before it lands on disk as "the" install
-const { names, hasInviteKey } = assess(tools);
+const { names, hasInviteKey, hasRepo } = assess(tools);
 writeFileSync(out, body);
 chmodSync(out, 0o755);
 rmSync(tmp, { force: true }); // the verified bytes are already at `out`
@@ -161,6 +166,10 @@ ok(`handshake answered, ${names.length} tools`);
 ok(`server: ${out} (${body.length} bytes)`);
 if (!hasInviteKey) die('downloaded build predates invite keys - pass --ref <branch> that has them');
 ok('cowork_connect advertises inviteKey (current security model)');
+if (!hasRepo) {
+  console.warn('  ! this build predates room repositories: cowork_connect has no repoUrl, so it can');
+  console.warn('    neither claim a room repo nor honour one on your behalf. Update it after the relay deploy.');
+}
 
 console.log(`\n  Paste into your harness config (Claude Code ~/.claude.json, Cursor ~/.cursor/mcp.json,`);
 console.log(`  Gemini CLI ~/.gemini/settings.json), or run it once by hand:\n`);
@@ -186,5 +195,7 @@ function parseInvite(raw) {
   const keyed = /(?:^|[&;])k(?:ey)?=([^&;]+)/i.exec(url.hash.replace(/^#/, ''));
   const cand = (keyed?.[1] || url.searchParams.get('key') || '').trim();
   if (/^[0-9a-f]{48,64}$/i.test(cand)) out.inviteKey = cand.toLowerCase();
+  const repo = (url.searchParams.get('repo') || '').trim();
+  if (repo) out.repo = repo; // not a secret: it is a repository name, and it rides in the query
   return out;
 }
