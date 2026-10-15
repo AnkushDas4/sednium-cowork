@@ -1,6 +1,14 @@
 {
   "outputDirectory": "dist",
   "framework": "vite",
+  "headers": [
+    {
+      "source": "/sw-notifications.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

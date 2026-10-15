@@ -216,7 +216,29 @@
   }
 }
 
+/* Notification banners get one short entrance; nothing else on screen animates, and that is the point. */
+@keyframes notify-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @layer utilities {
+  .notify-in {
+    animation: notify-in 160ms ease-out;
+  }
+  /* A banner that slides in on a moving train is not a feature. */
+  @media (prefers-reduced-motion: reduce) {
+    .notify-in {
+      animation: none;
+    }
+  }
+
   /* A sheet that stays clear of the home indicator and the status bar. */
   .pt-safe {
     padding-top: max(env(safe-area-inset-top), 0px);

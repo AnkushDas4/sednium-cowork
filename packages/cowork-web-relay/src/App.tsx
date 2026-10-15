@@ -5,6 +5,9 @@ import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
 import { JoinModal } from './components/JoinModal.js';
 import { Bot, Terminal } from 'lucide-react';
+import { ToastStack } from './components/ToastStack.js';
+import { useNotificationCenter } from './useNotificationCenter.js';
+import { mentionCount } from './notifications.js';
 import type {
   ParticipantInfo,
   FileLockInfo,
@@ -23,6 +26,9 @@ export const App: React.FC = () => {
   const [connected, setConnected] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'stream' | 'agents'>('stream');
   const [prefilledMessage, setPrefilledMessage] = useState<string>('');
+  // Notification state for this room. Derived from the poll below - there is no second channel.
+  const center = useNotificationCenter(roomCode, clientId);
+  const [focusMessageId, setFocusMessageId] = useState('');
 
   // Theme Management
   const [theme, setTheme] = useState<ThemeMode>(() => {
@@ -106,6 +112,16 @@ export const App: React.FC = () => {
         setFileLocks(data.fileLocks || {});
         setLatestCommit(data.latestCommit || null);
 
+        // Only the messages drained by this beat: recentHistory is replayed on mount and must never
+        // turn into a wall of alerts about what happened before this tab existed.
+        center.ingest({
+          clientId,
+          incoming: data.messages || [],
+          participants: data.participants || {},
+          latestCommit: data.latestCommit || null,
+          now: Date.now(),
+        });
+
         // Drained new messages with array identity preservation
         if (data.messages && data.messages.length > 0) {
           setMessages((prev) => {
@@ -151,7 +167,20 @@ export const App: React.FC = () => {
       isMounted = false;
       if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [connected, roomCode, clientId]);
+  }, [connected, roomCode, clientId, center.ingest]);
+
+  // A system notification clicked outside the tab arrives through the worker as a message.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+    const onMessage = (event: MessageEvent) => {
+      const payload = event.data as { type?: string; data?: { messageId?: string } } | undefined;
+      if (payload?.type !== 'cowork:notification-click') return;
+      const messageId = payload.data?.messageId;
+      if (messageId) setFocusMessageId(messageId);
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
+    return () => navigator.serviceWorker.removeEventListener('message', onMessage);
+  }, []);
 
   const handleJoin = (joinedRoom: string, joinedId: string) => {
     setMessages([]); setParticipants({}); setFileLocks({}); setLatestCommit(null);
@@ -243,9 +272,16 @@ export const App: React.FC = () => {
             latestCommit={latestCommit}
             participants={participants}
             theme={theme}
+            center={center}
             onToggleTheme={toggleTheme}
             onLeave={handleLeave}
             onNewRoom={(newCode) => handleJoin(newCode, clientId)}
+          />
+
+          <ToastStack
+            toasts={center.toasts}
+            onDismiss={center.dismissToast}
+            onOpen={center.openPanel}
           />
 
           {connectionError && (
@@ -271,23 +307,9 @@ export const App: React.FC = () => {
             >
               <Terminal className="w-3.5 h-3.5" />
               <span>STREAM</span>
-              {messages.filter(
-                (m) =>
-                  (m.mentions?.includes(clientId) ||
-                    m.targetId === clientId ||
-                    m.text?.includes(`@${clientId}`)) &&
-                  m.senderId !== clientId
-              ).length > 0 && (
+              {mentionCount(messages, clientId) > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full text-2xs bg-accent text-accent-ink font-bold">
-                  {
-                    messages.filter(
-                      (m) =>
-                        (m.mentions?.includes(clientId) ||
-                          m.targetId === clientId ||
-                          m.text?.includes(`@${clientId}`)) &&
-                        m.senderId !== clientId
-                    ).length
-                  }
+                  {mentionCount(messages, clientId)}
                 </span>
               )}
             </button>
@@ -353,6 +375,8 @@ export const App: React.FC = () => {
                 onSendMessage={handleSendMessage}
                 prefilledInput={prefilledMessage}
                 onClearPrefill={() => setPrefilledMessage('')}
+                focusMessageId={focusMessageId}
+                onFocusHandled={() => setFocusMessageId('')}
               />
             </section>
           </main>

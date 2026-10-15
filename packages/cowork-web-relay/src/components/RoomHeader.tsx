@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import type { CommitInfo, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink, rememberInvite } from '../relay.js';
+import { NotificationCenter } from './NotificationCenter.js';
+import type { NotificationCenter as NotificationModel } from '../useNotificationCenter.js';
 
 interface RoomHeaderProps {
   roomCode: string;
@@ -30,6 +32,8 @@ interface RoomHeaderProps {
   onToggleTheme: () => void;
   onLeave: () => void;
   onNewRoom?: (newRoom: string) => void;
+  /** Notifications for this room, owned by App because the poll loop is what feeds them. */
+  center?: NotificationModel;
 }
 
 export const RoomHeader: React.FC<RoomHeaderProps> = ({
@@ -41,6 +45,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   onToggleTheme,
   onLeave,
   onNewRoom,
+  center,
 }) => {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -221,6 +226,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           <span className="w-2 h-2 rounded-full bg-ok animate-pulse" />
           <span>{participantEntries.filter(([, p]) => isOnline(p.lastSeen)).length}</span>
         </div>
+
+        {/* Notification bell (only once a room is actually being polled) */}
+        {center && <NotificationCenter center={center} />}
 
         {/* Live sync pulse */}
         <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">

@@ -26,6 +26,16 @@ app.all('/api/presence', async (req, res) => {
   return presenceHandler(req, res);
 });
 
+/**
+ * A notification worker must never be cached, or a fix ships and only half the clients pick it up.
+ * Vercel gets this from vercel.json; `npm run dev`/`start` serves the app from Express, which never
+ * reads that file - so the same promise is made here too.
+ */
+app.use('/sw-notifications.js', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, max-age=0, must-revalidate');
+  next();
+});
+
 // Frontend Serving
 if (!isProd) {
   // Development: Mount Vite server middleware

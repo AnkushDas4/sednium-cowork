@@ -26,7 +26,7 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 
 | Part | Path | Responsibility |
 |---|---|---|
-| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, **live activity rail** (what each agent is doing, which files it is touching, its reasoning under Show more/less), roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
+| **Dashboard** | `packages/cowork-web-relay/src/` | React UI: join sheet, live chat stream, **live activity rail** (what each agent is doing, which files it is touching, its reasoning under Show more/less), **notification centre** (bell, banners, device alerts), roster, file-lock panel, QR + invite link, agent onboarding prompt. Human side of a room. |
 | **Relay API** | `packages/cowork-web-relay/api/` | Two serverless endpoints (`/api/presence`, `/api/send`) that do *everything*: room creation, auth, presence, acked delivery, lock claims. No sockets, no timers. |
 | **Store** | `api/_store.ts` | One Postgres table (`public.cowork_rooms`: `room_code`, `state JSONB`). Every mutation is a `SELECT … FOR UPDATE` transaction on the room row, so two agents can't both win a lock. |
 | **TLS policy** | `api/_tls.ts` | Decides how the relay verifies the database certificate (`verify-full` / `verify-pinned-ca` / `no-verify`), and strips `ssl*` params from the URL so a DSN can't silently downgrade it. |
@@ -42,6 +42,8 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 packages/cowork-web-relay/
   api/{presence,send}.ts _store.ts _validation.ts _tls.ts _types.ts   # relay (serverless)
   src/{App.tsx,relay.ts,index.css} src/components/*.tsx               # dashboard
+  src/{notifications.ts,notifyChannels.ts,useNotificationCenter.ts}   # alert rules, channels, state
+  public/sw-notifications.js                                           # notification worker (no fetch handler)
   server.ts                                                            # express runner for local dev
 packages/cowork-mcp/
   src/{index.ts,poller.ts,activity.ts,git.ts,identity.ts,invite.ts,types.ts}   # MCP server source
@@ -416,6 +418,35 @@ the invite key), light/dark with system default and no first-paint flash. The ra
 row under the header, is `aria-live="polite"`, and is the only part of the UI that updates from
 presence rather than chat.
 
+### Notifications
+
+The dashboard decides what is worth interrupting you for; the relay is not involved. Every alert is
+derived from the poll you are already doing, so there is no new endpoint, no new column, and nothing to
+deploy except the page.
+
+- **eight kinds**: `mention`, `prompt` (a `CROSS_PROMPT` aimed at you), `dm`, `attention` (a peer
+  blocked, errored or stalled), `done`, `push` (a new commit on the watched branch), `joined`, `left`.
+  Mentions, prompts and `attention` are urgent; a peer merely joining is quiet and centre-only.
+- **three surfaces**: a bell with an unread badge, transient banners, and OS/device notifications. All
+  three read one rules file, `src/notifications.ts` - pure, no React and no `window`, so the policy is
+  testable on its own and the UI stays a renderer.
+- **per-kind switches** in the panel's Settings tab (banner and device are separate), a short chime on
+  urgent alerts, and snooze (15/30/60 min or End). Snoozing mutes the banner and the device but still
+  collects the alert, so nothing is lost while you are heads-down.
+- **no storm on the first load**: alerts only fire for events this client has not seen, and the very
+  first successful poll primes a cursor instead of firing. Read state is per room, so a second tab in a
+  different room keeps its own badge.
+- **device alerts go through the worker**, because `registration.showNotification()` is the only path
+  Android Chrome honours; with no worker the page falls back to `new Notification()` (desktop
+  Chrome/Firefox). That worker registers, shows, closes, and on click posts a message so the dashboard
+  focuses the exact message. It has **no fetch handler**, and `vercel.json` serves it with
+  `Cache-Control: no-cache, must-revalidate` so a fix is never pinned by the CDN for a day.
+- **clicking an alert focuses the message**: the message id rides on the notification, a chat filter
+  that hides it is cleared, and the row is scrolled into view and ringed.
+- Dedupe ids are content-derived, not time-derived: `msg:<id>`, `push:<commit>`,
+  `state:<handle>:<state>:<since>`, `roster:<handle>:joined:<lastSeen>`. Keying a state alert on the
+  `at` stamp would re-fire on every 2s heartbeat, which is why `since` is used instead.
+
 **Mobile is the primary target** — these are contracts, not decoration:
 
 - tap targets ≥ 44px; inputs are 16px below 640px because iOS zooms the page otherwise, and never
@@ -431,8 +462,9 @@ presence rather than chat.
   under 400px and keep a fixed gutter so the column doesn't jitter while polling
 - `.scroll-panel` (`overscroll-behavior: contain`) stops a flick inside a list from dragging the
   page; `touch-action: manipulation` removes tap delay
-- `manifest.webmanifest` + `icon.svg` make "Add to Home Screen" a standalone shell. **No service
-  worker**: an installed CoWork is online-only, which is correct for a live relay
+- `manifest.webmanifest` + `icon.svg` make "Add to Home Screen" a standalone shell. The **only**
+  service worker is `sw-notifications.js`, and it never intercepts a fetch: an installed CoWork is
+  online-only, which is correct for a live relay
 
 **Theming** lives in two files: CSS custom properties in `src/index.css` (light + `.dark`) and their
 Tailwind mapping in `tailwind.config.js`. Components use semantic names only (`bg-panel`,
@@ -502,7 +534,10 @@ and manifest are committed while the relay assets are not — no 1 MB duplicate 
 | Agent: `403 Invalid invite key` | wrong key for that room. Re-open the original link; codes alone are not enough |
 | Agent: `403` on a handle | that handle is bound to a different participant token. Use a new handle or restore the token |
 | Agent joined a *different* room than the human | stale client bundle: it mints a new room when it cannot read the link. Re-run the installer; `--check` proves the version advertises `inviteKey` |
-| UI looks unchanged after a deploy | asset filenames are hashed, but the service worker-less page can cache — hard refresh |
+| UI looks unchanged after a deploy | asset filenames are hashed, but the HTML page itself is not — hard refresh |
+| **Bell shows nothing / no banners** | the alert rules only fire for what this client has not seen, so a first poll is silent by design. Check snooze (the bell becomes a crossed-out bell) and the per-kind switches in the panel's Settings tab |
+| **No device alerts** | the browser asks once and remembers. Look at the permission line in the panel's Settings tab: `default` = click Enable, `denied` = re-allow in site settings, `unsupported` = no Notification API. Android Chrome needs the worker, so a deploy that 404s `/sw-notifications.js` silences every alert |
+| **No alerts on iPhone/iPad** | Safari only notifies from an installed web app: Add to Home Screen, open it, then allow notifications for that site |
 | Two browsers in one room, one silent | they joined different rooms: compare the code **and** whether the link had `#k=` |
 | `npm run build` exits 2 on Vercel | the deploy build must be `vite build` only. Adding `tsc` (or `test/`) breaks it: the Vercel install has no `vitest`, so type-checking tests fails with TS2307 |
 
@@ -539,6 +574,11 @@ imported; existing `cowork_rooms` rows stay intact and no migration touches unre
   own edits), and an agent that never calls `cowork_report` shows a derived state without reasoning.
 - Dashboard history is the last 100 events (50 fetched). Nothing is archived; delete rows you don't
   want found.
+- Notifications are **tab-scoped**: no VAPID keys and no server push, so a message arriving while no
+  dashboard is open cannot wake you. The list holds the last 50 alerts in memory (only the read cursor
+  and your switches persist); device alerts are skipped while the document is hidden or unfocused,
+  because the OS banner is the right channel then; and one `attention` note per state-change - a peer
+  that stays blocked for an hour is not going to nag you 1,800 times.
 
 ## Development
 

@@ -34,6 +34,9 @@ interface ChatTerminalProps {
   onShowQr?: () => void;
   prefilledInput?: string;
   onClearPrefill?: () => void;
+  /** Set when a system notification was clicked: that message is scrolled to and ringed once. */
+  focusMessageId?: string;
+  onFocusHandled?: () => void;
 }
 
 type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
@@ -47,6 +50,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   onShowQr,
   prefilledInput,
   onClearPrefill,
+  focusMessageId = '',
+  onFocusHandled,
 }) => {
   const [input, setInput] = useState('');
   const [filter, setFilter] = useState<FilterType>('ALL');
@@ -61,6 +66,35 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   );
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // A banner clicked outside the tab should land on the message it was about. The stream filter is
+  // cleared first, because a message hidden by the current filter is indistinguishable from a
+  // message that never arrived - and the ring has to be dropped again, or it stays forever.
+  useEffect(() => {
+    if (!focusMessageId) return;
+    let ring: ReturnType<typeof setTimeout> | null = null;
+    const reveal = () => {
+      const node = document.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(focusMessageId)}"]`);
+      if (!node) {
+        setFilter('ALL');
+        requestAnimationFrame(() => {
+          const found = document.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(focusMessageId)}"]`);
+          found?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          ring = setTimeout(() => onFocusHandled?.(), 2600);
+        });
+        return;
+      }
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      ring = setTimeout(() => onFocusHandled?.(), 2600);
+    };
+    reveal();
+    return () => {
+      if (ring) clearTimeout(ring);
+    };
+  }, [focusMessageId]);
+
+  const focusRing = (messageId: string) =>
+    focusMessageId === messageId ? ' rounded-xl ring-2 ring-accent/70' : '';
   const streamEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
@@ -628,7 +662,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               const isExpanded = !!expandedMap[msg.messageId];
 
               return (
-                <div key={msg.messageId} className="flex justify-end my-1 select-text">
+                <div
+                  key={msg.messageId}
+                  data-message-id={msg.messageId}
+                  className={`flex justify-end my-1 select-text${focusRing(msg.messageId)}`}
+                >
                   <div className="flex flex-col items-end max-w-[85%] sm:max-w-[72%] space-y-1">
                     <div className="bg-accent text-accent-ink rounded-2xl rounded-tr-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-card break-words text-[14px] font-sans font-medium leading-relaxed">
                       {isLong && !isExpanded ? (
@@ -701,7 +739,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             const isAgent = msg.senderId.includes('ai');
 
             return (
-              <div key={msg.messageId} className="flex justify-start my-1.5 select-text">
+              <div
+                key={msg.messageId}
+                data-message-id={msg.messageId}
+                className={`flex justify-start my-1.5 select-text${focusRing(msg.messageId)}`}
+              >
                 <div className="flex flex-col items-start max-w-[88%] sm:max-w-[75%] space-y-1">
                   {/* Sender Header */}
                   <div className="flex items-center gap-1.5 pl-1 select-none flex-wrap">

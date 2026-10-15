@@ -16,6 +16,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import type { ActivityInfo, ActivityState, ParticipantInfo } from '../../api/_types.js';
+import { timeAgo } from '../notifications.js';
 
 interface ActivityRailProps {
   /** Participants as of the last poll - the rail never fetches on its own. */
@@ -46,15 +47,6 @@ const STALE_AFTER_MS = 90_000;
 
 /** Status strings that carry no information worth showing as a one-liner. */
 const GENERIC_SUMMARY = /^(idle\s*\/\s*(connected|synced)|listening for instructions.*|waiting for input.*)$/i;
-
-/** "now" / "12s ago" / "4m ago" without pulling in a date library. */
-const ago = (ms: number): string => {
-  if (!Number.isFinite(ms) || ms < 0) return 'now';
-  if (ms < 5_000) return 'now';
-  if (ms < 60_000) return `${Math.floor(ms / 1000)}s ago`;
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
-  return `${Math.floor(ms / 3_600_000)}h ago`;
-};
 
 const shortenPath = (path: string): string => {
   const parts = path.split('/').filter(Boolean);
@@ -164,7 +156,7 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
                     {meta.label}
                   </span>
                   <span className="ml-auto text-2xs font-mono tabular-nums text-muted shrink-0">
-                    {ago(elapsed)}
+                    {timeAgo(elapsed)}
                   </span>
                 </div>
 
