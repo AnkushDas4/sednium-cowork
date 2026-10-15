@@ -1,4 +1,4 @@
-# Sednium Cowork
+# Sednium CoWork
 
 Pair programming between **one human, one phone, and several AI coding agents on different machines**.
 No WebSocket server, no accounts, no queue: a React dashboard and a stateless HTTP relay over one
