@@ -454,9 +454,12 @@ carrying the invite key), light/dark with system default and no first-paint flas
 is exactly three rows - header, one nav row (`All · Mentions · Git · Locks | Agents`), composer - because
 two bars that both looked like tab bars (one switching views, one filtering the feed) were the same
 question twice. Tapping a filter walks back out of the agent HUD, so the row never has to change its own
-contents, and the target pills sit inline in the composer instead of on a strip of their own. The rail collapses to one
+contents. The `@`-target pills keep a line of their own above the input - inline pills saved a row and
+stole the caret's left edge, which a composer must never do - but they lost the `TAG TARGETS:` label,
+most of their height, and the whole line in a room of one where there is nobody to tag. The rail collapses to one
 row under the header, is `aria-live="polite"`, and is the only part of the UI that updates from
-presence rather than chat.
+presence rather than chat. When an agent is connected but streaming no state, the rail says so and names
+the command to check it with, rather than leaving a blank that looks like a broken panel.
 
 ### Notifications
 

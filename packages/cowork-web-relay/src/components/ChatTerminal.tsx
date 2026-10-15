@@ -970,40 +970,40 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         )}
 
-        {/* One flush row: the target pills sit inline left of the input instead of on their own bar,
-            because "who is this for" is part of writing the message, not a separate mode. The
-            "TAG TARGETS:" label went with it - the pills are the label, and typing @ still opens the
-            picker above. With nothing to tag (a room of one) the whole cluster is not rendered. */}
+        {/* The targets are a caption over the input, never in front of the caret: inline pills
+            did save a row, but they slid everything you type to the right - the one thing a composer
+            must not do. No label, because the pills are the label and typing @ still opens the picker
+            above, and no row at all when a room of one has nobody to tag. */}
+        {quickTargets.length > 1 && (
+          <div className="flex items-center gap-1 px-3 sm:px-4 py-1 border-b border-grid overflow-x-auto no-scrollbar overscroll-x-contain">
+            {quickTargets.map((mention) => {
+              const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
+              return (
+                <button
+                  key={mention}
+                  type="button"
+                  onClick={() => handlePillClick(mention)}
+                  title={isSelected ? `Stop addressing ${mention}` : `Address ${mention}`}
+                  className={`px-2 py-1 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
+                    isSelected
+                      ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
+                      : 'bg-hover hover:bg-hover/80 text-secondary hover:text-primary border-transparent'
+                  }`}
+                >
+                  <span>{mention}</span>
+                  {isSelected && mention !== '@all' && (
+                    <span className="text-[10px] opacity-75 font-bold">✕</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="h-12 xs:h-13 sm:h-14 flex items-stretch">
           <div className="pl-3 sm:pl-4 pr-1.5 sm:pr-2 flex items-center text-accent shrink-0 bg-canvas">
             <Terminal className="w-4 h-4" />
           </div>
-
-          {quickTargets.length > 1 && (
-            <div className="flex items-center gap-1 self-center sm:self-stretch sm:px-2 pl-1 max-w-[44%] sm:max-w-[260px] overflow-x-auto no-scrollbar shrink-0 sm:border-r sm:border-grid">
-              {quickTargets.map((mention) => {
-                const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
-                return (
-                  <button
-                    key={mention}
-                    type="button"
-                    onClick={() => handlePillClick(mention)}
-                    title={isSelected ? `Stop addressing ${mention}` : `Address ${mention}`}
-                    className={`px-2 py-1.5 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
-                      isSelected
-                        ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
-                        : 'bg-hover hover:bg-hover/80 text-secondary hover:text-primary border-transparent'
-                    }`}
-                  >
-                    <span>{mention}</span>
-                    {isSelected && mention !== '@all' && (
-                      <span className="text-[10px] opacity-75 font-bold">✕</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
 
           <input
             ref={inputRef}

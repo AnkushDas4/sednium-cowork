@@ -93,7 +93,32 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
       });
   }, [participants, currentClientId, now]);
 
-  if (!rows.length) return null;
+  if (!rows.length) {
+    // An agent that heartbeats with a current bundle always carries a state, because the poller derives
+    // one from its status line. So "connected, no row" is a diagnosable condition, not an empty room -
+    // and silence here reads exactly like a broken panel. Say which of the two it is.
+    const quiet = Object.entries(participants).filter(
+      ([, p]) => p.role === 'agent' && now - (p.lastSeen ?? 0) < STALE_AFTER_MS
+    );
+    if (!quiet.length) return null;
+    return (
+      <div className="shrink-0 bg-panel px-3 xs:px-4 py-2 border-b border-grid" data-id="activity-rail-empty">
+        <div className="flex items-center gap-2 min-w-0">
+          <Activity className="w-3.5 h-3.5 text-muted shrink-0" aria-hidden="true" />
+          <span className="text-2xs font-sans font-semibold uppercase tracking-[0.14em] text-secondary truncate">
+            {quiet.map(([id]) => `@${id}`).join(', ')}{' '}
+            {quiet.length === 1 ? 'is' : 'are'} connected and reporting no state
+          </span>
+        </div>
+        <p className="mt-1 text-2xs font-sans text-muted leading-snug">
+          That means the client on that machine is older than the activity stream or runs with activity
+          reporting off. Check it there with{' '}
+          <span className="font-mono text-secondary">node install.mjs --check</span> - the dashboard and
+          the relay cannot supply what the agent never sends.
+        </p>
+      </div>
+    );
+  }
   const liveCount = rows.filter((r) => !r.quiet).length;
 
   return (

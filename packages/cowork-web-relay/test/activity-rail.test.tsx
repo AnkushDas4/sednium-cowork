@@ -16,9 +16,25 @@ const render = (participants: any, currentClientId = 'loid') =>
   );
 
 describe('ActivityRail', () => {
-  it('renders nothing until somebody actually streams state', () => {
+  it('says nothing about an empty room, and nothing about a room of humans', () => {
+    expect(render({})).toBe('');
+    // A human never streams state, so a panel about "reporting nothing" would nag the operator.
+    expect(render({ loid: { clientId: 'loid', role: 'human', status: 'Idle / Connected', lastSeen: now } })).toBe('');
+  });
+
+  it('names an agent that is connected but streaming no state, instead of rendering nothing', () => {
+    // A current client derives a state from its status line on every heartbeat, so silence here means a
+    // stale bundle or a switched-off reporter. An empty area with no explanation reads as a broken panel.
     const html = render({ 'gem-ai': { clientId: 'gem-ai', role: 'agent', status: 'Idle / Connected', lastSeen: now } });
-    expect(html).toBe('');
+    expect(html).toContain('data-id="activity-rail-empty"');
+    expect(html).toContain('@gem-ai is connected and reporting no state');
+    expect(html).toContain('node install.mjs --check');
+    expect(html).not.toContain('data-id="activity-rail"'); // not a rail of rows with nothing in them
+    expect(html).not.toContain('activity-rail-toggle');
+  });
+
+  it('leaves an agent that stopped heartbeating alone - that is a gone agent, not a mute one', () => {
+    expect(render({ 'gem-ai': { clientId: 'gem-ai', role: 'agent', status: 'Idle', lastSeen: now - 600_000 } })).toBe('');
   });
 
   it('shows the state chip, the one-liner and the folded reasoning', () => {
