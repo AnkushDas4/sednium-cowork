@@ -9,7 +9,7 @@ import {
 import "./fonts";
 import { C, font } from "./theme";
 import { SceneTransition } from "./components/Motion";
-import { scenes } from "./timeline";
+import { scenes, transitionForScene } from "./timeline";
 import { HudFrame } from "./components/HudFrame";
 import { Subtitles } from "./components/Subtitles";
 import { Scene1Chaos } from "./scenes/Scene1Chaos";
@@ -45,7 +45,7 @@ export const CoWorkVideo: React.FC<VideoProps> = ({
           >
             <SceneTransition
               duration={scenes[i].duration}
-              last={i === components.length - 1}
+              {...transitionForScene(scenes[i].name)}
             >
               <Scene />
             </SceneTransition>

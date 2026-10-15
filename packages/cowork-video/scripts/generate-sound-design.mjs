@@ -7,7 +7,7 @@ const scenes = JSON.parse(fs.readFileSync(path.join(root, "src/scenes.json")));
 const seconds = scenes.reduce((sum, s) => sum + s.duration, 0) / 30;
 const at = (scene, frame = 0) => (scenes[scene].start + frame) / 30;
 const sr = 48000;
-const length = sr * seconds;
+const length = Math.round(sr * seconds);
 const buffer = new Float32Array(length);
 let seed = 17;
 const noise = () => {

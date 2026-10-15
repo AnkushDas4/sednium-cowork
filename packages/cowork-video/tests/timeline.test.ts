@@ -6,24 +6,26 @@ import {
   FPS,
   TOTAL_FRAMES,
   getSceneIndex,
+  transitionForScene,
 } from "../src/timeline";
 import report from "../public/audio/timing-report.json";
-import { pop, enter } from "../src/theme";
+import { getTransitionStyle } from "../src/components/Motion";
+import { pop, enter, dashboardScale } from "../src/theme";
 
 describe("natural-pace launch timeline", () => {
-  it("has six contiguous scenes, 1245 frames, and 41.5s at 30fps", () => {
+  it("has six contiguous scenes, 1270 frames, and 42⅓s at 30fps", () => {
     expect(FPS).toBe(30);
-    expect(TOTAL_FRAMES).toBe(1245);
+    expect(TOTAL_FRAMES).toBe(1270);
     expect(scenes.map((s) => s.duration)).toEqual([
-      240, 90, 270, 300, 165, 180,
+      240, 90, 270, 300, 190, 180,
     ]);
-    expect(scenes.map((s) => s.start)).toEqual([0, 240, 330, 600, 900, 1065]);
+    expect(scenes.map((s) => s.start)).toEqual([0, 240, 330, 600, 900, 1090]);
     let end = 0;
     for (const scene of scenes) {
       expect(scene.start).toBe(end);
       end += scene.duration;
     }
-    expect(end / FPS).toBe(41.5);
+    expect(end / FPS).toBeCloseTo(42 + 1 / 3);
   });
   it("assigns every frame and each exact cut to the correct scene", () => {
     for (let frame = 0; frame < TOTAL_FRAMES; frame++) {
@@ -95,5 +97,44 @@ describe("smooth motion", () => {
     expect(enter(100)).toEqual({ opacity: 1, transform: "translateY(0px)" });
     expect(enter(100)).toEqual(enter(101));
     expect(enter(0).transform).not.toContain("scale");
+  });
+});
+
+describe("phone-to-outro match cut", () => {
+  it("adds 25 frames to the phone scene without shortening the final hold", () => {
+    expect(scenes[4].duration).toBe(165 + 25);
+    expect(scenes[5].duration).toBe(180);
+    expect(getSceneIndex(1089)).toBe(4);
+    expect(getSceneIndex(1090)).toBe(5);
+  });
+  it("keeps every frame of the added phone hold fully visible", () => {
+    for (let frame = 165; frame < 190; frame++) {
+      expect(
+        getTransitionStyle(frame, 190, transitionForScene("MOBILE")),
+      ).toEqual({ opacity: 1, transform: "translateY(0px)" });
+    }
+  });
+  it("shows the white scene at full opacity on the very next frame", () => {
+    expect(getTransitionStyle(0, 180, transitionForScene("OUTRO"))).toEqual({
+      opacity: 1,
+      transform: "translateY(0px)",
+    });
+    expect(transitionForScene("DASHBOARD")).toEqual({
+      fadeIn: true,
+      fadeOut: true,
+    });
+  });
+});
+
+describe("portrait dashboard framing", () => {
+  it("zooms portrait by 12 percent and leaves landscape unchanged", () => {
+    expect(dashboardScale(true)).toBe(1.12);
+    expect(dashboardScale(false)).toBe(1);
+  });
+  it("keeps the centered 904px dashboard inside the 1080px architectural frame", () => {
+    const width = 904 * dashboardScale(true);
+    const left = (1080 - width) / 2;
+    expect(left).toBeGreaterThan(32);
+    expect(left + width).toBeLessThan(1080 - 32);
   });
 });

@@ -45,3 +45,6 @@ export const enter = (f: number, delay = 0, distance = 24) => ({
   opacity: ramp(f, delay, delay + 18),
   transform: `translateY(${(1 - pop(f, 30, delay)) * distance}px)`,
 });
+
+// Enlarge the entire portrait dashboard; never alter the landscape framing.
+export const dashboardScale = (vertical: boolean) => (vertical ? 1.12 : 1);

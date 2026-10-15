@@ -2,7 +2,7 @@
   "name": "@sednium/cowork-video",
   "version": "1.0.0",
   "private": true,
-  "description": "Natural-pace Sednium CoWork launch film: 41.5 seconds, 1x narration, responsive 16:9 and 9:16",
+  "description": "Natural-pace Sednium CoWork launch film: 42.33 seconds, 1x narration, responsive 16:9 and 9:16",
   "type": "module",
   "scripts": {
     "studio": "remotion studio src/index.ts --port=3100",

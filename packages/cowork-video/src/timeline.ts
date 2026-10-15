@@ -45,3 +45,9 @@ export const getSceneIndex = (frame: number) =>
     0,
     scenes.findIndex((s) => frame >= s.start && frame < s.start + s.duration),
   );
+
+// A deliberate match cut: keep the phone visible, then show white on the very next frame.
+export const transitionForScene = (name: string) => ({
+  fadeIn: name !== "OUTRO",
+  fadeOut: name !== "MOBILE" && name !== "OUTRO",
+});

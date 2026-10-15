@@ -1,6 +1,6 @@
 # Sednium CoWork — natural-pace launch film
 
-**41.5 seconds · 1245 frames · 30fps.** The full original script and male recordings now play at **exactly 1× speed**. This revision intentionally replaces the original 35-second cut: scene lengths accommodate the recordings, not the other way around.
+**42⅓ seconds · 1270 frames · 30fps.** The full original script and male recordings now play at **exactly 1× speed**. This revision intentionally replaces the original 35-second cut: scene lengths accommodate the recordings, not the other way around.
 
 | Composition | Size | Export |
 |---|---|---|
@@ -27,7 +27,7 @@ git pull --ff-only
 npm run video:studio
 ```
 
-Do not discard local edits to update. Stop the old Studio process first if port 3100 is already in use. Check the timeline duration is **1245 frames**, not 1050, to confirm the new cut loaded.
+Do not discard local edits to update. Stop the old Studio process first if port 3100 is already in use. Check the timeline duration is **1270 frames**, not 1050 or 1245, to confirm the new cut loaded.
 
 ## Render and verify
 
@@ -36,7 +36,7 @@ npm run video:render
 npm --workspace=@sednium/cowork-video run verify:renders
 ```
 
-H.264, CRF 18, yuv420p, AAC audio; JPEG frame quality 95. The verification script checks both resolutions, 30fps, **1245 frames**, and **41.5 seconds of video**. AAC encoder padding can make the container a few milliseconds longer. Results go to `renders/verification.json`.
+H.264, CRF 18, yuv420p, AAC audio; JPEG frame quality 95. The verification script checks both resolutions, 30fps, **1270 frames**, and **42⅓ seconds of video**. AAC encoder padding can make the container a few milliseconds longer. Results go to `renders/verification.json`.
 
 ```sh
 npm --workspace=@sednium/cowork-video run render:horizontal
@@ -53,9 +53,11 @@ Renders are ignored by Git. All required source assets are included.
 - A brief 0.2-second lead-in per scene, then at least half a second after each take, gives the edit breathing room.
 - Critically damped entrances settle without overshoot. Most movement travels only 12–32px, not across the whole screen.
 - Removed camera jitter, warning-banner slams/rotation, scale-from-zero panels, and abrupt button scaling.
-- Short eased scene fade-outs/fade-ins retain a continuous `Series` timeline; they do not overlap or change audio timing.
+- Short eased fades retain a continuous `Series` timeline. The phone-to-outro cut is the exception: Scene 5 holds at full opacity through its final frame, then Scene 6 shows the white canvas immediately (no fade through black).
 - Unified gutters; terminals and conflict warning have distinct rows. Mesh hub and nodes have dedicated lanes. The dashboard no longer scales an oversized layout or uses negative margins.
 - Dashboard headings and event slots reserve their space, so new events don't push existing content around. Phone feed/composer use flex layout instead of overlapping absolute blocks.
+- Scene 5 has 25 extra hold frames (190 total). This moves the outro cue, captions, and sound effects 25 frames later while keeping all narration at 1×.
+- The portrait dashboard container is scaled to **1.12×** around its top center, preserving the entrance translation; landscape stays at 1×. The enlarged panel remains inside the architectural frame and above the captions.
 - A dedicated caption lane stays below content in both aspect ratios. The outro holds still after local frame 142, except for persistent live HUD telemetry/progress.
 
 ## Edit the source
@@ -119,8 +121,8 @@ Frame ranges are half-open: start inclusive, end exclusive.
 | Reveal | 240–330 | 8–11s | Grid draw, restrained logo settle, staggered wordmark, install command |
 | Mesh | 330–600 | 11–20s | Hub first, paths draw, three nodes connect in sequence |
 | Dashboard | 600–900 | 20–30s | Message at local 30; lock at 95; 409 at 115; Git handoff 205–244 |
-| Mobile | 900–1065 | 30–35.5s | Prompt; smooth button press; dispatch at local 88; packet to inbox at 108 |
-| Outro | 1065–1245 | 35.5–41.5s | White canvas, staggered line reveals, CTA at local 98, stable final hold |
+| Mobile | 900–1090 | 30–36.333s | Dispatch at local 88; inbox at 108; success stays visible through the final 25-frame hold |
+| Outro | 1090–1270 | 36.333–42.333s | Immediate white match cut; staggered lines; CTA at local 98; stable final hold |
 
 ## Browser / constrained CI
 

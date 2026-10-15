@@ -1,7 +1,7 @@
 import React from "react";
 import { GitBranch, Lock, ShieldCheck, ArrowRight } from "lucide-react";
 import { interpolateColors } from "remotion";
-import { C, mono, useScene, enter, ease, ramp } from "../theme";
+import { C, mono, useScene, enter, ease, ramp, dashboardScale } from "../theme";
 import { Chip, Dots, Label, SceneShell, Title } from "../components/Primitives";
 import { Reveal } from "../components/Motion";
 export const Scene4Dashboard: React.FC = () => {
@@ -19,6 +19,8 @@ export const Scene4Dashboard: React.FC = () => {
       <div
         style={{
           ...enter(f, 12, 24),
+          transform: `${enter(f, 12, 24).transform} scale(${dashboardScale(v)})`,
+          transformOrigin: "top center",
           marginTop: v ? 54 : 42,
           border: `1px solid ${C.line}`,
           background: C.bg,

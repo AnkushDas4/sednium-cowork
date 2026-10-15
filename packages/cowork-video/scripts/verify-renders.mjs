@@ -28,7 +28,8 @@ for (const [format, width, height] of [
   assert.equal(video.height, height);
   assert.equal(video.r_frame_rate, "30/1");
   assert.equal(Number(video.nb_frames), totalFrames);
-  assert.equal(Number(video.duration), seconds);
+  // FFprobe rounds fractional seconds to six decimals; frame count above is exact.
+  assert.ok(Math.abs(Number(video.duration) - seconds) < 0.000001);
   assert.equal(video.codec_name, "h264");
   assert.equal(audio.codec_name, "aac");
   // AAC adds encoder padding of a few milliseconds; video remains exactly totalFrames frames.
