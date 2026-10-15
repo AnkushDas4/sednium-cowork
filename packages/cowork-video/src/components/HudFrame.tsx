@@ -1,3 +1,4 @@
+import { OUTRO_START, TOTAL_FRAMES, getSceneIndex } from "../timeline";
 import React from "react";
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, mono } from "../theme";
@@ -5,7 +6,7 @@ export const HudFrame: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps, height, width } = useVideoConfig();
   const v = height > width;
-  const light = frame >= 930;
+  const light = frame >= OUTRO_START;
   const ink = light ? C.bg : C.muted;
   const tc = [
     Math.floor(frame / fps / 3600),
@@ -78,20 +79,7 @@ export const HudFrame: React.FC = () => {
         }}
       >
         S/
-        {String(
-          frame < 135
-            ? 1
-            : frame < 240
-              ? 2
-              : frame < 480
-                ? 3
-                : frame < 780
-                  ? 4
-                  : frame < 930
-                    ? 5
-                    : 6,
-        ).padStart(2, "0")}{" "}
-        — 06
+        {String(getSceneIndex(frame) + 1).padStart(2, "0")} — 06
       </div>
       {[0, 1, 2, 3].map((i) => (
         <div
@@ -115,7 +103,7 @@ export const HudFrame: React.FC = () => {
           bottom: v ? 32 : 36,
           left: v ? 32 : 36,
           height: 2,
-          width: `${(frame / 1049) * (v ? 1016 : 1848)}px`,
+          width: `${(frame / (TOTAL_FRAMES - 1)) * (v ? 1016 : 1848)}px`,
           background: light ? C.bg : C.orange,
         }}
       />

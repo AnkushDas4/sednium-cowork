@@ -1,24 +1,19 @@
-/** Fits the six male narration takes to the fixed scene slots; never changes the video timing. */
+/** Assemble original takes at EXACTLY 1x. Never time-stretch or trim spoken audio. */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
+import { getBinary } from "./binaries.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const require = createRequire(import.meta.url);
-const binary = (name) =>
-  process.env[name.toUpperCase() + "_PATH"] ||
-  path.join(
-    path.dirname(
-      require.resolve("@remotion/compositor-linux-x64-gnu/package.json"),
-    ),
-    name,
-  );
 const scenes = JSON.parse(fs.readFileSync(path.join(root, "src/scenes.json")));
+const fps = 30;
+const totalFrames = scenes.reduce((sum, s) => sum + s.duration, 0);
+const seconds = totalFrames / fps;
 const inputs = [];
 const filters = [];
 const report = [];
 for (let i = 0; i < scenes.length; i++) {
+  const scene = scenes[i];
   const file = path.join(
     root,
     "public/audio",
@@ -26,7 +21,7 @@ for (let i = 0; i < scenes.length; i++) {
   );
   const duration = Number(
     execFileSync(
-      binary("ffprobe"),
+      getBinary("ffprobe"),
       [
         "-v",
         "error",
@@ -39,19 +34,27 @@ for (let i = 0; i < scenes.length; i++) {
       { encoding: "utf8" },
     ).trim(),
   );
-  const target = scenes[i].duration / 30 - 0.24;
-  const tempo = Math.max(1, duration / target);
+  const offset = scene.voiceoverOffset / fps;
+  if (duration + offset > scene.duration / fps)
+    throw new Error(
+      `${scene.name}: original narration is ${duration}s, longer than its slot. Extend the scene; speeding or trimming speech is forbidden.`,
+    );
   inputs.push("-i", file);
   filters.push(
-    `[${i}:a]atempo=${tempo.toFixed(6)},atrim=0:${target},adelay=${(scenes[i].start / 30) * 1000 + 100}:all=1[a${i}]`,
+    `[${i}:a]adelay=${Math.round((scene.start / fps + offset) * 1000)}:all=1[a${i}]`,
   );
-  report.push({ ...scenes[i], sourceSeconds: duration, playbackRate: tempo });
+  report.push({
+    ...scene,
+    sourceSeconds: duration,
+    playbackRate: 1,
+    tailSeconds: scene.duration / fps - duration - offset,
+  });
 }
 filters.push(
-  "[a0][a1][a2][a3][a4][a5]amix=inputs=6:normalize=0,apad,atrim=0:35,loudnorm=I=-16:TP=-1.5:LRA=7[out]",
+  `${scenes.map((_, i) => `[a${i}]`).join("")}amix=inputs=${scenes.length}:normalize=0,apad,atrim=0:${seconds},loudnorm=I=-16:TP=-1.5:LRA=7[out]`,
 );
 execFileSync(
-  binary("ffmpeg"),
+  getBinary("ffmpeg"),
   [
     "-y",
     ...inputs,
@@ -74,5 +77,5 @@ fs.writeFileSync(
   JSON.stringify(report, null, 2) + "\n",
 );
 console.log(
-  "35-second narration assembled. First scene is brisk to fit the requested 21-word / 4.5s slot.",
+  `${seconds}s narration assembled. All ${scenes.length} original takes play at 1x, untrimmed.`,
 );

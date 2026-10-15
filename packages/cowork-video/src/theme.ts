@@ -1,4 +1,10 @@
-import { interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import {
+  Easing,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 export const C = {
   bg: "#121214",
   panel: "#18181B",
@@ -17,14 +23,25 @@ export const clamp = {
 } as const;
 export const ramp = (f: number, a: number, b: number) =>
   interpolate(f, [a, b], [0, 1], clamp);
-export const useScene = () => {
-  const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
-  return { f: frame, fps, width, height, vertical: height > width };
-};
-export const pop = (frame: number, fps = 30, delay = 0) =>
-  spring({
-    frame: frame - delay,
-    fps,
-    config: { damping: 18, stiffness: 160 },
+export const ease = (f: number, a: number, b: number) =>
+  interpolate(f, [a, b], [0, 1], {
+    ...clamp,
+    easing: Easing.inOut(Easing.cubic),
   });
+export const useScene = () => {
+  const f = useCurrentFrame();
+  const { fps, width, height, durationInFrames } = useVideoConfig();
+  return { f, fps, width, height, durationInFrames, vertical: height > width };
+};
+// Critically damped, no overshoot: small travel, consistent settling, no scale-from-zero pops.
+export const pop = (f: number, fps = 30, delay = 0) =>
+  spring({
+    frame: f - delay,
+    fps,
+    config: { damping: 24, stiffness: 100, mass: 1.2, overshootClamping: true },
+    durationInFrames: 42,
+  });
+export const enter = (f: number, delay = 0, distance = 24) => ({
+  opacity: ramp(f, delay, delay + 18),
+  transform: `translateY(${(1 - pop(f, 30, delay)) * distance}px)`,
+});

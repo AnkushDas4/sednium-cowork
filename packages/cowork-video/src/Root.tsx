@@ -1,5 +1,6 @@
 import React from "react";
 import { Composition } from "remotion";
+import { FPS, TOTAL_FRAMES } from "./timeline";
 import { CoWorkVideo } from "./CoWorkVideo";
 export const RemotionRoot: React.FC = () => (
   <>
@@ -11,8 +12,8 @@ export const RemotionRoot: React.FC = () => (
         key={size.id}
         {...size}
         component={CoWorkVideo}
-        durationInFrames={1050}
-        fps={30}
+        durationInFrames={TOTAL_FRAMES}
+        fps={FPS}
         defaultProps={{ captions: true, soundDesign: true }}
       />
     ))}

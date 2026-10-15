@@ -1,41 +1,70 @@
 import { describe, it, expect } from "vitest";
-import { scenes, captions } from "../src/timeline";
+import { readFileSync } from "node:fs";
+import {
+  scenes,
+  captions,
+  FPS,
+  TOTAL_FRAMES,
+  getSceneIndex,
+} from "../src/timeline";
+import report from "../public/audio/timing-report.json";
+import { pop, enter } from "../src/theme";
 
-describe("35-second launch timeline", () => {
-  it("has exactly six contiguous scenes and 1050 frames at 30fps", () => {
+describe("natural-pace launch timeline", () => {
+  it("has six contiguous scenes, 1245 frames, and 41.5s at 30fps", () => {
+    expect(FPS).toBe(30);
+    expect(TOTAL_FRAMES).toBe(1245);
     expect(scenes.map((s) => s.duration)).toEqual([
-      135, 105, 240, 300, 150, 120,
+      240, 90, 270, 300, 165, 180,
     ]);
-    expect(scenes.map((s) => s.start)).toEqual([0, 135, 240, 480, 780, 930]);
+    expect(scenes.map((s) => s.start)).toEqual([0, 240, 330, 600, 900, 1065]);
     let end = 0;
     for (const scene of scenes) {
       expect(scene.start).toBe(end);
       end += scene.duration;
     }
-    expect(end).toBe(1050);
-    expect(end / 30).toBe(35);
+    expect(end / FPS).toBe(41.5);
   });
-  it("assigns each frame to exactly one scene", () => {
-    for (let frame = 0; frame < 1050; frame++)
-      expect(
-        scenes.filter((s) => frame >= s.start && frame < s.start + s.duration),
-      ).toHaveLength(1);
+  it("assigns every frame and each exact cut to the correct scene", () => {
+    for (let frame = 0; frame < TOTAL_FRAMES; frame++) {
+      const active = scenes.filter(
+        (s) => frame >= s.start && frame < s.start + s.duration,
+      );
+      expect(active).toHaveLength(1);
+      expect(scenes[getSceneIndex(frame)]).toBe(active[0]);
+    }
   });
-  it("keeps captions ordered, non-overlapping, and inside their scene", () => {
+  it("plays all six original takes at 1x with no clipped speech and a tail", () => {
+    expect(report).toHaveLength(scenes.length);
+    for (const [i, take] of report.entries()) {
+      expect(take.playbackRate).toBe(1);
+      expect(take.start).toBe(scenes[i].start);
+      expect(take.sourceSeconds + take.voiceoverOffset / FPS).toBeLessThan(
+        scenes[i].duration / FPS,
+      );
+      expect(take.tailSeconds).toBeGreaterThan(0.5);
+    }
+  });
+  it("has no time-stretch filter in the assembly pipeline", () => {
+    const source = readFileSync(
+      new URL("../scripts/assemble-voiceover.mjs", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toMatch(/atempo|asetrate|rubberband/);
+    expect(source).not.toMatch(/\[\$\{i\}:a\].*atrim/);
+  });
+  it("keeps captions non-overlapping and inside their own scene", () => {
     let end = 0;
     for (const [start, stop, text] of captions) {
       expect(start).toBeGreaterThanOrEqual(end);
       expect(stop).toBeGreaterThan(start);
-      expect(stop).toBeLessThanOrEqual(1050);
       expect(text.length).toBeGreaterThan(0);
-      const scene = scenes.find(
-        (s) => start >= s.start && start < s.start + s.duration,
-      )!;
+      const scene = scenes[getSceneIndex(start)];
       expect(stop).toBeLessThanOrEqual(scene.start + scene.duration);
       end = stop;
     }
   });
-  it("captions preserve every spoken word in each scene", () => {
+  it("preserves all words from the full original script", () => {
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
     for (const scene of scenes) {
       const text = captions
@@ -47,5 +76,24 @@ describe("35-second launch timeline", () => {
         .join(" ");
       expect(normalize(text)).toBe(normalize(scene.caption));
     }
+  });
+});
+
+describe("smooth motion", () => {
+  it("never overshoots or reverses direction during an entrance", () => {
+    let previous = 0;
+    for (let f = 0; f <= 60; f++) {
+      const value = pop(f);
+      expect(value).toBeGreaterThanOrEqual(previous - 1e-9);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+      previous = value;
+    }
+    expect(pop(60)).toBe(1);
+  });
+  it("settles completely instead of vibrating or scaling whole panels", () => {
+    expect(enter(100)).toEqual({ opacity: 1, transform: "translateY(0px)" });
+    expect(enter(100)).toEqual(enter(101));
+    expect(enter(0).transform).not.toContain("scale");
   });
 });

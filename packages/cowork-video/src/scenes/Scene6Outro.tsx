@@ -1,16 +1,17 @@
 import React from "react";
 import { ArrowUpRight } from "lucide-react";
-import { C, mono, useScene, pop, ramp } from "../theme";
+import { C, mono, useScene, enter, ease } from "../theme";
 import { Logo, Label } from "../components/Primitives";
 export const Scene6Outro: React.FC = () => {
-  const { f, fps, vertical: v } = useScene();
+  const { f, vertical: v } = useScene();
+  const held = Math.min(f, 142);
   return (
     <div
       style={{
         position: "absolute",
         inset: 0,
         background: C.white,
-        color: "#141416",
+        color: C.bg,
       }}
     >
       <div
@@ -18,14 +19,15 @@ export const Scene6Outro: React.FC = () => {
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "linear-gradient(#1414160D 1px, transparent 1px),linear-gradient(90deg,#1414160D 1px,transparent 1px)",
+            "linear-gradient(#1414160D 1px,transparent 1px),linear-gradient(90deg,#1414160D 1px,transparent 1px)",
           backgroundSize: v ? "180px 180px" : "240px 180px",
+          opacity: ease(f, 0, 36),
         }}
       />
       <div
         style={{
           position: "absolute",
-          inset: v ? "230px 76px 220px" : "140px 125px 140px",
+          inset: v ? "245px 100px 260px" : "150px 140px 190px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -33,68 +35,62 @@ export const Scene6Outro: React.FC = () => {
       >
         <div
           style={{
+            ...enter(held, 6, 18),
             display: "flex",
             alignItems: "center",
-            gap: 22,
-            marginBottom: v ? 100 : 35,
+            gap: 24,
+            marginBottom: v ? 80 : 40,
           }}
         >
-          <Logo size={v ? 80 : 62} />
-          <Label style={{ color: C.bg, fontSize: v ? 21 : 18 }}>
+          <Logo size={v ? 76 : 60} />
+          <Label style={{ color: C.bg, fontSize: v ? 19 : 16 }}>
             SEDNIUM COWORK / OPEN SOURCE
           </Label>
         </div>
         <div
-          style={{ display: "flex", flexDirection: "column", gap: v ? 27 : 12 }}
+          style={{ display: "flex", flexDirection: "column", gap: v ? 32 : 22 }}
         >
           {[
             "ZERO LOGINS.",
             "ZERO MERGE CONFLICTS.",
             "ONE SHARED MAIN BRANCH.",
           ].map((t, i) => (
-            <div
-              key={t}
-              style={{
-                fontSize: v ? 78 : 76,
-                fontWeight: 800,
-                letterSpacing: v ? -3 : -2.5,
-                lineHeight: 1.04,
-                opacity: ramp(f, 5 + i * 20, 8 + i * 20),
-                transform: `translateY(${(1 - pop(f, fps, 5 + i * 20)) * 40}px)`,
-                color: i === 2 ? C.orange : C.bg,
-              }}
-            >
-              {t}
+            <div key={t} style={{ overflow: "hidden", paddingBottom: 4 }}>
+              <div
+                style={{
+                  ...enter(held, 14 + i * 26, 30),
+                  fontSize: v ? 76 : 70,
+                  fontWeight: 800,
+                  letterSpacing: -2.5,
+                  lineHeight: 1.08,
+                  color: i === 2 ? C.orange : C.bg,
+                }}
+              >
+                {t}
+              </div>
             </div>
           ))}
         </div>
-        <div
-          style={{
-            marginTop: v ? 110 : 42,
-            opacity: ramp(f, 60, 66),
-            transform: `translateY(${(1 - pop(f, fps, 60)) * 40}px)`,
-          }}
-        >
+        <div style={{ ...enter(held, 98, 24), marginTop: v ? 96 : 48 }}>
           <div
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: v ? 25 : 45,
+              gap: 36,
               background: C.orange,
-              padding: v ? "30px 34px" : "22px 32px",
-              fontSize: v ? 48 : 44,
+              padding: v ? "30px 32px" : "22px 30px",
+              fontSize: v ? 46 : 42,
               fontWeight: 800,
               letterSpacing: -1,
             }}
           >
-            cowork.sednium.com{" "}
-            <ArrowUpRight size={v ? 48 : 44} strokeWidth={2} />
+            cowork.sednium.com <ArrowUpRight size={40} />
           </div>
           <div
             style={{
               fontFamily: mono,
-              fontSize: v ? 16 : 15,
-              marginTop: 24,
+              fontSize: v ? 15 : 14,
+              marginTop: 28,
               lineHeight: 1.8,
             }}
           >

@@ -8,6 +8,7 @@ import {
 } from "remotion";
 import "./fonts";
 import { C, font } from "./theme";
+import { SceneTransition } from "./components/Motion";
 import { scenes } from "./timeline";
 import { HudFrame } from "./components/HudFrame";
 import { Subtitles } from "./components/Subtitles";
@@ -42,7 +43,12 @@ export const CoWorkVideo: React.FC<VideoProps> = ({
             key={scenes[i].name}
             durationInFrames={scenes[i].duration}
           >
-            <Scene />
+            <SceneTransition
+              duration={scenes[i].duration}
+              last={i === components.length - 1}
+            >
+              <Scene />
+            </SceneTransition>
           </Series.Sequence>
         ))}
       </Series>

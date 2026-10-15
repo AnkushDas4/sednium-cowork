@@ -3,8 +3,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const scenes = JSON.parse(fs.readFileSync(path.join(root, "src/scenes.json")));
+const seconds = scenes.reduce((sum, s) => sum + s.duration, 0) / 30;
+const at = (scene, frame = 0) => (scenes[scene].start + frame) / 30;
 const sr = 48000;
-const length = sr * 35;
+const length = sr * seconds;
 const buffer = new Float32Array(length);
 let seed = 17;
 const noise = () => {
@@ -36,20 +39,29 @@ function whoosh(time, duration = 0.25) {
     buffer[start + i] += (n - prev) * Math.sin(Math.PI * t) ** 2 * 0.2;
   }
 }
-[0, 4.5, 8, 16, 19, 22.5, 26, 31, 33].forEach(hit);
-[4.2, 7.7, 15.7, 25.7, 30.7].forEach((t) => whoosh(t));
-[18.9, 19.15, 22.6, 24, 28.17, 29.95].forEach((t) => {
-  tone(t, 0.18, 880, 0.2);
-  tone(t + 0.075, 0.25, 1320, 0.14);
+// Cue from the same timeline as the visuals. Gentler arrivals, not aggressive cut hits.
+[at(0, 128), at(1, 8), at(5, 14), at(5, 98)].forEach((t) => {
+  tone(t, 0.55, 60, 0.25);
+  tone(t, 0.18, 120, 0.08);
 });
-[31.17, 31.83, 32.5].forEach((t) => {
-  tone(t, 0.2, 95, 0.5);
-  whoosh(t, 0.09);
+scenes.slice(1).forEach((scene) => whoosh(scene.start / 30 - 0.24, 0.38));
+[
+  at(2, 90),
+  at(2, 106),
+  at(2, 122),
+  at(3, 30),
+  at(3, 115),
+  at(3, 244),
+  at(4, 88),
+  at(4, 142),
+].forEach((t) => {
+  tone(t, 0.2, 880, 0.13);
+  tone(t + 0.09, 0.28, 1320, 0.09);
 });
-for (let t = 0.5; t < 1.8; t += 0.075)
-  tone(t, 0.025, 1600 + noise() * 700, 0.12);
-// Very restrained 120 BPM mechanical pulse under the voice, not a glossy music bed.
-for (let t = 5; t < 30; t += 0.5) tone(t, 0.12, t % 2 === 0 ? 65 : 130, 0.07);
+for (let t = 1.3; t < 3.6; t += 0.14)
+  tone(t, 0.025, 1600 + noise() * 700, 0.065);
+for (let t = at(1); t < at(5); t += 0.5)
+  tone(t, 0.12, t % 2 === 0 ? 65 : 130, 0.035);
 const wav = Buffer.alloc(44 + length * 2);
 wav.write("RIFF", 0);
 wav.writeUInt32LE(36 + length * 2, 4);
@@ -67,5 +79,5 @@ for (let i = 0; i < length; i++)
   wav.writeInt16LE(Math.round(Math.tanh(buffer[i]) * 28000), 44 + i * 2);
 fs.writeFileSync(path.join(root, "public/sound-design.wav"), wav);
 console.log(
-  "35 seconds of original UI ticks, mechanical cuts, dispatch chimes, and low-frequency hits.",
+  `${seconds}s of restrained sound design, synced to the natural-pace timeline.`,
 );

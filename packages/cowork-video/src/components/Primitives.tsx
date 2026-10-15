@@ -18,9 +18,9 @@ export const Panel: React.FC<
     {title && (
       <div
         style={{
-          height: 54,
+          height: 48,
           borderBottom: `1px solid ${C.line}`,
-          padding: "0 22px",
+          padding: "0 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -94,7 +94,7 @@ export const Title: React.FC<
       fontWeight: 800,
       fontSize: 82,
       letterSpacing: -3,
-      lineHeight: 1.04,
+      lineHeight: 1.08,
       ...style,
     }}
   >
@@ -133,7 +133,7 @@ export const SceneShell: React.FC<
   <div
     style={{
       position: "absolute",
-      inset: vertical ? "160px 76px 190px" : "140px 125px 135px",
+      inset: vertical ? "170px 88px 235px" : "140px 140px 190px",
       ...style,
     }}
   >

@@ -1,111 +1,113 @@
 import React from "react";
-import { spring } from "remotion";
-import { C, mono, useScene, ramp } from "../theme";
+import { C, mono, useScene, enter, ramp } from "../theme";
 import { Label, Panel, SceneShell, Title } from "../components/Primitives";
+import { Reveal } from "../components/Motion";
 export const Scene1Chaos: React.FC = () => {
-  const { f, fps, vertical: v } = useScene();
-  const jitter = f >= 60 && f <= 115 ? Math.sin(f * 1.8) * 5 : 0;
+  const { f, vertical: v } = useScene();
   return (
-    <>
-      <SceneShell vertical={v} style={{ transform: `translateX(${jitter}px)` }}>
+    <SceneShell vertical={v}>
+      <Reveal>
         <Label>00 / THE COORDINATION PROBLEM</Label>
-        <Title style={{ fontSize: v ? 91 : 92, marginTop: 24 }}>
+        <Title style={{ fontSize: v ? 86 : 80, marginTop: 26 }}>
           More agents.
           <br />
           <span style={{ color: C.muted }}>More collisions.</span>
         </Title>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: v ? "1fr" : "1fr 1fr",
-            gap: v ? 28 : 36,
-            marginTop: v ? 80 : 56,
-          }}
-        >
-          {[0, 1].map((n) => {
-            const p = spring({
-              frame: f - n * 5,
-              fps,
-              config: { damping: 14, stiffness: 160 },
-            });
-            const text =
-              n === 0
-                ? "export async function POST(req) {\n  const user = await authenticate(req);\n  return session.create(user);\n}"
-                : "export function POST(request) {\n  const token = request.headers.token;\n  return authorize(token);\n}";
-            return (
-              <Panel
-                key={n}
-                title={`LAPTOP 0${n + 1} // AGENT ${n === 0 ? "A" : "B"}`}
+      </Reveal>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: v ? "1fr" : "1fr 1fr",
+          gap: 32,
+          marginTop: v ? 64 : 44,
+        }}
+      >
+        {[0, 1].map((n) => {
+          const text =
+            n === 0
+              ? "export async function POST(req) {\n  const user = await authenticate(req);\n  return session.create(user);\n}"
+              : "export function POST(request) {\n  const token = request.headers.token;\n  return authorize(token);\n}";
+          return (
+            <Panel
+              key={n}
+              title={`LAPTOP 0${n + 1} // AGENT ${n === 0 ? "A" : "B"}`}
+              style={{ ...enter(f, 18 + n * 14, 32), height: v ? 288 : 264 }}
+            >
+              <div
                 style={{
-                  transform: `translateX(${(1 - p) * (n === 0 ? -1100 : 1100)}px)`,
-                  minHeight: v ? 300 : 260,
+                  padding: v ? 28 : 26,
+                  fontFamily: mono,
+                  fontSize: v ? 21 : 18,
+                  lineHeight: 1.8,
                 }}
               >
-                <div
+                <div style={{ color: C.muted, marginBottom: 20 }}>
+                  <span style={{ color: C.orange }}>EDITING</span>{" "}
+                  src/api/routes.ts
+                </div>
+                <pre
                   style={{
-                    padding: 24,
+                    margin: 0,
                     fontFamily: mono,
-                    fontSize: v ? 21 : 19,
-                    lineHeight: 1.8,
+                    fontSize: "inherit",
+                    whiteSpace: "pre-wrap",
+                    color: n === 0 ? C.white : "#B5B5BA",
                   }}
                 >
-                  <div style={{ color: C.muted, marginBottom: 18 }}>
-                    <span style={{ color: C.orange }}>EDITING</span>{" "}
-                    src/api/routes.ts
-                  </div>
-                  <pre
-                    style={{
-                      margin: 0,
-                      color: n === 0 ? C.white : "#B5B5BA",
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
-                    {text.slice(0, Math.max(0, Math.floor((f - 12) * 3)))}
-                    <span style={{ color: C.orange }}>|</span>
-                  </pre>
-                </div>
-              </Panel>
-            );
-          })}
-        </div>
-        {f >= 55 && (
-          <div
-            style={{
-              position: "absolute",
-              left: v ? -15 : 80,
-              right: v ? -15 : 80,
-              top: v ? 760 : 335,
-              background: C.red,
-              color: C.bg,
-              padding: v ? "32px 28px" : "30px 36px",
-              transform: `scale(${1 + (1 - ramp(f, 55, 64)) * 0.15}) rotate(-1deg)`,
-              boxShadow: "0 10px 0 #0008",
-              fontFamily: mono,
-              fontWeight: 600,
-            }}
-          >
-            <div style={{ fontSize: v ? 32 : 28 }}>[ ! GIT CONFLICT ]</div>
-            <div
-              style={{ fontSize: v ? 21 : 20, marginTop: 12, lineHeight: 1.6 }}
-            >
-              Automatic merge failed in src/api/routes.ts
-              <br />
-              42 lines overwritten
-            </div>
-          </div>
-        )}
-      </SceneShell>
-      {f >= 125 && (
+                  {text.slice(
+                    0,
+                    Math.max(0, Math.floor((f - 40 - n * 10) * 1.5)),
+                  )}
+                  <span style={{ color: C.orange, opacity: f < 128 ? 1 : 0 }}>
+                    |
+                  </span>
+                </pre>
+              </div>
+            </Panel>
+          );
+        })}
+      </div>
+      <div
+        style={{
+          ...enter(f, 128, 18),
+          marginTop: 32,
+          border: `1px solid ${C.red}80`,
+          background: C.red + "12",
+          padding: v ? "26px 30px" : "22px 28px",
+          fontFamily: mono,
+          display: "flex",
+          flexDirection: v ? "column" : "row",
+          gap: v ? 14 : 36,
+          alignItems: v ? "flex-start" : "center",
+        }}
+      >
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background: C.bg,
-            transform: `scaleY(${ramp(f, 125, 129)})`,
-            transformOrigin: "center",
+            fontSize: v ? 24 : 21,
+            color: C.red,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+          }}
+        >
+          [ ! GIT CONFLICT ]
+        </div>
+        <div style={{ fontSize: v ? 19 : 17, lineHeight: 1.6, color: C.white }}>
+          Automatic merge failed in src/api/routes.ts
+          <br />
+          <span style={{ color: C.muted }}>
+            42 lines overwritten · Two agents. One uncoordinated file.
+          </span>
+        </div>
+        <div
+          style={{
+            marginLeft: v ? 0 : "auto",
+            width: 6,
+            height: v ? 3 : 48,
+            background: C.red,
+            opacity: ramp(f, 130, 150),
           }}
         />
-      )}
-    </>
+      </div>
+    </SceneShell>
   );
 };

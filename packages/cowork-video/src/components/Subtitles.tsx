@@ -1,6 +1,6 @@
 import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { captions } from "../timeline";
+import { OUTRO_START, captions } from "../timeline";
 import { C, font, ramp } from "../theme";
 export const Subtitles: React.FC = () => {
   const f = useCurrentFrame();
@@ -12,7 +12,7 @@ export const Subtitles: React.FC = () => {
     <div
       style={{
         position: "absolute",
-        bottom: v ? 108 : 92,
+        bottom: v ? 132 : 108,
         left: v ? 85 : 200,
         right: v ? 85 : 200,
         display: "flex",
@@ -23,15 +23,16 @@ export const Subtitles: React.FC = () => {
       <div
         style={{
           padding: "12px 22px",
-          background: f >= 930 ? C.bg : C.white,
-          color: f >= 930 ? C.white : C.bg,
+          background: f >= OUTRO_START ? C.bg : C.white,
+          color: f >= OUTRO_START ? C.white : C.bg,
           fontFamily: font,
           fontWeight: 600,
           fontSize: v ? 25 : 24,
           lineHeight: 1.25,
           textAlign: "center",
-          opacity: ramp(f, line[0], line[0] + 4),
-          transform: `translateY(${(1 - ramp(f, line[0], line[0] + 6)) * 8}px)`,
+          opacity:
+            ramp(f, line[0], line[0] + 7) * (1 - ramp(f, line[1] - 5, line[1])),
+          transform: `translateY(${(1 - ramp(f, line[0], line[0] + 12)) * 8}px)`,
         }}
       >
         {line[2]}
