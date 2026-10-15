@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
+import { FeedNav } from './components/FeedNav.js';
+import type { FilterType } from './components/ChatTerminal.js';
 import { JoinModal } from './components/JoinModal.js';
-import { Bot, Terminal } from 'lucide-react';
 import { ToastStack } from './components/ToastStack.js';
 import { useNotificationCenter } from './useNotificationCenter.js';
 import { mentionCount } from './notifications.js';
@@ -27,6 +28,9 @@ export const App: React.FC = () => {
   const [inviteNotice, setInviteNotice] = useState('');
   const [connected, setConnected] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'stream' | 'agents'>('stream');
+  // Owned here, not inside ChatTerminal, so the mobile feed row can stay visible while the HUD is
+  // up - that row is the only way back to the stream.
+  const [feedFilter, setFeedFilter] = useState<FilterType>('ALL');
   const [prefilledMessage, setPrefilledMessage] = useState<string>('');
   // Notification state for this room. Derived from the poll below - there is no second channel.
   const center = useNotificationCenter(roomCode, clientId);
@@ -279,6 +283,17 @@ export const App: React.FC = () => {
     }
   };
 
+  // Agents seen in the last 90s - the same window the roster uses, so the badge and the HUD agree.
+  const onlineAgents = Object.values(participants).filter(
+    (p) => p.role === 'agent' && Date.now() - (p.lastSeen || 0) < 90000
+  ).length;
+  // A filter tap always lands back on the stream: on desktop the tab state is irrelevant, so this
+  // is one handler for both layouts rather than two.
+  const selectFeed = (next: FilterType) => {
+    setFeedFilter(next);
+    setMobileTab('stream');
+  };
+
   return (
     <div className="h-full w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text">
       {!connected ? (
@@ -321,52 +336,18 @@ export const App: React.FC = () => {
               {inviteNotice}
             </div>
           )}
-          {/* Mobile Tab Switcher */}
-          <div className="md:hidden flex items-stretch border-b border-grid bg-panel h-11 text-xs font-mono divide-x divide-grid shrink-0 select-none">
-            <button
-              onClick={() => setMobileTab('stream')}
-              aria-pressed={mobileTab === 'stream'}
-              className={`flex-1 flex items-center justify-center gap-2 transition-colors ${
-                mobileTab === 'stream'
-                  ? 'bg-canvas text-accent font-semibold border-b-2 border-accent'
-                  : 'text-muted hover:text-secondary'
-              }`}
-            >
-              <Terminal className="w-3.5 h-3.5" />
-              <span>STREAM</span>
-              {mentionCount(messages, clientId) > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-2xs bg-accent text-accent-ink font-bold">
-                  {mentionCount(messages, clientId)}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setMobileTab('agents')}
-              aria-pressed={mobileTab === 'agents'}
-              className={`flex-1 flex items-center justify-center gap-2 transition-colors ${
-                mobileTab === 'agents'
-                  ? 'bg-canvas text-accent font-semibold border-b-2 border-accent'
-                  : 'text-muted hover:text-secondary'
-              }`}
-            >
-              <Bot className="w-3.5 h-3.5" />
-              <span>AGENTS & LOCKS</span>
-              {Object.values(participants).filter(
-                (p) => p.role === 'agent' && Date.now() - (p.lastSeen || 0) < 90000
-              ).length > 0 ? (
-                <span className="flex items-center gap-1 text-2xs font-mono text-ok font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
-                  {
-                    Object.values(participants).filter(
-                      (p) => p.role === 'agent' && Date.now() - (p.lastSeen || 0) < 90000
-                    ).length
-                  }
-                </span>
-              ) : (
-                <span className="text-2xs text-muted font-mono">0</span>
-              )}
-            </button>
-          </div>
+          {/* One row for both decisions a phone makes: which slice of the feed, and whether the agent
+              HUD is up. These used to be two stacked bars that both looked like tab bars, and the
+              second one could not be reached from the first - so a filter tap had to return the view. */}
+          <FeedNav
+            filter={feedFilter}
+            agentsActive={mobileTab === 'agents'}
+            eventCount={messages.length}
+            mentionCount={mentionCount(messages, clientId)}
+            agentCount={onlineAgents}
+            onSelectFilter={selectFeed}
+            onSelectAgents={() => setMobileTab('agents')}
+          />
 
           {/* Main Full-Viewport Structural Split Workspace */}
           <main className="flex-1 min-h-0 flex overflow-hidden">
@@ -397,6 +378,8 @@ export const App: React.FC = () => {
             >
               <ChatTerminal
                 key={roomCode}
+                filter={feedFilter}
+                onFilterChange={selectFeed}
                 participants={participants}
                 messages={messages}
                 currentClientId={clientId}

@@ -447,10 +447,14 @@ on the relay, `test/repo-parity.test.ts` (both copies, same inputs, must agree) 
 
 ## Dashboard
 
-Room code with one-tap copy, invite link + QR, **live activity rail** (per-agent state chip, what it
-is doing, the files it is touching, and its reasoning behind Show more/less), roster, chat stream with
-filters and `@` mentions, file-lock panel, latest commit, agent onboarding prompt (already carrying
-the invite key), light/dark with system default and no first-paint flash. The rail collapses to one
+Room code that opens the invite sheet (QR, the raw link, copy), **live activity rail** (per-agent state
+chip, what it is doing, the files it is touching, and its reasoning behind Show more/less), roster, chat
+stream with filters and `@` mentions, file-lock panel, latest commit, agent onboarding prompt (already
+carrying the invite key), light/dark with system default and no first-paint flash. On a phone the chrome
+is exactly three rows - header, one nav row (`All · Mentions · Git · Locks | Agents`), composer - because
+two bars that both looked like tab bars (one switching views, one filtering the feed) were the same
+question twice. Tapping a filter walks back out of the agent HUD, so the row never has to change its own
+contents, and the target pills sit inline in the composer instead of on a strip of their own. The rail collapses to one
 row under the header, is `aria-live="polite"`, and is the only part of the UI that updates from
 presence rather than chat.
 

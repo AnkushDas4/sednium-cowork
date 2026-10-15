@@ -108,22 +108,20 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
         </div>
       </div>
 
-      {/* 2. Room Session Cell */}
+      {/* 2. Room Session Cell - the code is the invite: one tap opens the sheet that carries the QR,
+          the raw link and the copy button. It used to be three controls (code-copies, Copy Link, QR)
+          doing the same job, which on a phone was three tap targets for one intent. */}
       <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 flex-1 min-w-0 sm:flex-none">
         <button
-          onClick={handleCopy}
+          onClick={() => setShowQr(true)}
           className="flex items-center gap-1 font-mono min-w-0 hover:bg-hover px-1.5 sm:px-2 py-1 rounded-sm border border-transparent hover:border-grid transition-colors text-left"
-          title="Click to copy invite link"
+          title="Invite link - QR code, share and copy"
+          aria-label="Show the invite link for this room"
         >
           <Hash className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-accent shrink-0" strokeWidth={2.5} />
           <span className="font-semibold text-primary text-xs xs:text-sm tracking-tight truncate min-w-0">
             {roomCode.length > 15 ? `${roomCode.slice(0, 7)}...${roomCode.slice(-4)}` : roomCode}
           </span>
-          {copied ? (
-            <Check className="w-3 h-3 text-accent shrink-0" strokeWidth={2.5} />
-          ) : (
-            <Copy className="w-3 h-3 text-muted shrink-0" />
-          )}
         </button>
 
         <div className="flex items-center gap-1 ml-auto sm:ml-1 shrink-0">
@@ -138,16 +136,6 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               <Copy className="w-3.5 h-3.5 text-accent" />
             )}
             <span>{copied ? 'Copied!' : hasInviteKey ? 'Copy Link' : 'Copy'}</span>
-          </button>
-
-          <button
-            onClick={() => setShowQr(true)}
-            className="min-tap justify-center p-2 sm:px-2.5 sm:py-1.5 flex items-center gap-1.5 bg-hover hover:bg-hover/80 text-secondary hover:text-primary rounded-sm transition-colors border border-grid text-xs font-sans font-medium"
-            title="Show mobile QR code"
-            aria-label="Show QR code"
-          >
-            <QrCode className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-secondary" />
-            <span className="hidden md:inline">QR</span>
           </button>
 
           {onNewRoom && (
@@ -241,8 +229,9 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
         {/* Notification bell (only once a room is actually being polled) */}
         {center && <NotificationCenter center={center} />}
 
-        {/* Live sync pulse */}
-        <div className="flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
+        {/* Live sync pulse - a decoration that means "we are polling"; on a phone the Agents count
+            in FeedNav already answers that, so it does not get a tap target's width here. */}
+        <div className="hidden sm:flex items-center gap-1 text-muted pl-1" title="Active 2s heartbeat">
           <Activity className="w-4 h-4 text-accent animate-pulse" />
         </div>
 

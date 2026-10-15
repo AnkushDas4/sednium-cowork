@@ -40,9 +40,17 @@ interface ChatTerminalProps {
   /** Set when a system notification was clicked: that message is scrolled to and ringed once. */
   focusMessageId?: string;
   onFocusHandled?: () => void;
+  /**
+   * On phones the filter lives up in App, because the one-row FeedNav has to stay visible while the
+   * agent HUD is open - a filter bar buried inside this component could not switch views. Both props
+   * are optional so a bare <ChatTerminal /> still filters itself, which keeps this component usable
+   * on its own (and testable without the whole app).
+   */
+  filter?: FilterType;
+  onFilterChange?: (filter: FilterType) => void;
 }
 
-type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
+export type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
 
 export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   messages,
@@ -56,9 +64,17 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   onClearPrefill,
   focusMessageId = '',
   onFocusHandled,
+  filter: filterProp,
+  onFilterChange,
 }) => {
   const [input, setInput] = useState('');
-  const [filter, setFilter] = useState<FilterType>('ALL');
+  // Written to both places so the controlled and uncontrolled paths never drift apart.
+  const [internalFilter, setInternalFilter] = useState<FilterType>('ALL');
+  const filter = filterProp ?? internalFilter;
+  const setFilter = (next: FilterType) => {
+    setInternalFilter(next);
+    onFilterChange?.(next);
+  };
   const [sending, setSending] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -360,8 +376,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   return (
     <div className="h-full flex flex-col bg-canvas divide-y divide-grid overflow-hidden">
-      {/* 1. Filter Tab Bar */}
-      <div className="h-10 bg-panel border-b border-grid flex items-stretch px-1 xs:px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto no-scrollbar">
+      {/* 1. Filter Tab Bar - phones get the merged one-row FeedNav from App instead, so this bar is
+          the desktop filter strip and is not rendered below md. */}
+      <div className="hidden md:flex h-10 bg-panel border-b border-grid items-stretch px-3 divide-x divide-grid select-none shrink-0 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setFilter('ALL')}
           className={`min-tap justify-center gap-1.5 px-3 xs:px-3.5 text-xs font-sans font-medium relative transition-colors flex items-center shrink-0 ${
@@ -953,39 +970,40 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         )}
 
-        {/* Row 1: Quick Target Mention Bar with Multiple Tagging Support */}
-        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1 sm:py-1.5 border-b border-grid overflow-x-auto no-scrollbar bg-hover/30 overscroll-x-contain">
-          <span className="text-2xs font-mono uppercase text-muted shrink-0 mr-1 flex items-center gap-1 font-semibold select-none">
-            <AtSign className="w-3 h-3 text-accent" />
-            <span className="hidden xs:inline">TAG </span>TARGETS:
-          </span>
-          {quickTargets.map((mention) => {
-            const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
-            return (
-              <button
-                key={mention}
-                type="button"
-                onClick={() => handlePillClick(mention)}
-                className={`px-2.5 py-1 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
-                  isSelected
-                    ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
-                    : 'bg-panel hover:bg-hover text-secondary hover:text-primary border-grid'
-                }`}
-              >
-                <span>{mention}</span>
-                {isSelected && mention !== '@all' && (
-                  <span className="text-[10px] opacity-75 hover:opacity-100 font-bold ml-0.5">✕</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Row 2: 100% Flush Edge-to-Edge Input & Dispatch Button */}
+        {/* One flush row: the target pills sit inline left of the input instead of on their own bar,
+            because "who is this for" is part of writing the message, not a separate mode. The
+            "TAG TARGETS:" label went with it - the pills are the label, and typing @ still opens the
+            picker above. With nothing to tag (a room of one) the whole cluster is not rendered. */}
         <form onSubmit={handleSubmit} className="h-12 xs:h-13 sm:h-14 flex items-stretch">
           <div className="pl-3 sm:pl-4 pr-1.5 sm:pr-2 flex items-center text-accent shrink-0 bg-canvas">
             <Terminal className="w-4 h-4" />
           </div>
+
+          {quickTargets.length > 1 && (
+            <div className="flex items-center gap-1 self-center sm:self-stretch sm:px-2 pl-1 max-w-[44%] sm:max-w-[260px] overflow-x-auto no-scrollbar shrink-0 sm:border-r sm:border-grid">
+              {quickTargets.map((mention) => {
+                const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
+                return (
+                  <button
+                    key={mention}
+                    type="button"
+                    onClick={() => handlePillClick(mention)}
+                    title={isSelected ? `Stop addressing ${mention}` : `Address ${mention}`}
+                    className={`px-2 py-1.5 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
+                      isSelected
+                        ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
+                        : 'bg-hover hover:bg-hover/80 text-secondary hover:text-primary border-transparent'
+                    }`}
+                  >
+                    <span>{mention}</span>
+                    {isSelected && mention !== '@all' && (
+                      <span className="text-[10px] opacity-75 font-bold">✕</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           <input
             ref={inputRef}
