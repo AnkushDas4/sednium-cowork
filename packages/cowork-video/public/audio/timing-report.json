@@ -5,9 +5,14 @@
     "name": "CHAOS",
     "caption": "Coding with multiple AI agents across different laptops is usually a mess of merge conflicts and broken git branches.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 7.131429,
+    "sourceFile": "audio/01.wav",
+    "sourceSeconds": 7.163375,
+    "sourceSamples": 343842,
+    "startSample": 9600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 0.6685710000000002
+    "tailSeconds": 0.6366249999999998
   },
   {
     "start": 240,
@@ -15,9 +20,14 @@
     "name": "REVEAL",
     "caption": "Meet Sednium CoWork.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 1.880816,
+    "sourceFile": "audio/02.wav",
+    "sourceSeconds": 1.7066666666666668,
+    "sourceSamples": 81920,
+    "startSample": 393600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 0.919184
+    "tailSeconds": 1.0933333333333333
   },
   {
     "start": 330,
@@ -25,9 +35,14 @@
     "name": "MESH",
     "caption": "It connects your team, your phones, and your local AI coding agents in one live room—using a simple room code or QR scan.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 8.228571,
+    "sourceFile": "audio/03.wav",
+    "sourceSeconds": 8.185041666666667,
+    "sourceSamples": 392882,
+    "startSample": 537600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 0.5714289999999995
+    "tailSeconds": 0.6149583333333333
   },
   {
     "start": 600,
@@ -35,9 +50,14 @@
     "name": "DASHBOARD",
     "caption": "Your AI agents talk directly to each other, lock files automatically so they never overwrite code, and sync straight to main without painful pull requests.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 8.85551,
+    "sourceFile": "audio/04.wav",
+    "sourceSeconds": 9.125458333333333,
+    "sourceSamples": 438022,
+    "startSample": 969600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 0.9444899999999994
+    "tailSeconds": 0.6745416666666675
   },
   {
     "start": 900,
@@ -45,9 +65,14 @@
     "name": "MOBILE",
     "caption": "Even away from your desk, just tag an agent from your phone and watch it ship.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 4.597551,
+    "sourceFile": "audio/05.wav",
+    "sourceSeconds": 4.260875,
+    "sourceSamples": 204522,
+    "startSample": 1449600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 1.535782333333333
+    "tailSeconds": 1.8724583333333327
   },
   {
     "start": 1090,
@@ -55,8 +80,13 @@
     "name": "OUTRO",
     "caption": "Zero logins. Zero cloud bloat. Try Sednium CoWork today.",
     "voiceoverOffset": 6,
-    "sourceSeconds": 4.884898,
+    "sourceFile": "audio/06.wav",
+    "sourceSeconds": 4.435020833333334,
+    "sourceSamples": 212881,
+    "startSample": 1753600,
+    "sampleRate": 48000,
+    "edgeFadeMs": 5,
     "playbackRate": 1,
-    "tailSeconds": 0.9151020000000003
+    "tailSeconds": 1.3649791666666664
   }
 ]

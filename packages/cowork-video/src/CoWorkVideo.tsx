@@ -7,6 +7,7 @@ import {
   staticFile,
 } from "remotion";
 import "./fonts";
+import { selectVoiceover, soundDesignVolume, voiceoverRevision } from "./audio";
 import { C, font } from "./theme";
 import { SceneTransition } from "./components/Motion";
 import { scenes, transitionForScene } from "./timeline";
@@ -33,6 +34,9 @@ export const CoWorkVideo: React.FC<VideoProps> = ({
 }) => {
   const files = getStaticFiles();
   const has = (name: string) => files.some((file) => file.name === name);
+  const voiceover = selectVoiceover(files.map((file) => file.name));
+  const voiceoverFile = files.find((file) => file.name === voiceover);
+  const audioVersion = `${voiceoverRevision}-${voiceoverFile?.lastModified ?? 0}-${voiceoverFile?.sizeInBytes ?? 0}`;
   return (
     <AbsoluteFill
       style={{ background: C.bg, color: C.white, fontFamily: font }}
@@ -52,9 +56,19 @@ export const CoWorkVideo: React.FC<VideoProps> = ({
           </Series.Sequence>
         ))}
       </Series>
-      {has("voiceover.mp3") && <Audio src={staticFile("voiceover.mp3")} />}{" "}
+      {voiceover && (
+        <Audio
+          src={`${staticFile(voiceover)}?v=${audioVersion}`}
+          playbackRate={1}
+          pauseWhenBuffering
+        />
+      )}
       {soundDesign && has("sound-design.wav") && (
-        <Audio src={staticFile("sound-design.wav")} volume={0.3} />
+        <Audio
+          src={staticFile("sound-design.wav")}
+          volume={soundDesignVolume}
+          pauseWhenBuffering
+        />
       )}
       <HudFrame />
       {captions && <Subtitles />}

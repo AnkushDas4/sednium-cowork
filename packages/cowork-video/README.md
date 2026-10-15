@@ -1,6 +1,6 @@
 # Sednium CoWork — natural-pace launch film
 
-**42⅓ seconds · 1270 frames · 30fps.** The full original script and male recordings now play at **exactly 1× speed**. This revision intentionally replaces the original 35-second cut: scene lengths accommodate the recordings, not the other way around.
+**42⅓ seconds · 1270 frames · 30fps.** The full original script and refreshed male recordings play at **exactly 1× speed**. This revision intentionally replaces the original 35-second cut: scene lengths accommodate the recordings, not the other way around.
 
 | Composition | Size | Export |
 |---|---|---|
@@ -49,7 +49,7 @@ Renders are ignored by Git. All required source assets are included.
 
 ## What changed in the pacing revision
 
-- **No speed changes:** all six original narration takes play at 1×, with their full spoken content preserved. Opening is now 8 seconds instead of 4.5; outro is 6 instead of 4.
+- **No speed changes:** all six refreshed narration takes play at 1×, with their full spoken content preserved. Opening is now 8 seconds instead of 4.5; outro is 6 instead of 4.
 - A brief 0.2-second lead-in per scene, then at least half a second after each take, gives the edit breathing room.
 - Critically damped entrances settle without overshoot. Most movement travels only 12–32px, not across the whole screen.
 - Removed camera jitter, warning-banner slams/rotation, scale-from-zero panels, and abrupt button scaling.
@@ -87,15 +87,21 @@ npx remotion render src/index.ts CoWorkLaunchHorizontal renders/clean.mp4 \
 
 ### Voiceover: never speed up to fit
 
-The composition reads `public/voiceover.mp3` at the default **1×** rate. You can replace that file with another master. Preserve the scene cue starts below or update the timeline/captions to match. If the file is absent, preview and rendering continue without narration. The sound-design file is independently optional.
+The composition prefers **`public/voiceover.wav`**: a lossless, 48kHz, 16-bit dual-mono stereo master played at **1×**. `public/voiceover.mp3` remains a compatibility fallback only when WAV is absent. Remove both files for a silent narration preview. The sound-design file is independently optional.
 
-Original narration takes remain unchanged under `public/audio/01.mp3` through `06.mp3`.
+The six male narration takes were freshly regenerated for the voice-repair revision and are included as **`public/audio/01.wav` through `06.wav`**. Retired compressed takes are recoverable from Git history. Same wording, same selected male voice, same 1270-frame timeline; no speed changes.
 
 ```sh
 npm --workspace=@sednium/cowork-video run audio
 ```
 
-The assembly script only delays and mixes the original recordings, pads the full master, and normalizes loudness to a -16 LUFS target. **There are no tempo/rate filters and no per-take speech trims.** If a source take is longer than its slot, generation throws an error asking you to extend the scene. It never silently accelerates or truncates the take. `public/audio/timing-report.json` records every playback rate as 1, source length, and remaining tail.
+Assembly decodes each take to mono PCM once, resamples to 48kHz (without changing pitch/speed), and places it on exact sample offsets: **1600 samples per 30fps frame**. It applies a **5ms raised-cosine ramp at each take's edges** to prevent join clicks, without shortening the recordings or moving words. The master uses one measured constant gain, aiming for -16 LUFS stereo with -2dB true-peak headroom. If the source's crest factor prevents both targets, peak safety takes precedence over extra loudness. There is no time-varying loudness processing/pumping. Stereo channels duplicate the same mono narration to avoid another mono downmix attenuation in the final render.
+
+There are **no tempo/rate filters, per-take speech trims, or intermediate MP3 encodes**. A source that overruns its slot fails generation rather than being accelerated/truncated. An MP3 fallback is encoded only after the lossless master is finished. Video exports use WAV directly and encode narration to AAC only at the final mix.
+
+`public/audio/timing-report.json` records source filenames, exact sample counts/positions, 1× playback rates, and tails. `public/audio/voiceover-manifest.json` records the PCM SHA-256 revision, format, fixed gain, and loudness estimates. Source URLs include this revision plus file modification metadata so Studio does not keep replaying an old cached master after `git pull`. Both audio elements pause the preview while buffering instead of running ahead.
+
+To replace narration manually, replace `voiceover.wav`, or remove it to use your replacement `voiceover.mp3`. Preserve the scene cue starts below, or update the timeline/caption cues to match. Restart Studio and hard-refresh after updating media. Running the assembly command rebuilds the master from the six source WAVs, overwriting manual master edits.
 
 Caption cues are editorial phrase timings, not forced-aligned word timestamps. Update them when replacing narration.
 
@@ -105,7 +111,7 @@ Caption cues are editorial phrase timings, not forced-aligned word timestamps. U
 node packages/cowork-video/scripts/generate-sound-design.mjs
 ```
 
-The seeded, original synthesized track now derives cut cues and duration from `scenes.json`. Restrained whooshes, UI ticks, connection/dispatch chimes, low hits, and a quiet 120-BPM pulse sit beneath the narration at 0.3 volume. No external samples/music licenses are required.
+The seeded, original synthesized track now derives cut cues and duration from `scenes.json`. Restrained whooshes, UI ticks, connection/dispatch chimes, low hits, and a quiet 120-BPM pulse sit beneath the narration at a restrained 0.18 volume, smoothly ducked to 0.08 during spoken lines so digital ticks do not mask consonants. No external samples/music licenses are required.
 
 ### Typography
 

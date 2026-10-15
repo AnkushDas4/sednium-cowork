@@ -36,7 +36,7 @@ describe("natural-pace launch timeline", () => {
       expect(scenes[getSceneIndex(frame)]).toBe(active[0]);
     }
   });
-  it("plays all six original takes at 1x with no clipped speech and a tail", () => {
+  it("plays all six refreshed takes at 1x with no clipped speech and a tail", () => {
     expect(report).toHaveLength(scenes.length);
     for (const [i, take] of report.entries()) {
       expect(take.playbackRate).toBe(1);
