@@ -560,6 +560,12 @@ Vercel serves ahead of the SPA rewrite. `.gitignore` uses `public/*` with two ne
 and manifest are committed while the relay assets are not — no 1 MB duplicate in git. Root `build` runs
 `bundle:mcp` **before** the workspaces so the copy can never be stale.
 
+These four names are **not** content-hashed, so `vercel.json` serves `install.mjs`, `verify.mjs`,
+`cowork.cjs` and their `.sha256` sidecars with `no-cache, max-age=0, must-revalidate`: a re-run of the
+install line after a deploy must not be handed the previous bundle by an edge or a corporate proxy.
+The sidecars matter as much as the files — a fresh bundle against a stale digest would fail the
+installer's sha check and read like a corrupted download.
+
 ---
 
 ## Troubleshooting
