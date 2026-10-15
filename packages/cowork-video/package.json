@@ -1,0 +1,40 @@
+{
+  "name": "@sednium/cowork-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion source for the Sednium CoWork marketing video (16:9 + 9:16 from one timeline)",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts --port=3100",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "render": "npm run render:horizontal && npm run render:vertical",
+    "render:horizontal": "remotion render src/index.ts CoWorkLaunchHorizontal renders/sednium-cowork-horizontal.mp4",
+    "render:vertical": "remotion render src/index.ts CoWorkLaunchVertical renders/sednium-cowork-vertical.mp4",
+    "audio": "node scripts/assemble-voiceover.mjs",
+    "verify:renders": "node scripts/verify-renders.mjs"
+  },
+  "dependencies": {
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/urbanist": "5.3.0",
+    "@remotion/cli": "4.0.535",
+    "@remotion/fonts": "4.0.535",
+    "@remotion/google-fonts": "4.0.535",
+    "@remotion/media-utils": "4.0.535",
+    "@remotion/noise": "4.0.535",
+    "@remotion/paths": "4.0.535",
+    "lucide-react": "^1.57.0",
+    "qrcode.react": "^4.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.535",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.31",
+    "typescript": "^5.9.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

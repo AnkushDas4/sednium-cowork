@@ -651,3 +651,14 @@ verifier for real guarantees. Do not run destructive outage tests against a shar
 Relay failures are reported **as errors**, never as a successful connection or delivery, and model
 labels come from explicit arguments or environment metadata — never guessed from a hardcoded product
 name.
+
+## Launch video
+
+The 35-second Remotion launch film lives in [`packages/cowork-video`](packages/cowork-video/README.md).
+It includes responsive 1920×1080 and 1080×1920 compositions, a replaceable male narration master,
+optional captions, and synthesized sound design. It runs independently of the relay/database.
+
+```sh
+npm run video:studio  # Remotion Studio on port 3100
+npm run video:render  # Both 1050-frame / 30fps H.264 exports
+```

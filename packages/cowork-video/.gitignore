@@ -1,0 +1,5 @@
+node_modules/
+# Rendered videos are build output (like the relay's generated public/ assets): reproduce them with `npm run render`.
+renders/
+out/
+.cache/

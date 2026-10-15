@@ -1,7 +1,7 @@
 {
   "name": "sednium-cowork",
   "version": "1.0.0",
-  "description": "Sednium CoWork \u2014 Stateless HTTP Mailbox Relay, Cyberpunk Dashboard & Antigravity MCP Server",
+  "description": "Sednium CoWork — Stateless HTTP Mailbox Relay, Cyberpunk Dashboard & Antigravity MCP Server",
   "type": "module",
   "bin": {
     "cowork": "./bin/cowork.cjs",
@@ -19,7 +19,9 @@
     "typecheck": "tsc -p packages/cowork-mcp/tsconfig.json --noEmit && npm --workspace=@sednium/cowork-web-relay run typecheck",
     "verify:relay": "node scripts/verify-relay.mjs",
     "mcp:install": "node scripts/install-mcp.mjs",
-    "sync:assets": "node scripts/sync-client-assets.mjs"
+    "sync:assets": "node scripts/sync-client-assets.mjs",
+    "video:studio": "npm --workspace=@sednium/cowork-video run studio",
+    "video:render": "npm --workspace=@sednium/cowork-video run render"
   },
   "devDependencies": {
     "esbuild": "^0.27.0",
