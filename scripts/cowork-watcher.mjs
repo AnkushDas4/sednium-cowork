@@ -53,6 +53,7 @@ async function poll() {
       let triggered = false;
       for (const msg of data.messages) {
         if ((msg.senderId || '').toLowerCase() === agentId) continue;
+        if ((msg.senderId || '').toUpperCase() === 'SYSTEM' || msg.contentType === 'STATUS') continue;
         const text = msg.text || '';
         const timeStr = new Date().toLocaleTimeString();
         console.log(`\n🚨 [COWORK_INCOMING_TASK] [${timeStr}] @${msg.senderId} says: "${text}" (Type: ${msg.contentType})`);
