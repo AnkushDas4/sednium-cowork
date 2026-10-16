@@ -148,6 +148,21 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
         {liveCount > 0 && (
           <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse shrink-0" aria-hidden="true" />
         )}
+        {!open && (() => {
+          const activeRow = rows.find((r) => !r.quiet && r.activity.state !== 'idle');
+          if (!activeRow) return null;
+          return (
+            <span className="flex items-center gap-1.5 text-2xs font-mono text-primary truncate max-w-[12rem] xs:max-w-xs ml-1">
+              <span className="text-accent font-semibold truncate">@{activeRow.id}:</span>
+              <span className="uppercase font-bold text-accent text-[10px] px-1.5 py-0.2 rounded-sm bg-accent/15 border border-accent/30 shrink-0">
+                {activeRow.activity.state}
+              </span>
+              <span className="truncate text-secondary hidden xs:inline">
+                {activeRow.activity.summary || ''}
+              </span>
+            </span>
+          );
+        })()}
         <span className="ml-auto flex items-center gap-1 text-2xs font-sans text-muted">
           {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           <span className="hidden xs:inline">{open ? 'Hide' : 'Show'}</span>

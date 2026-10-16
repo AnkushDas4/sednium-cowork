@@ -7,9 +7,11 @@ import {
   Cpu,
   FileCode,
   MessageSquare,
+  Activity,
 } from 'lucide-react';
 import type { ParticipantInfo, FileLockInfo, GitRepoBinding } from '../../api/_types.js';
 import { RepoCard } from './RepoCard.js';
+import { timeAgo } from '../notifications.js';
 
 interface AgentHUDProps {
   participants: Record<string, ParticipantInfo>;
@@ -121,6 +123,65 @@ export const AgentHUD: React.FC<AgentHUDProps> = ({
                     </span>
                   </div>
                 </div>
+
+                {/* Live Activity State Stream */}
+                {participant.activity && participant.activity.state && (
+                  <div className="pt-1.5 pb-0.5">
+                    <div className="text-2xs font-mono uppercase text-muted tracking-wide mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Activity className="w-3 h-3 text-accent" />
+                        <span>LIVE ACTIVITY STREAM</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-muted">
+                        {participant.activity.at ? timeAgo(now - participant.activity.at) : 'just now'}
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-panel border border-grid space-y-1.5 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-sans font-semibold uppercase tracking-wider text-accent bg-accent/15 border border-accent/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+                          {participant.activity.state}
+                        </span>
+                        {participant.activity.tool && (
+                          <span className="text-2xs font-mono text-muted">
+                            via {participant.activity.tool}
+                          </span>
+                        )}
+                      </div>
+
+                      {participant.activity.summary && (
+                        <div className="text-xs font-sans text-secondary font-medium leading-snug">
+                          {participant.activity.summary}
+                        </div>
+                      )}
+
+                      {participant.activity.files && participant.activity.files.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {participant.activity.files.slice(0, 4).map((f) => (
+                            <span
+                              key={f}
+                              className="font-mono text-2xs bg-canvas px-1.5 py-0.5 rounded-sm border border-grid text-secondary truncate max-w-[12rem]"
+                            >
+                              {f.split('/').pop() || f}
+                            </span>
+                          ))}
+                          {participant.activity.files.length > 4 && (
+                            <span className="font-mono text-2xs text-muted">
+                              +{participant.activity.files.length - 4} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {participant.activity.detail && (
+                        <div className="text-2xs font-sans text-muted italic bg-canvas p-1.5 rounded border border-grid/50 leading-relaxed whitespace-pre-wrap">
+                          {participant.activity.detail}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Clean Unbordered Current Task Line */}
                 <div className="pt-1">

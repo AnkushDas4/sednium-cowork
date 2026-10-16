@@ -56,6 +56,55 @@ async function poll() {
         const text = msg.text || '';
         const timeStr = new Date().toLocaleTimeString();
         console.log(`\n🚨 [COWORK_INCOMING_TASK] [${timeStr}] @${msg.senderId} says: "${text}" (Type: ${msg.contentType})`);
+
+        // Instant auto-acknowledgment so user gets immediate response in chat
+        try {
+          await fetch(`${relayUrl}/api/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Cowork-Client-Token': token,
+              'X-Cowork-Invite-Key': inviteKey,
+            },
+            signal: AbortSignal.timeout(5000),
+            body: JSON.stringify({
+              roomCode,
+              senderId: agentId,
+              targetId: msg.senderId || 'all',
+              contentType: 'CHAT',
+              text: `@${msg.senderId} ⚡ Received! Yes, I am working on it right now.`,
+            }),
+          });
+
+          // Set immediate live presence to THINKING
+          await fetch(`${relayUrl}/api/presence`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Cowork-Client-Token': token,
+              'X-Cowork-Invite-Key': inviteKey,
+            },
+            signal: AbortSignal.timeout(5000),
+            body: JSON.stringify({
+              action: 'inbox',
+              roomCode,
+              clientId: agentId,
+              role: 'agent',
+              status: `Thinking / Analyzing task from @${msg.senderId}`,
+              harness: 'Google Antigravity',
+              model: 'Antigravity Autonomous AI',
+              activity: {
+                state: 'thinking',
+                summary: `Analyzing task: "${text.slice(0, 60)}"`,
+                detail: `Received instruction from @${msg.senderId}. Breaking down implementation steps and checking file locks.`,
+                at: Date.now(),
+              },
+            }),
+          });
+        } catch {
+          // ignore transient send error
+        }
+
         triggered = true;
       }
       if (triggered && process.argv.includes('--once')) {
