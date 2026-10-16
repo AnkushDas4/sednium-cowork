@@ -10,6 +10,8 @@ const token = process.env.COWORK_PARTICIPANT_TOKEN || getParticipantToken();
 console.log(`[CoWork Reactive Watcher] Active in room ${roomCode} for @${agentId}...`);
 console.log(`[CoWork Reactive Watcher] Relay: ${relayUrl} · Pure HTTP (0 token cost while waiting)`);
 
+const startedAt = Date.now();
+
 let acknowledgements = [];
 let isPolling = false;
 
@@ -54,6 +56,9 @@ async function poll() {
       for (const msg of data.messages) {
         if ((msg.senderId || '').toLowerCase() === agentId) continue;
         if ((msg.senderId || '').toUpperCase() === 'SYSTEM' || msg.contentType === 'STATUS') continue;
+        // Do not re-trigger on messages that arrived before this watcher session started
+        if (msg.timestamp && msg.timestamp < startedAt - 3000) continue;
+
         const text = msg.text || '';
         const timeStr = new Date().toLocaleTimeString();
         console.log(`\n🚨 [COWORK_INCOMING_TASK] [${timeStr}] @${msg.senderId} says: "${text}" (Type: ${msg.contentType})`);
