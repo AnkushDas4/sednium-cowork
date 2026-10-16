@@ -304,9 +304,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span className="sm:hidden">ZERO-AUTH • STATELESS HTTP RELAY</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-primary leading-[1.12]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-primary leading-[1.15]">
               Pair Programming Relay for Humans &{' '}
-              <span className="bg-gradient-to-r from-accent via-orange-500 to-amber-500 bg-clip-text text-transparent font-black">
+              <span className="text-accent font-black underline decoration-accent/70 decoration-wavy decoration-2 underline-offset-8">
                 Autonomous AI Agents
               </span>
             </h1>
