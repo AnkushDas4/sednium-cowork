@@ -119,6 +119,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const prevMessagesLengthRef = useRef(messages.length);
+  const prevScrollTopRef = useRef(0);
 
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [unreadWhileScrolled, setUnreadWhileScrolled] = useState(0);
@@ -130,6 +131,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const startUserInteraction = () => {
     isUserInteractingRef.current = true;
     if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
+    interactTimeoutRef.current = setTimeout(() => {
+      isUserInteractingRef.current = false;
+    }, 1500);
   };
 
   const endUserInteraction = () => {
@@ -140,8 +144,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   };
 
   const handleWheel = (e: React.WheelEvent) => {
+    startUserInteraction();
     if (e.deltaY < 0) {
-      startUserInteraction();
+      isNearBottomRef.current = false;
+      setIsScrolledUp(true);
     }
   };
 
@@ -152,9 +158,12 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }));
   };
 
-  const isMessageLong = (text: string) => {
+  const isMessageLong = (text: string, isAgent = false) => {
     if (!text) return false;
     const lineCount = (text.match(/\n/g) || []).length + 1;
+    if (isAgent) {
+      return text.length > 90 || lineCount > 2 || text.includes('```') || (text.includes('`') && text.length > 50);
+    }
     return text.length > 150 || lineCount > 3;
   };
 
@@ -169,18 +178,33 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     const el = scrollContainerRef.current;
     if (!el) return;
     const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // Strict threshold: user is only at the bottom if within 35px
-    const atBottom = distanceToBottom <= 35;
-    isNearBottomRef.current = atBottom;
-    setIsScrolledUp(!atBottom);
+
+    // Detect user actively scrolling upward
+    if (el.scrollTop < prevScrollTopRef.current - 5) {
+      isNearBottomRef.current = false;
+      setIsScrolledUp(true);
+      startUserInteraction();
+    }
+    prevScrollTopRef.current = el.scrollTop;
+
+    // Threshold: user is only near the bottom if within 60px
+    const atBottom = distanceToBottom <= 60;
     if (atBottom) {
+      isNearBottomRef.current = true;
+      setIsScrolledUp(false);
       setUnreadWhileScrolled(0);
+    } else {
+      isNearBottomRef.current = false;
+      setIsScrolledUp(true);
     }
   };
 
   useEffect(() => {
     const countDiff = messages.length - prevMessagesLengthRef.current;
     prevMessagesLengthRef.current = messages.length;
+
+    // Critical: Do NOT auto-scroll on polls or updates if no new messages arrived
+    if (countDiff <= 0) return;
 
     const lastMsg = messages[messages.length - 1];
     const isSelfLast = lastMsg && lastMsg.senderId === currentClientId;
@@ -194,7 +218,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     // Only scroll background messages if user is sitting at bottom AND not touching/scrolling
     if (isNearBottomRef.current && !isUserInteractingRef.current) {
       scrollToBottom('smooth');
-    } else if (countDiff > 0) {
+    } else {
       setUnreadWhileScrolled((prev) => prev + countDiff);
     }
   }, [messages, currentClientId]);
@@ -771,9 +795,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             }
 
             // Peer / AI Agent Message: Left-Aligned Speech Bubble
-            const isLong = isMessageLong(msg.text);
+            const isAgent = msg.senderId.toLowerCase().includes('ai') || participants[msg.senderId]?.role === 'agent' || msg.contentType === 'AGENT_SYNC';
+            const isLong = isMessageLong(msg.text, isAgent);
             const isExpanded = !!expandedMap[msg.messageId];
-            const isAgent = msg.senderId.includes('ai');
 
             return (
               <div
@@ -929,7 +953,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
         <button
           type="button"
           onClick={() => scrollToBottom('smooth')}
-          className="absolute bottom-4 right-4 sm:right-6 z-20 flex items-center gap-1.5 px-3.5 py-2 bg-panel/95 hover:bg-panel border border-grid hover:border-accent text-primary rounded-full shadow-float backdrop-blur-md text-xs font-mono font-semibold transition-all animate-bounce cursor-pointer select-none"
+          className="absolute bottom-4 right-4 sm:right-6 z-30 flex items-center gap-1.5 px-3.5 py-2 bg-panel border-2 border-accent text-primary hover:text-accent rounded-full shadow-float backdrop-blur-md text-xs font-mono font-bold transition-all animate-bounce cursor-pointer select-none"
           title="Scroll down to latest messages"
           aria-label="Scroll to bottom"
         >
@@ -939,7 +963,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               {unreadWhileScrolled} new
             </span>
           ) : (
-            <span className="text-2xs text-secondary hidden xs:inline">Jump to bottom</span>
+            <span className="text-2xs text-primary hidden xs:inline">Jump to bottom</span>
           )}
         </button>
       )}

@@ -266,7 +266,11 @@ export const App: React.FC = () => {
 
     try {
       const res = await relayRequest<{ ok: boolean; messageId?: string }>('/api/send', {
-        roomCode, senderId: clientId, targetId: 'all', contentType: 'CHAT', text,
+        roomCode,
+        senderId: clientId,
+        targetId: isDirected ? (allMentions.length === 1 ? allMentions[0] : 'all') : 'all',
+        contentType: isDirected ? 'CROSS_PROMPT' : 'CHAT',
+        text,
       }, roomCode);
 
       if (res && res.messageId) {
