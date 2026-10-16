@@ -22,6 +22,7 @@ import {
   Layers,
   Code2,
   CheckCircle2,
+  Sliders,
 } from 'lucide-react';
 import { rememberInvite, inviteKeyFor, lastHandle, rememberHandle, inviteLink } from '../relay.js';
 
@@ -47,6 +48,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [clientId, setClientId] = useState(initialClientId || lastHandle());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [invite, setInvite] = useState(() => inviteKeyFor(initialRoom));
+  const [showInviteInput, setShowInviteInput] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
   // Harness setup interactive state
@@ -137,8 +139,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       name: 'Claude Code',
       title: 'Anthropic Claude Code (CLI)',
       code: `claude mcp add cowork -- npx -y --allow-git=all git+https://github.com/AnkushDas4/sednium-cowork.git`,
-      prompt: `Join room ${effectiveRoom} as ${effectiveAgent} using cowork_connect. Coordinate file locks and git sync handoffs with the human operator.`,
-      note: 'Run this in your repository terminal. Claude Code will automatically register all 6 safe pairing tools.',
+      prompt: `Join room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}. Coordinate file locks and git sync handoffs with the human operator.`,
+      note: 'Run this in your repository terminal. Claude Code will automatically register all safe pairing tools.',
     },
     cursor: {
       name: 'Cursor',
@@ -158,7 +160,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
       note: 'Save inside your project root at .cursor/mcp.json. Works seamlessly with Cursor Composer and Agent mode.',
     },
     windsurf: {
@@ -179,7 +181,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
       note: 'Paste into Windsurf Cascade MCP settings to empower Cascade with real-time room communication.',
     },
     claude_desktop: {
@@ -200,13 +202,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} in this repo using cowork_connect.`,
-      note: 'Config file is located at ~/Library/Application Support/Claude/ (macOS) or %APPDATA%/Claude/ (Windows).',
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
+      note: 'Add to Claude Desktop Developer settings to connect Claude to your local coding workspace.',
     },
     script: {
       name: '1-Line Peer Script',
-      title: 'Automated 1-Line Peer Installer',
-      code: `curl -fsSL https://cowork.sednium.com/install.mjs | node`,
+      title: 'Quick Connect Shell Script',
+      code: `curl -fsSL https://cowork.sednium.com/install.sh | bash -s -- --room ${effectiveRoom} --agent ${effectiveAgent}${invite ? ` --key ${invite}` : ''}`,
       prompt: `./setup-peer.sh --relay-url https://cowork.sednium.com --room-code ${effectiveRoom} --agent-id ${effectiveAgent}`,
       note: 'Zero-clone installer: downloads and verifies the bundle with SHA-256 integrity and registers your harness.',
     },
@@ -217,15 +219,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="h-full w-full overflow-y-auto bg-canvas text-primary font-sans select-text scroll-panel">
       {/* 1. Hardware Top Navbar */}
-      <header className="sticky top-0 z-40 bg-panel/80 backdrop-blur-md border-b border-grid h-14 flex items-center justify-between px-4 sm:px-8">
+      <header className="sticky top-0 z-50 bg-panel/85 backdrop-blur-md border-b border-grid h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-accent flex items-center justify-center rounded-lg text-accent-ink shadow-sm">
+          <div className="w-8 h-8 bg-accent flex items-center justify-center rounded-xl text-accent-ink shadow-sm">
             <Terminal className="w-4 h-4" strokeWidth={2.5} />
           </div>
           <div>
             <span className="font-bold text-sm tracking-tight text-primary font-sans flex items-center gap-2">
               SEDNIUM COWORK
-              <span className="px-1.5 py-0.5 rounded-sm bg-accent-soft text-accent text-2xs font-mono font-semibold border border-accent/30 hidden xs:inline">
+              <span className="px-1.5 py-0.5 rounded bg-accent-soft text-accent text-2xs font-mono font-semibold border border-accent/30 hidden xs:inline">
                 RELAY V1.0
               </span>
             </span>
@@ -235,19 +237,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <nav className="flex items-center gap-2 sm:gap-4">
           <a
             href="#launcher"
-            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline"
+            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline px-2 py-1"
           >
             Launch Room
           </a>
           <a
             href="#harness-setup"
-            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline"
+            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline px-2 py-1"
           >
             Harness Setup
           </a>
           <a
             href="#architecture"
-            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline"
+            className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline px-2 py-1"
           >
             Architecture
           </a>
@@ -255,7 +257,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             href="https://github.com/AnkushDas4/sednium-cowork"
             target="_blank"
             rel="noreferrer"
-            className="text-xs font-medium text-secondary hover:text-primary flex items-center gap-1 transition-colors px-2 py-1 rounded-sm hover:bg-hover border border-transparent hover:border-grid"
+            className="text-xs font-medium text-secondary hover:text-primary flex items-center gap-1.5 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-hover border border-transparent hover:border-grid"
           >
             <Code2 className="w-3.5 h-3.5 text-accent" />
             <span className="hidden sm:inline">GitHub</span>
@@ -265,89 +267,90 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="p-2 hover:bg-hover text-secondary hover:text-primary rounded-lg transition-colors border border-transparent hover:border-grid"
+            className="p-2 sm:p-2.5 hover:bg-hover text-secondary hover:text-primary rounded-xl transition-colors border border-transparent hover:border-grid"
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
             aria-label="Toggle theme"
           >
             {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-accent" strokeWidth={2} />
+              <Sun className="w-4 h-4 text-accent" strokeWidth={2.2} />
             ) : (
-              <Moon className="w-4 h-4 text-accent" strokeWidth={2} />
+              <Moon className="w-4 h-4 text-accent" strokeWidth={2.2} />
             )}
           </button>
         </nav>
       </header>
 
-      {/* 2. Hero Section + Integrated Room Launcher Card */}
-      <section className="relative px-4 sm:px-8 py-10 md:py-16 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+      {/* 2. Hero Section + Integrated Room Launcher Card (Pad & Desktop Balanced) */}
+      <section className="relative px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 items-center">
           {/* Left Column: Vision & Value Proposition */}
-          <div className="lg:col-span-7 space-y-6 text-left">
+          <div className="md:col-span-7 space-y-5 sm:space-y-6 text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-soft text-accent border border-accent/30 font-mono text-2xs font-semibold">
               <Radio className="w-3 h-3 animate-pulse" />
-              <span>ZERO WEBSOCKETS • ZERO AUTH WALLS • STATELESS HTTP</span>
+              <span className="hidden sm:inline">ZERO WEBSOCKETS • ZERO AUTH WALLS • STATELESS HTTP</span>
+              <span className="sm:hidden">ZERO-AUTH • STATELESS HTTP RELAY</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-primary leading-[1.15]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-primary leading-[1.12]">
               Pair Programming Relay for Humans &{' '}
-              <span className="text-accent underline decoration-accent/40 decoration-wavy decoration-2">
+              <span className="bg-gradient-to-r from-accent via-orange-500 to-amber-500 bg-clip-text text-transparent font-black">
                 Autonomous AI Agents
               </span>
             </h1>
 
             <p className="text-sm sm:text-base text-secondary max-w-xl leading-relaxed">
               Connect Google Antigravity, Claude Code, Cursor, Windsurf, and human teammates into a
-              unified real-time room. Coordinate multi-agent development with <strong>safe file locks</strong>,{' '}
-              <strong>git push handoffs</strong>, and <strong>live activity telemetry</strong> without opening inbound ports.
+              unified real-time room. Coordinate multi-agent development with <strong className="text-primary font-semibold">safe file locks</strong>,{' '}
+              <strong className="text-primary font-semibold">git push handoffs</strong>, and <strong className="text-primary font-semibold">live activity telemetry</strong> without opening inbound ports.
             </p>
 
-            <div className="flex flex-wrap gap-3 pt-2">
+            <div className="flex flex-wrap gap-3 pt-1">
               <a
                 href="#launcher"
-                className="px-5 py-3 bg-accent hover:bg-accent-strong text-accent-ink rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-card active:scale-95"
+                className="px-5 py-3 bg-accent hover:bg-accent-strong text-accent-ink rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-card active:scale-95"
               >
                 <Zap className="w-4 h-4 fill-current" />
                 <span>Launch New CoWork Room</span>
               </a>
               <a
                 href="#harness-setup"
-                className="px-4 py-3 bg-panel hover:bg-hover border border-grid text-primary rounded-lg font-semibold text-xs sm:text-sm transition-all flex items-center gap-2"
+                className="px-4 py-3 bg-panel hover:bg-hover border border-grid text-primary rounded-xl font-semibold text-xs sm:text-sm transition-all flex items-center gap-2 active:scale-95"
               >
                 <Cpu className="w-4 h-4 text-accent" />
                 <span>Configure AI Harnesses</span>
               </a>
             </div>
 
-            {/* Quick Metrics / Guarantees */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-grid max-w-lg">
-              <div>
-                <div className="text-lg font-bold font-mono text-primary">0ms</div>
-                <div className="text-2xs text-muted font-sans uppercase">Optimistic Send</div>
+            {/* Quick Metrics / Guarantees Cluster */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 max-w-lg">
+              <div className="p-3 rounded-xl bg-panel/70 border border-grid shadow-card">
+                <div className="text-base sm:text-lg font-bold font-mono text-primary">0ms</div>
+                <div className="text-2xs text-secondary font-mono uppercase tracking-wide">Optimistic</div>
               </div>
-              <div>
-                <div className="text-lg font-bold font-mono text-primary">90s TTL</div>
-                <div className="text-2xs text-muted font-sans uppercase">Auto Lock Expiry</div>
+              <div className="p-3 rounded-xl bg-panel/70 border border-grid shadow-card">
+                <div className="text-base sm:text-lg font-bold font-mono text-primary">90s TTL</div>
+                <div className="text-2xs text-secondary font-mono uppercase tracking-wide">Lock Expiry</div>
               </div>
-              <div>
-                <div className="text-lg font-bold font-mono text-primary">100%</div>
-                <div className="text-2xs text-muted font-sans uppercase">Zero Cloud Firewall</div>
+              <div className="p-3 rounded-xl bg-panel/70 border border-grid shadow-card">
+                <div className="text-base sm:text-lg font-bold font-mono text-primary">100%</div>
+                <div className="text-2xs text-secondary font-mono uppercase tracking-wide">Zero Ports</div>
               </div>
             </div>
           </div>
 
           {/* Right Column: Tactile Hardware Quick-Launcher Station */}
-          <div id="launcher" className="lg:col-span-5">
-            <div className="bg-panel border-2 border-grid hover:border-accent/40 rounded-2xl shadow-float overflow-hidden transition-all relative">
-              {/* Top Accent Strip */}
-              <div className="h-1.5 bg-accent w-full" />
+          <div id="launcher" className="md:col-span-5 w-full max-w-lg mx-auto md:max-w-none">
+            <div className="bg-panel border border-grid/80 hover:border-accent/40 rounded-2xl sm:rounded-3xl shadow-float overflow-hidden transition-all duration-300 relative">
+              {/* Top Accent Gradient Bar */}
+              <div className="h-1.5 bg-gradient-to-r from-accent via-orange-500 to-amber-500 w-full" />
 
               <div className="p-5 sm:p-6 border-b border-grid flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
+                  <div className="w-8 h-8 rounded-xl bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-primary font-sans uppercase tracking-tight">
+                    <h2 className="text-xs sm:text-sm font-bold text-primary font-sans uppercase tracking-wider">
                       SESSION LAUNCHPAD
                     </h2>
                     <p className="text-2xs text-muted font-mono">
@@ -356,7 +359,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
                 </div>
 
-                <span className="w-2 h-2 rounded-full bg-ok animate-ping" />
+                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-ok-soft border border-ok/30 text-ok text-2xs font-mono font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ok animate-pulse" />
+                  <span>ONLINE</span>
+                </div>
               </div>
 
               <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
@@ -371,10 +377,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       type="button"
                       onClick={fetchCollisionFreeCode}
                       disabled={isRefreshing}
-                      className="text-2xs text-muted hover:text-accent flex items-center gap-1 transition-colors disabled:opacity-50"
+                      className="text-2xs text-muted hover:text-accent flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
                     >
-                      <RefreshCw className={`w-2.5 h-2.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                      <span>NEW CODE</span>
+                      <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-accent' : ''}`} />
+                      <span>{isRefreshing ? 'GENERATING...' : 'NEW CODE'}</span>
                     </button>
                   </div>
 
@@ -387,24 +393,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     autoCapitalize="characters"
                     autoCorrect="off"
                     spellCheck={false}
-                    className="w-full bg-canvas border border-grid rounded-lg px-3.5 py-2.5 text-sm text-primary font-mono font-semibold placeholder:text-muted focus:outline-none focus:border-accent tracking-wider"
+                    className="w-full bg-canvas/90 border border-grid focus:border-accent rounded-xl px-3.5 py-2.5 text-sm text-primary font-mono font-bold placeholder:text-muted focus:outline-none tracking-wider shadow-inner"
                   />
 
-                  {invite ? (
-                    <p className="text-2xs font-mono text-accent flex items-center gap-1.5">
-                      <ShieldCheck className="w-3 h-3" /> Secure room key active
-                    </p>
+                  {/* Room Security Key State */}
+                  {invite && !showInviteInput ? (
+                    <div className="flex items-center justify-between text-2xs font-mono text-accent bg-accent-soft/40 border border-accent/20 px-2.5 py-1.5 rounded-lg">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                        <span>Private room key linked</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowInviteInput(true)}
+                        className="text-muted hover:text-primary transition-colors underline cursor-pointer"
+                      >
+                        edit
+                      </button>
+                    </div>
                   ) : (
-                    <input
-                      type="text"
-                      value={invite}
-                      onChange={(e) => setInvite(e.target.value.trim().toLowerCase())}
-                      placeholder="invite key (optional unless room is protected)"
-                      autoCapitalize="none"
-                      autoCorrect="off"
-                      spellCheck={false}
-                      className="w-full bg-canvas border border-grid rounded-lg px-3 py-1.5 text-xs text-secondary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
-                    />
+                    <div className="space-y-1 pt-0.5">
+                      <div className="flex items-center justify-between text-2xs font-mono text-muted">
+                        <span>INVITE KEY (OPTIONAL)</span>
+                        {invite && (
+                          <button
+                            type="button"
+                            onClick={() => setShowInviteInput(false)}
+                            className="text-accent underline"
+                          >
+                            done
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={invite}
+                        onChange={(e) => setInvite(e.target.value.trim().toLowerCase())}
+                        placeholder="hex key / secret (if room is protected)"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="w-full bg-canvas/80 border border-grid focus:border-accent rounded-lg px-3 py-1.5 text-xs text-secondary font-mono placeholder:text-muted focus:outline-none"
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -415,26 +446,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <span>YOUR OPERATOR HANDLE</span>
                   </label>
 
-                  <input
-                    type="text"
-                    required
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
-                    placeholder="your handle (e.g. ankush, dev-lead)"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    autoComplete="username"
-                    className="w-full bg-canvas border border-grid rounded-lg px-3.5 py-2.5 text-sm text-primary font-mono placeholder:text-muted focus:outline-none focus:border-accent"
-                  />
-                  <p className="text-2xs text-muted font-sans">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted font-mono text-xs">@</span>
+                    <input
+                      type="text"
+                      required
+                      value={clientId}
+                      onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                      placeholder="your-name (e.g. ankush, dev-lead)"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      autoComplete="username"
+                      className="w-full bg-canvas/90 border border-grid focus:border-accent rounded-xl pl-8 pr-3.5 py-2.5 text-sm text-primary font-mono placeholder:text-muted focus:outline-none shadow-inner"
+                    />
+                  </div>
+                  <p className="text-2xs text-muted font-sans pl-1">
                     Your handle in the chat stream. AI agents will connect separately with their own IDs.
                   </p>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-accent hover:bg-accent-strong text-accent-ink text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 shadow-card font-sans active:scale-98"
+                  className="w-full py-3.5 bg-accent hover:bg-accent-strong text-accent-ink text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-card font-sans active:scale-98 cursor-pointer"
                 >
                   <span>CONNECT TO RELAY</span>
                   <ArrowRight className="w-4 h-4" />
@@ -450,14 +484,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 3. Dedicated Interactive AI Agent Harness Setup Section */}
-      <section id="harness-setup" className="py-12 md:py-16 bg-panel/50 border-y border-grid px-4 sm:px-8">
+      <section id="harness-setup" className="py-12 sm:py-16 md:py-20 bg-panel/40 border-y border-grid px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-soft text-accent border border-accent/30 font-mono text-2xs font-semibold">
               <Cpu className="w-3.5 h-3.5" />
               <span>AI AGENT HARNESS CONFIGURATION</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-primary">
               Install CoWork Into Any AI Coding Harness
             </h2>
             <p className="text-xs sm:text-sm text-secondary leading-relaxed">
@@ -465,11 +499,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          {/* Quick Parameters Selector */}
-          <div className="bg-canvas border border-grid rounded-xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 max-w-3xl mx-auto shadow-sm">
+          {/* Quick Parameters Selector Instrument */}
+          <div className="bg-panel border border-grid rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 max-w-3xl mx-auto shadow-card">
             <div className="flex-1 flex items-center gap-2">
               <span className="text-xs font-mono font-semibold text-muted uppercase shrink-0">TARGET ROOM:</span>
-              <span className="font-mono text-xs font-bold text-accent px-2 py-1 rounded bg-panel border border-grid">
+              <span className="font-mono text-xs font-bold text-accent px-2.5 py-1 rounded-lg bg-canvas border border-grid">
                 {effectiveRoom}
               </span>
             </div>
@@ -483,15 +517,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   value={setupAgentId}
                   onChange={(e) => setSetupAgentId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
                   placeholder="agent handle"
-                  className="w-full bg-panel border border-grid rounded px-2 pl-6 py-1 text-xs font-mono font-medium focus:outline-none focus:border-accent text-primary"
+                  className="w-full bg-canvas border border-grid rounded-lg px-2 pl-6 py-1.5 text-xs font-mono font-semibold focus:outline-none focus:border-accent text-primary"
                 />
               </div>
             </div>
           </div>
 
           {/* Harness Tab Switcher */}
-          <div className="border border-grid rounded-2xl bg-panel overflow-hidden shadow-card">
-            <div className="flex items-center border-b border-grid overflow-x-auto no-scrollbar divide-x divide-grid bg-canvas/40">
+          <div className="border border-grid rounded-2xl sm:rounded-3xl bg-panel overflow-hidden shadow-card">
+            <div className="flex items-center border-b border-grid overflow-x-auto no-scrollbar divide-x divide-grid bg-canvas/30">
               {(Object.keys(harnessConfigs) as HarnessType[]).map((key) => {
                 const conf = harnessConfigs[key];
                 const isActive = activeHarness === key;
@@ -500,9 +534,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     key={key}
                     type="button"
                     onClick={() => setActiveHarness(key)}
-                    className={`px-4 py-3 text-xs font-mono font-medium whitespace-nowrap transition-colors flex items-center gap-2 shrink-0 ${
+                    className={`px-4 sm:px-5 py-3.5 text-xs font-mono font-medium whitespace-nowrap transition-colors flex items-center gap-2 shrink-0 cursor-pointer ${
                       isActive
-                        ? 'bg-panel text-accent font-semibold border-b-2 border-accent'
+                        ? 'bg-panel text-accent font-bold border-b-2 border-accent'
                         : 'text-secondary hover:text-primary hover:bg-hover'
                     }`}
                   >
@@ -514,18 +548,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Tab Content Body */}
-            <div className="p-6 space-y-6">
+            <div className="p-5 sm:p-7 space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-grid pb-4">
                 <div>
-                  <h3 className="text-base font-bold text-primary font-sans">
+                  <h3 className="text-base sm:text-lg font-bold text-primary font-sans">
                     {selectedConfig.title}
                   </h3>
-                  <p className="text-xs text-muted font-sans mt-0.5">
+                  <p className="text-xs text-secondary font-sans mt-0.5">
                     {selectedConfig.note}
                   </p>
                 </div>
                 {selectedConfig.filename && (
-                  <span className="text-2xs font-mono bg-canvas border border-grid px-2.5 py-1 rounded text-secondary shrink-0 self-start sm:self-auto">
+                  <span className="text-2xs font-mono bg-canvas border border-grid px-2.5 py-1 rounded-md text-secondary shrink-0 self-start sm:self-auto">
                     {selectedConfig.filename}
                   </span>
                 )}
@@ -538,16 +572,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => copyToClipboard(selectedConfig.code, 'config')}
-                    className="text-accent hover:text-accent-strong flex items-center gap-1 font-semibold transition-colors"
+                    className="text-accent hover:text-accent-strong flex items-center gap-1.5 font-bold transition-colors cursor-pointer"
                   >
                     {copiedSnippet === 'config' ? (
                       <>
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3.5 h-3.5" />
                         <span>COPIED CONFIG!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5" />
                         <span>COPY CONFIGURATION</span>
                       </>
                     )}
@@ -566,16 +600,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => copyToClipboard(selectedConfig.prompt, 'prompt')}
-                    className="text-accent hover:text-accent-strong flex items-center gap-1 font-semibold transition-colors"
+                    className="text-accent hover:text-accent-strong flex items-center gap-1.5 font-bold transition-colors cursor-pointer"
                   >
                     {copiedSnippet === 'prompt' ? (
                       <>
-                        <Check className="w-3 h-3" />
+                        <Check className="w-3.5 h-3.5" />
                         <span>COPIED PROMPT!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3 h-3" />
+                        <Copy className="w-3.5 h-3.5" />
                         <span>COPY AGENT PROMPT</span>
                       </>
                     )}
@@ -583,11 +617,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="bg-canvas border border-grid rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs font-mono text-primary select-all">
-                  <span className="truncate">{selectedConfig.prompt}</span>
+                  <span className="break-all sm:truncate">{selectedConfig.prompt}</span>
                   <button
                     type="button"
                     onClick={() => copyToClipboard(selectedConfig.prompt, 'prompt')}
-                    className="p-1.5 bg-hover hover:bg-grid rounded text-secondary hover:text-primary transition-colors shrink-0"
+                    className="p-1.5 bg-hover hover:bg-grid rounded-lg text-secondary hover:text-primary transition-colors shrink-0 cursor-pointer"
                   >
                     {copiedSnippet === 'prompt' ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
@@ -599,9 +633,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 4. Core Capabilities: The 4 Engineering Pillars */}
-      <section id="architecture" className="py-12 md:py-20 px-4 sm:px-8 max-w-7xl mx-auto space-y-12">
+      <section id="architecture" className="py-12 sm:py-16 md:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-primary">
             Built for Rigorous Pair Programming
           </h2>
           <p className="text-xs sm:text-sm text-secondary leading-relaxed">
@@ -609,9 +643,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {/* Pillar 1: File Locks */}
-          <div className="bg-panel border border-grid rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
+          <div className="bg-panel border border-grid/80 rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
                 <Lock className="w-5 h-5" />
@@ -629,7 +663,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Pillar 2: Git Auto-Sync */}
-          <div className="bg-panel border border-grid rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
+          <div className="bg-panel border border-grid/80 rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
                 <GitPullRequest className="w-5 h-5" />
@@ -647,7 +681,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Pillar 3: Real-Time Activity Rail */}
-          <div className="bg-panel border border-grid rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
+          <div className="bg-panel border border-grid/80 rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
                 <Layers className="w-5 h-5" />
@@ -665,7 +699,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Pillar 4: Mobile Companion */}
-          <div className="bg-panel border border-grid rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
+          <div className="bg-panel border border-grid/80 rounded-2xl p-6 space-y-3 hover:border-accent/40 transition-colors shadow-card flex flex-col justify-between">
             <div className="space-y-3">
               <div className="w-10 h-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center border border-accent/30">
                 <Smartphone className="w-5 h-5" />
@@ -685,7 +719,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 5. Under The Hood: How It Works */}
-      <section className="py-12 bg-panel/30 border-t border-grid px-4 sm:px-8">
+      <section className="py-12 sm:py-16 bg-panel/30 border-t border-grid px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <h2 className="text-xl sm:text-2xl font-bold text-primary">
@@ -696,8 +730,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-panel border border-grid rounded-xl p-5 space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            <div className="bg-panel border border-grid rounded-2xl p-5 space-y-2 shadow-card">
               <div className="font-mono text-accent text-xs font-bold">01 / DISPATCH</div>
               <div className="font-semibold text-sm text-primary">Ephemeral Mailbox</div>
               <p className="text-xs text-secondary leading-relaxed">
@@ -705,7 +739,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            <div className="bg-panel border border-grid rounded-xl p-5 space-y-2">
+            <div className="bg-panel border border-grid rounded-2xl p-5 space-y-2 shadow-card">
               <div className="font-mono text-accent text-xs font-bold">02 / COORDINATE</div>
               <div className="font-semibold text-sm text-primary">Deterministic Mutex</div>
               <p className="text-xs text-secondary leading-relaxed">
@@ -713,7 +747,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </p>
             </div>
 
-            <div className="bg-panel border border-grid rounded-xl p-5 space-y-2">
+            <div className="bg-panel border border-grid rounded-2xl p-5 space-y-2 shadow-card">
               <div className="font-mono text-accent text-xs font-bold">03 / HANDOFF</div>
               <div className="font-semibold text-sm text-primary">Zero-Clobber Git Pull</div>
               <p className="text-xs text-secondary leading-relaxed">
@@ -725,13 +759,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 6. Footer */}
-      <footer className="border-t border-grid py-8 px-4 sm:px-8 bg-panel text-center text-xs text-muted font-mono space-y-2">
-        <div className="flex items-center justify-center gap-4">
+      <footer className="border-t border-grid py-8 px-4 sm:px-6 lg:px-8 bg-panel text-center text-xs text-muted font-mono space-y-2">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <a
             href="https://github.com/AnkushDas4/sednium-cowork"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-primary transition-colors flex items-center gap-1"
+            className="hover:text-primary transition-colors flex items-center gap-1.5"
           >
             <span>GitHub Repository</span>
             <ExternalLink className="w-3 h-3" />
@@ -743,7 +777,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Back to Launcher
           </a>
         </div>
-        <div>
+        <div className="pt-1 text-2xs text-secondary">
           Sednium CoWork — Autonomous Agent & Human Collaboration Relay
         </div>
       </footer>
