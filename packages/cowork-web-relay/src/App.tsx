@@ -1,6 +1,7 @@
 import { relayRequest, captureInviteFromUrl, inviteKeyFor, lastHandle } from './relay.js';
 import { parseRepoUrl } from '../api/_repo.js';
 import React, { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
@@ -46,6 +47,8 @@ export const App: React.FC = () => {
     return 'dark';
   });
 
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (typeof document !== 'undefined') {
       if (theme === 'dark') {
@@ -58,7 +61,48 @@ export const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    const applyThemeChange = () => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.add('theme-transitioning');
+        if (transitionTimerRef.current) {
+          clearTimeout(transitionTimerRef.current);
+        }
+        transitionTimerRef.current = setTimeout(() => {
+          document.documentElement.classList.remove('theme-transitioning');
+          transitionTimerRef.current = null;
+        }, 350);
+      }
+      setTheme((prev) => {
+        const next = prev === 'dark' ? 'light' : 'dark';
+        if (typeof document !== 'undefined') {
+          if (next === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
+        return next;
+      });
+    };
+
+    if (
+      typeof document !== 'undefined' &&
+      'startViewTransition' in document &&
+      typeof (document as any).startViewTransition === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      try {
+        (document as any).startViewTransition(() => {
+          flushSync(() => {
+            applyThemeChange();
+          });
+        });
+      } catch {
+        applyThemeChange();
+      }
+    } else {
+      applyThemeChange();
+    }
   };
 
   const [participants, setParticipants] = useState<Record<string, ParticipantInfo>>({});

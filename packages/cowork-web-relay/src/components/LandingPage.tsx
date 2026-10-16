@@ -267,15 +267,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <button
             type="button"
             onClick={onToggleTheme}
-            className="p-2 sm:p-2.5 hover:bg-hover text-secondary hover:text-primary rounded-xl transition-colors border border-transparent hover:border-grid"
+            className="p-2 sm:p-2.5 hover:bg-hover text-secondary hover:text-primary rounded-xl transition-all duration-200 border border-transparent hover:border-grid active:scale-90"
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-accent" strokeWidth={2.2} />
-            ) : (
-              <Moon className="w-4 h-4 text-accent" strokeWidth={2.2} />
-            )}
+            <div className="relative w-4 h-4 flex items-center justify-center">
+              <Sun
+                className={`w-4 h-4 text-accent absolute inset-0 transform transition-all duration-300 ease-out ${
+                  theme === 'dark'
+                    ? 'rotate-0 scale-100 opacity-100'
+                    : '-rotate-90 scale-0 opacity-0 pointer-events-none'
+                }`}
+                strokeWidth={2.2}
+              />
+              <Moon
+                className={`w-4 h-4 text-accent absolute inset-0 transform transition-all duration-300 ease-out ${
+                  theme === 'light'
+                    ? 'rotate-0 scale-100 opacity-100'
+                    : 'rotate-90 scale-0 opacity-0 pointer-events-none'
+                }`}
+                strokeWidth={2.2}
+              />
+            </div>
           </button>
         </nav>
       </header>
