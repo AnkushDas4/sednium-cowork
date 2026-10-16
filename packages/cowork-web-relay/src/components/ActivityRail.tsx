@@ -66,6 +66,14 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(() => Date.now());
 
+  // On mobile devices, default the activity rail to collapsed so it does not clutter the screen like a cockpit.
+  // Initial state remains `true` for SSR / static markup tests (which assert rendered rows without executing effects).
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setOpen(false);
+    }
+  }, []);
+
   // One shared tick makes "12s ago" move and fades stale rows; it only runs while the rail is open.
   useEffect(() => {
     if (!open) return;
@@ -128,7 +136,7 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         data-id="activity-rail-toggle"
-        className="min-tap w-full flex items-center gap-2 px-3 xs:px-4 border-b border-grid hover:bg-hover transition-colors"
+        className="min-tap w-full flex items-center gap-2 px-3 xs:px-4 py-1.5 xs:py-2 border-b border-grid/70 bg-panel/70 hover:bg-hover transition-colors"
       >
         <Activity className="w-3.5 h-3.5 text-accent shrink-0" />
         <span className="text-2xs font-sans font-semibold uppercase tracking-[0.14em] text-secondary">
@@ -147,7 +155,7 @@ export const ActivityRail: React.FC<ActivityRailProps> = ({ participants, curren
       </button>
 
       {open && (
-        <ul className="max-h-56 xs:max-h-64 overflow-y-auto divide-y divide-grid scroll-panel" aria-live="polite">
+        <ul className="max-h-52 xs:max-h-64 overflow-y-auto divide-y divide-grid/60 scroll-panel bg-panel/40" aria-live="polite">
           {rows.map(({ id, activity, isSelf, quiet, elapsed }) => {
             const meta = META[activity.state] ?? META_FALLBACK;
             const { Icon } = meta;

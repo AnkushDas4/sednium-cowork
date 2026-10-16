@@ -970,11 +970,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       {/* 2.5 Live working state of every agent - streamed over presence, never through chat */}
       <ActivityRail participants={participants} currentClientId={currentClientId} />
 
-      {/* 3. Command Composer Dock (Flush Edge-to-Edge Input Row) */}
-      <div className="bg-panel border-t border-grid shrink-0 relative pb-[max(env(safe-area-inset-bottom),0.65rem)] sm:pb-0">
+      {/* 3. Command Composer Dock */}
+      <div className="bg-panel/90 backdrop-blur-md border-t border-grid/60 px-2.5 sm:px-4 py-2 sm:py-2.5 shrink-0 relative pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:pb-2.5">
         {/* Inline @ Mention Autocomplete Popup */}
         {showMentionPopup && (
-          <div className="absolute bottom-full left-4 mb-2 bg-panel border border-grid rounded-sm shadow-float py-1 z-30 w-52 divide-y divide-grid">
+          <div className="absolute bottom-full left-3 sm:left-4 mb-2 bg-panel border border-grid rounded-xl shadow-float py-1 z-30 w-52 divide-y divide-grid overflow-hidden">
             <div className="px-3 py-1 text-2xs font-mono text-muted uppercase">
               SELECT TARGET MENTION
             </div>
@@ -992,12 +992,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         )}
 
-        {/* The targets are a caption over the input, never in front of the caret: inline pills
-            did save a row, but they slid everything you type to the right - the one thing a composer
-            must not do. No label, because the pills are the label and typing @ still opens the picker
-            above, and no row at all when a room of one has nobody to tag. */}
+        {/* Quick Targets Pill Strip */}
         {quickTargets.length > 1 && (
-          <div className="flex items-center gap-1 px-3 sm:px-4 py-1 border-b border-grid overflow-x-auto no-scrollbar overscroll-x-contain">
+          <div className="flex items-center gap-1.5 pb-2 overflow-x-auto no-scrollbar overscroll-x-contain">
             {quickTargets.map((mention) => {
               const isSelected = new RegExp(`(^|\\s)${mention}(\\s|$)`).test(input);
               return (
@@ -1006,10 +1003,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                   type="button"
                   onClick={() => handlePillClick(mention)}
                   title={isSelected ? `Stop addressing ${mention}` : `Address ${mention}`}
-                  className={`px-2 py-1 sm:py-0.5 rounded-sm text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-mono transition-all shrink-0 border flex items-center gap-1 active:scale-95 ${
                     isSelected
                       ? 'bg-accent text-accent-ink border-accent font-semibold shadow-card'
-                      : 'bg-hover hover:bg-hover/80 text-secondary hover:text-primary border-transparent'
+                      : 'bg-canvas hover:bg-hover text-secondary hover:text-primary border-grid/50'
                   }`}
                 >
                   <span>{mention}</span>
@@ -1022,29 +1019,29 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="h-12 xs:h-13 sm:h-14 flex items-stretch">
-          <div className="pl-3 sm:pl-4 pr-1.5 sm:pr-2 flex items-center text-accent shrink-0 bg-canvas">
-            <Terminal className="w-4 h-4" />
+        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+          <div className="flex-1 min-h-[44px] flex items-center bg-canvas border border-grid focus-within:border-accent rounded-xl sm:rounded-2xl px-3 shadow-inner transition-colors">
+            <Terminal className="w-4 h-4 text-accent shrink-0 mr-2" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={handleInputChange}
+              placeholder="Message room, or @handle..."
+              enterKeyHint="send"
+              autoComplete="off"
+              className="flex-1 bg-transparent border-0 text-[16px] md:text-sm text-primary placeholder:text-muted focus:outline-none font-sans font-medium min-w-0"
+            />
           </div>
-
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Message room, or @handle..."
-            enterKeyHint="send"
-            autoComplete="off"
-            className="flex-1 bg-canvas h-full px-2 text-[16px] md:text-sm text-primary placeholder:text-muted focus:outline-none font-sans font-medium"
-          />
 
           <button
             type="submit"
             disabled={!input.trim() || sending}
-            className="h-full min-w-[50px] px-3.5 xs:px-6 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-sm flex items-center justify-center gap-2 transition-all shrink-0 select-none shadow-card active:scale-[0.98]"
+            className="h-[44px] min-w-[44px] px-3.5 sm:px-5 bg-accent hover:bg-accent-strong disabled:opacity-40 text-accent-ink font-sans font-semibold text-xs sm:text-sm flex items-center justify-center gap-1.5 rounded-xl sm:rounded-2xl transition-all shrink-0 select-none shadow-card active:scale-95"
+            aria-label="Send message"
           >
             <Send className="w-4 h-4" />
-            <span className="hidden xs:inline">DISPATCH</span>
+            <span className="hidden sm:inline">DISPATCH</span>
           </button>
         </form>
       </div>

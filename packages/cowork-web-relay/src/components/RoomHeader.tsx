@@ -92,7 +92,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   };
 
   return (
-    <header className="min-h-14 pt-safe border-b border-grid bg-panel/85 backdrop-blur-md flex items-stretch divide-x divide-grid select-none text-xs sticky top-0 z-40">
+    <header className="min-h-14 pt-safe border-b border-grid bg-panel/90 backdrop-blur-md flex items-stretch sm:divide-x sm:divide-grid select-none text-xs sticky top-0 z-40">
       {/* 1. Brand Cell */}
       <div className="flex items-center gap-2.5 px-3 md:px-5 shrink-0">
         <div className="w-7 h-7 bg-accent flex items-center justify-center rounded-lg shrink-0 shadow-card">
@@ -109,12 +109,11 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       </div>
 
       {/* 2. Room Session Cell - the code is the invite: one tap opens the sheet that carries the QR,
-          the raw link and the copy button. It used to be three controls (code-copies, Copy Link, QR)
-          doing the same job, which on a phone was three tap targets for one intent. */}
-      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 flex-1 min-w-0 sm:flex-none">
+          the raw link and the copy button. */}
+      <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 flex-1 min-w-0 sm:flex-none">
         <button
           onClick={() => setShowQr(true)}
-          className="flex items-center gap-1 font-mono min-w-0 hover:bg-hover px-1.5 sm:px-2 py-1 rounded-sm border border-transparent hover:border-grid transition-colors text-left"
+          className="flex items-center gap-1.5 font-mono min-w-0 bg-hover/40 hover:bg-hover px-2 py-1 rounded-lg border border-grid/50 hover:border-grid transition-colors text-left"
           title="Invite link - QR code, share and copy"
           aria-label="Show the invite link for this room"
         >

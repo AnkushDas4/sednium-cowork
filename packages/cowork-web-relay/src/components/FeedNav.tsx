@@ -44,16 +44,14 @@ export const FeedNav: React.FC<FeedNavProps> = ({
   onSelectAgents,
 }) => {
   const chip = (active: boolean) =>
-    `min-tap relative flex items-center justify-center gap-1 px-2.5 text-xs font-sans font-medium transition-colors shrink-0 ${
-      active ? 'text-primary font-semibold' : 'text-muted hover:text-secondary'
+    `min-tap relative flex items-center justify-center gap-1.5 px-3 py-1 rounded-lg text-xs font-sans font-medium transition-all shrink-0 ${
+      active ? 'bg-accent/15 text-accent font-semibold' : 'text-secondary hover:text-primary hover:bg-hover/60'
     }`;
 
   return (
     <nav
       aria-label="Feed"
-      // h-11, not h-10: min-tap is a 44px floor, and a bar shorter than its own buttons clips the
-      // 2px active underline that tells you which feed you are looking at.
-      className="md:hidden h-11 bg-panel border-b border-grid flex items-stretch divide-x divide-grid shrink-0 select-none overflow-x-auto no-scrollbar"
+      className="md:hidden min-h-11 bg-panel/95 backdrop-blur-md border-b border-grid/60 px-2 py-1 flex items-center gap-1 shrink-0 select-none overflow-x-auto no-scrollbar"
     >
       {FEEDS.map(({ id, label, icon: Icon }) => {
         const active = !agentsActive && filter === id;
@@ -69,7 +67,7 @@ export const FeedNav: React.FC<FeedNavProps> = ({
             <Icon className={`w-3.5 h-3.5 ${id === 'MENTIONS' && !active ? 'text-accent' : ''}`} />
             <span>{label}</span>
             {count > 0 && <span className="text-[10px] font-mono text-muted">{count}</span>}
-            {active && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />}
+            {active && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-full" />}
           </button>
         );
       })}
@@ -78,8 +76,8 @@ export const FeedNav: React.FC<FeedNavProps> = ({
         type="button"
         onClick={onSelectAgents}
         aria-pressed={agentsActive}
-        className={`min-tap relative flex items-center justify-center gap-1.5 px-2.5 ml-auto text-xs font-sans font-medium transition-colors shrink-0 ${
-          agentsActive ? 'text-accent font-semibold' : 'text-muted hover:text-secondary'
+        className={`min-tap relative flex items-center justify-center gap-1.5 px-3 py-1 ml-auto rounded-lg text-xs font-sans font-medium transition-all shrink-0 ${
+          agentsActive ? 'bg-accent/15 text-accent font-semibold' : 'text-secondary hover:text-primary hover:bg-hover/60'
         }`}
       >
         <Bot className="w-3.5 h-3.5" />
@@ -90,7 +88,7 @@ export const FeedNav: React.FC<FeedNavProps> = ({
             {agentCount}
           </span>
         )}
-        {agentsActive && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />}
+        {agentsActive && <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-accent rounded-full" />}
       </button>
     </nav>
   );
