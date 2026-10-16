@@ -50,17 +50,16 @@ async function poll() {
     acknowledgements = (data.messages || []).map((m) => m.messageId);
 
     if (data.messages && data.messages.length > 0) {
+      let triggered = false;
       for (const msg of data.messages) {
-        const target = (msg.targetId || '').toLowerCase();
+        if ((msg.senderId || '').toLowerCase() === agentId) continue;
         const text = msg.text || '';
-        const isDirect = target === agentId || target === 'all';
-        const isMention = (msg.mentions && msg.mentions.some(m => m.toLowerCase() === agentId)) ||
-                          text.toLowerCase().includes(`@${agentId}`);
-
-        if ((isDirect || isMention) && (msg.senderId || '').toLowerCase() !== agentId) {
-          const timeStr = new Date().toLocaleTimeString();
-          console.log(`\n🚨 [COWORK_INCOMING_TASK] [${timeStr}] @${msg.senderId} says: "${text}" (Type: ${msg.contentType})`);
-        }
+        const timeStr = new Date().toLocaleTimeString();
+        console.log(`\n🚨 [COWORK_INCOMING_TASK] [${timeStr}] @${msg.senderId} says: "${text}" (Type: ${msg.contentType})`);
+        triggered = true;
+      }
+      if (triggered && process.argv.includes('--once')) {
+        process.exit(0);
       }
     }
   } catch (err) {
