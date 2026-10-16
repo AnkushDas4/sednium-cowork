@@ -20,6 +20,10 @@ import {
   ChevronDown,
   ChevronUp,
   User,
+  Unlock,
+  Info,
+  ExternalLink,
+  FileCode,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
@@ -51,6 +55,52 @@ interface ChatTerminalProps {
 }
 
 export type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
+
+const CodeBlock: React.FC<{ code: string; language?: string }> = ({ code, language }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  return (
+    <div className="my-2 rounded-xl bg-canvas border border-grid overflow-hidden shadow-sm text-left">
+      <div className="flex items-center justify-between px-3 py-1 bg-panel/90 border-b border-grid/60 text-2xs font-mono text-muted select-none">
+        <span className="uppercase font-semibold tracking-wider text-accent text-[11px]">
+          {language || 'code'}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-secondary hover:text-primary transition-colors px-1.5 py-0.5 rounded hover:bg-hover active:scale-95"
+          title="Copy code"
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3 text-ok" />
+              <span className="text-ok font-semibold text-[10px]">Copied</span>
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              <span className="text-[10px]">Copy</span>
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="p-3 overflow-x-auto text-xs font-mono leading-relaxed text-primary scroll-panel whitespace-pre select-text">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+};
 
 export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   messages,
@@ -377,21 +427,80 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }
   };
 
+  const renderInlineMarkdown = (text: string, keyPrefix: string): React.ReactNode => {
+    const tokenRegex = /(`[^`]+`|@[a-zA-Z0-9_-]+|https?:\/\/[^\s]+)/g;
+    const parts = text.split(tokenRegex);
+
+    return (
+      <span key={keyPrefix}>
+        {parts.map((part, idx) => {
+          if (!part) return null;
+          if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
+            const inlineCode = part.slice(1, -1);
+            return (
+              <code
+                key={idx}
+                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-canvas border border-grid text-accent font-mono text-[12px] font-semibold"
+              >
+                {inlineCode}
+              </code>
+            );
+          }
+          if (part.startsWith('@')) {
+            return (
+              <span
+                key={idx}
+                className="inline-flex items-center px-1.5 py-0.2 rounded-sm bg-accent/15 text-accent border border-accent/30 font-mono text-xs font-semibold mr-1"
+              >
+                {part}
+              </span>
+            );
+          }
+          if (part.startsWith('http://') || part.startsWith('https://')) {
+            return (
+              <a
+                key={idx}
+                href={part}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline font-sans font-medium hover:text-accent-strong break-all inline-flex items-center gap-0.5"
+              >
+                {part}
+                <ExternalLink className="w-3 h-3 inline shrink-0" />
+              </a>
+            );
+          }
+          return <span key={idx}>{part}</span>;
+        })}
+      </span>
+    );
+  };
+
   const renderFormattedText = (text: string) => {
-    const parts = text.split(/(@[a-zA-Z0-9_-]+)/g);
-    return parts.map((part, idx) => {
-      if (part.startsWith('@')) {
-        return (
-          <span
-            key={idx}
-            className="inline-flex items-center px-1.5 py-0.2 rounded-sm bg-accent-soft text-accent border border-accent/30 font-mono text-xs font-semibold mr-1"
-          >
-            {part}
-          </span>
-        );
+    if (!text) return null;
+
+    const fenceRegex = /```([a-zA-Z0-9_-]*)\n?([\s\S]*?)```/g;
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = fenceRegex.exec(text)) !== null) {
+      const preceding = text.slice(lastIndex, match.index);
+      if (preceding) {
+        elements.push(renderInlineMarkdown(preceding, `pre-${lastIndex}`));
       }
-      return <span key={idx}>{part}</span>;
-    });
+      const lang = match[1] || '';
+      const code = match[2]?.replace(/\n$/, '') || '';
+      elements.push(<CodeBlock key={`code-${match.index}`} code={code} language={lang} />);
+      lastIndex = fenceRegex.lastIndex;
+    }
+
+    const remaining = text.slice(lastIndex);
+    if (remaining) {
+      elements.push(renderInlineMarkdown(remaining, `post-${lastIndex}`));
+    }
+
+    return elements;
   };
 
   const promptPreview = onboardingPrompt(onboardingAgentId || 'my-agent');
@@ -671,6 +780,11 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                         {msg.text}
                       </span>
                     )}
+                    {msg.files && msg.files.length > 0 && (
+                      <span className="text-secondary text-[11px] shrink-0 font-mono">
+                        ({msg.files.length} file{msg.files.length > 1 ? 's' : ''})
+                      </span>
+                    )}
                     <span className="text-muted text-2xs shrink-0">{timeStr}</span>
                   </div>
                 </div>
@@ -709,6 +823,38 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               );
             }
 
+            // System Event: FILE_UNLOCK
+            if (msg.contentType === 'FILE_UNLOCK') {
+              return (
+                <div key={msg.messageId} className="flex justify-center my-2 select-none">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-panel border border-grid rounded-full shadow-sm text-xs font-mono max-w-full">
+                    <Unlock className="w-3.5 h-3.5 text-secondary shrink-0" />
+                    <span className="text-secondary font-medium shrink-0">@{msg.senderId} unlocked</span>
+                    <span className="text-muted font-semibold truncate max-w-[180px] xs:max-w-[260px]">
+                      {msg.files?.join(', ') || 'files'}
+                    </span>
+                    <span className="text-muted text-2xs shrink-0">{timeStr}</span>
+                  </div>
+                </div>
+              );
+            }
+
+            // System Event: STATUS
+            if (msg.contentType === 'STATUS') {
+              return (
+                <div key={msg.messageId} className="flex justify-center my-2 select-none">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-panel border border-grid rounded-full shadow-sm text-xs font-mono max-w-full">
+                    <Info className="w-3.5 h-3.5 text-accent shrink-0" />
+                    <span className="text-secondary font-medium shrink-0">@{msg.senderId}:</span>
+                    <span className="text-primary truncate max-w-[220px] xs:max-w-[320px]">
+                      {msg.text}
+                    </span>
+                    <span className="text-muted text-2xs shrink-0">{timeStr}</span>
+                  </div>
+                </div>
+              );
+            }
+
             // Multiple tagging & High Priority detection
             const parsedMentions = [...new Set([...(msg.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(m => m[1]))];
             const allMentions = msg.mentions && msg.mentions.length > 0 ? msg.mentions : parsedMentions;
@@ -728,6 +874,18 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                 >
                   <div className="flex flex-col items-end max-w-[85%] sm:max-w-[72%] space-y-1">
                     <div className="bg-accent text-accent-ink rounded-2xl rounded-tr-xs px-3.5 sm:px-4 py-2 sm:py-2.5 shadow-card break-words text-[14px] font-sans font-medium leading-relaxed">
+                      {msg.contentType === 'CROSS_PROMPT' && (
+                        <div className="flex items-center gap-1.5 pb-1 mb-1.5 border-b border-accent-ink/20 text-2xs font-mono font-bold uppercase tracking-wider text-accent-ink select-none">
+                          <AtSign className="w-3 h-3" />
+                          <span>Task Dispatch</span>
+                        </div>
+                      )}
+                      {msg.contentType === 'AGENT_SYNC' && (
+                        <div className="flex items-center gap-1.5 pb-1 mb-1.5 border-b border-accent-ink/20 text-2xs font-mono font-bold uppercase tracking-wider text-accent-ink select-none">
+                          <Cpu className="w-3 h-3" />
+                          <span>Agent Sync</span>
+                        </div>
+                      )}
                       {isLong && !isExpanded ? (
                         <div>
                           <div className="relative">
@@ -776,10 +934,20 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                       {msg.files && msg.files.length > 0 && (
                         <div className="flex flex-wrap gap-1 pt-1.5 opacity-90">
                           {msg.files.map((f) => (
-                            <span key={f} className="text-xs font-mono bg-accent-strong px-2 py-0.5 rounded-sm">
-                              {f}
+                            <span key={f} className="inline-flex items-center gap-1 text-xs font-mono bg-accent-strong px-2 py-0.5 rounded-sm">
+                              <FileCode className="w-3 h-3" />
+                              <span>{f}</span>
                             </span>
                           ))}
+                        </div>
+                      )}
+
+                      {msg.commitHash && (
+                        <div className="pt-1.5">
+                          <span className="inline-flex items-center gap-1 font-mono text-xs bg-accent-strong px-2 py-0.5 rounded-sm font-semibold">
+                            <GitCommit className="w-3 h-3" />
+                            <span>{msg.commitHash.slice(0, 7)}</span>
+                          </span>
                         </div>
                       )}
                     </div>
@@ -834,7 +1002,13 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
                     {isAgent && (
                       <span className="px-1.5 py-0.2 rounded-sm bg-hover text-secondary border border-grid text-2xs font-mono">
-                        AGENT
+                        {msg.senderHarness ? `${msg.senderHarness} AGENT` : 'AGENT'}
+                      </span>
+                    )}
+
+                    {msg.senderModel && (
+                      <span className="px-1.5 py-0.2 rounded-sm bg-hover text-muted border border-grid text-2xs font-mono hidden xs:inline-block">
+                        {msg.senderModel}
                       </span>
                     )}
 
@@ -864,6 +1038,18 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                         : 'bg-panel border border-grid text-primary'
                     }`}
                   >
+                    {msg.contentType === 'CROSS_PROMPT' && (
+                      <div className="flex items-center gap-1.5 pb-1.5 mb-2 border-b border-accent/20 text-2xs font-mono font-bold uppercase tracking-wider text-accent select-none">
+                        <AtSign className="w-3.5 h-3.5" />
+                        <span>Task Dispatch</span>
+                      </div>
+                    )}
+                    {msg.contentType === 'AGENT_SYNC' && (
+                      <div className="flex items-center gap-1.5 pb-1.5 mb-2 border-b border-grid text-2xs font-mono font-bold uppercase tracking-wider text-secondary select-none">
+                        <Cpu className="w-3.5 h-3.5" />
+                        <span>Agent Sync</span>
+                      </div>
+                    )}
                     {isLong && !isExpanded ? (
                       <div>
                         <div className="relative">
@@ -917,9 +1103,10 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                         {msg.files.map((file) => (
                           <span
                             key={file}
-                            className="font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-secondary font-medium"
+                            className="inline-flex items-center gap-1 font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-secondary font-medium"
                           >
-                            {file}
+                            <FileCode className="w-3 h-3 text-accent" />
+                            <span>{file}</span>
                           </span>
                         ))}
                       </div>
@@ -927,8 +1114,9 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
                     {msg.commitHash && (
                       <div className="pt-1.5">
-                        <span className="font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-accent font-semibold">
-                          {msg.commitHash.slice(0, 7)}
+                        <span className="inline-flex items-center gap-1 font-mono text-xs bg-canvas px-2 py-0.5 rounded-sm border border-grid text-accent font-semibold">
+                          <GitCommit className="w-3 h-3 text-accent" />
+                          <span>{msg.commitHash.slice(0, 7)}</span>
                         </span>
                       </div>
                     )}
