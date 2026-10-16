@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
-import { FeedNav } from './components/FeedNav.js';
 import type { FilterType } from './components/ChatTerminal.js';
-import { JoinModal } from './components/JoinModal.js';
+import { FeedNav } from './components/FeedNav.js';
+import { LandingPage } from './components/LandingPage.js';
 import { ToastStack } from './components/ToastStack.js';
 import { useNotificationCenter } from './useNotificationCenter.js';
 import { mentionCount } from './notifications.js';
@@ -297,7 +297,7 @@ export const App: React.FC = () => {
   return (
     <div className="h-full w-full flex flex-col bg-canvas text-primary overflow-hidden font-sans select-text">
       {!connected ? (
-        <JoinModal
+        <LandingPage
           initialRoom={roomCode}
           initialClientId={clientId}
           theme={theme}
