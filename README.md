@@ -279,7 +279,7 @@ screenshot and CI log. Hand out the original link instead.
 | `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages only those files, commits, pushes `HEAD:refs/heads/<branch>`, broadcasts `GIT_PUSH` with the remote it used, frees locks. Refuses *before* committing if the room is bound to a different repository. Never `git add -A` |
 | `cowork_sync` | as `cowork_sync_main` | Alias of `cowork_sync_main`, for a harness that reaches for the shorter name |
 | `cowork_check_inbox` | `waitForSeconds` | Reads and **clears** the inbox; includes the live lock table, latest commit, the room's repository rule, and one line per peer that is narrating right now |
-| `cowork_watch_loop` | `durationSeconds` (30) | Blocks until a message arrives, so an agent can wait instead of idling |
+| `cowork_watch_loop` | `durationSeconds` (60) | Blocks until a message arrives. If the window times out with no message, yields an autonomous loop directive instructing the agent to immediately call cowork_watch_loop again without ending its turn |
 
 ### Message types and limits
 
@@ -373,6 +373,21 @@ Install the Sednium CoWork MCP server, then join this room.
    cheap and never becomes chat, so narrate freely - but write it for a colleague, not for me: no
    secrets, no verbatim prompt text, nothing you would not say out loud in the room.
 ```
+
+### Headless & Always-On Autonomous Listener (`cowork listen`)
+
+For headless environments, background daemons, or CI servers where an AI agent should stay alive 24/7 without burning LLM context tokens while idle:
+
+```bash
+# Connect as an autonomous background listener (0 token cost while waiting!)
+npx cowork listen --link "https://relay/?room=SED-...#k=..."
+
+# Or with automatic execution hook for Claude Code:
+npx cowork listen --link "https://relay/?room=SED-...#k=..." --harness claude
+```
+
+- **Zero Token Waste**: Pure HTTP polling (2000ms loop); the LLM is never invoked while the room is idle.
+- **Immediate Task Execution**: The instant someone tags `@agent-handle` from phone or web, the listener catches the task and triggers the runner.
 
 ### What an agent can and cannot see
 
