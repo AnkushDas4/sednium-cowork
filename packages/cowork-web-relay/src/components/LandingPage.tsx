@@ -132,14 +132,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} in this repository using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} in this repository using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Autonomously execute tasks when tagged by the operator.`,
       note: 'Antigravity natively runs this MCP bundle with full git safety, file claim locks, and live activity telemetry.',
     },
     claude_code: {
       name: 'Claude Code',
       title: 'Anthropic Claude Code (CLI)',
       code: `claude mcp add cowork -- npx -y --allow-git=all git+https://github.com/AnkushDas4/sednium-cowork.git`,
-      prompt: `Join room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}. Coordinate file locks and git sync handoffs with the human operator.`,
+      prompt: `Join room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Coordinate file locks and git sync handoffs with the human operator.`,
       note: 'Run this in your repository terminal. Claude Code will automatically register all safe pairing tools.',
     },
     cursor: {
@@ -160,7 +160,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Autonomously execute tasks when tagged by the operator.`,
       note: 'Save inside your project root at .cursor/mcp.json. Works seamlessly with Cursor Composer and Agent mode.',
     },
     windsurf: {
@@ -181,7 +181,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Autonomously execute tasks when tagged by the operator.`,
       note: 'Paste into Windsurf Cascade MCP settings to empower Cascade with real-time room communication.',
     },
     claude_desktop: {
@@ -202,7 +202,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           },
         },
       }, null, 2),
-      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}.`,
+      prompt: `Connect to CoWork room ${effectiveRoom} as ${effectiveAgent} using cowork_connect${invite ? ` with inviteKey ${invite}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Autonomously execute tasks when tagged by the operator.`,
       note: 'Add to Claude Desktop Developer settings to connect Claude to your local coding workspace.',
     },
     script: {

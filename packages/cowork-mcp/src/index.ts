@@ -570,6 +570,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const joinUrl = `${relayUrl.replace(/\/+$/, '')}/?room=${encodeURIComponent(roomCode)}${shareKey ? `#k=${shareKey}` : ''}`;
         const asciiQr = await getAsciiQr(joinUrl);
 
+        const pending = activePoller.drainInbox();
+
         return {
           content: [
             {
@@ -590,7 +592,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `${repoPlan.line}\n` +
                     (repoPlan.cloned ? `📥 ${repoPlan.cloned}\n` : '') +
                     (repoPlan.warning ? `⚠️ ${repoPlan.warning}\n` : '') +
-                    `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`,
+                    `🔄 Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)\n\n` +
+                    (pending.length > 0
+                      ? `📬 Unread incoming messages from inbox (${pending.length}):\n` +
+                        pending.map((m) => renderInboxMessage(m)).join('\n') + '\n\n'
+                      : '') +
+                    `🎯 AUTONOMOUS PAIRING DIRECTIVE:\n` +
+                    `You are now connected to the pair programming room. To receive tasks from the human operator or peer agents, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).\n` +
+                    `When an instruction arrives:\n` +
+                    `1. Announce what you are starting via cowork_report(state='reading'|'editing'|'thinking', summary='...')\n` +
+                    `2. Claim any files you will edit via cowork_claim_files(files=[...], taskDescription='...')\n` +
+                    `3. Implement changes and verify tests pass\n` +
+                    `4. Commit and push via cowork_sync(files=[...], commitMessage='...')\n` +
+                    `5. Call cowork_watch_loop again to wait for the next instruction.\n\n` +
+                    `👉 CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.`,
             },
           ],
         };
@@ -791,7 +806,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `  Message: "${commitMessage}"\n\n` +
                     `🔓 All file locks held by @${activePoller.getAgentId()} have been liberated.\n` +
                     `📡 Peers have been notified; only peers with autoPull enabled will pull.` +
-                    pushNote,
+                    pushNote +
+                    `\n\n👉 Call cowork_watch_loop now to wait for your next task from the room.`,
             },
           ],
         };
@@ -860,7 +876,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             content: [
               {
                 type: 'text',
-                text: `⏳ Watched for ${duration}s. No new @ instructions arrived. System is idle.`,
+                text: `⏳ Watched for ${duration}s. No new @ instructions arrived yet. Room is active.\n` +
+                      `👉 Call cowork_watch_loop again to keep listening for instructions from the operator.`,
               },
             ],
           };

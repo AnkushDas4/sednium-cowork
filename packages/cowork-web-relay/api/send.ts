@@ -230,6 +230,15 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       room.history.shift();
     }
 
+    // Helper: resolve mention/target to canonical participant ID case-insensitively
+    const resolveCanonicalRecipient = (handle: string): string => {
+      const lower = handle.toLowerCase();
+      for (const pId of Object.keys(room.participants)) {
+        if (pId.toLowerCase() === lower) return pId;
+      }
+      return handle.toLowerCase();
+    };
+
     // 6. Multicast Queueing into inboxes (Guaranteed Multiple Tagging Delivery)
     const targetSet = new Set<string>();
     if (targetId === 'all') {
@@ -240,11 +249,12 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
       }
     } else {
       // Specific target
-      targetSet.add(targetId);
+      const canonicalTarget = resolveCanonicalRecipient(targetId);
+      targetSet.add(canonicalTarget);
 
       // Also mirror to human dashboard participants so phone/web UI observes cross-agent interactions
       for (const [pId, p] of Object.entries(room.participants)) {
-        if (p.role === 'human' && pId !== senderId && pId !== targetId) {
+        if (p.role === 'human' && pId !== senderId && pId !== canonicalTarget) {
           targetSet.add(pId);
         }
       }
@@ -252,8 +262,8 @@ export async function handleSend(payload: SendPayload, token?: unknown, inviteKe
 
     // High-Priority Multiple Tagging: Guarantee EVERY tagged handle receives the message directly in their inbox
     for (const mention of allMentions) {
-      if (mention !== senderId && mention !== 'all') {
-        targetSet.add(mention);
+      if (mention.toLowerCase() !== senderId.toLowerCase() && mention !== 'all') {
+        targetSet.add(resolveCanonicalRecipient(mention));
       }
     }
 

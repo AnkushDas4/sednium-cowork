@@ -87,6 +87,15 @@ export async function handlePresence(params: PresenceParams, token?: unknown, in
     }
     const acknowledged = new Set(ack);
     if (!room.inboxes[clientId] && Object.keys(room.inboxes).length >= 100) throw new ApiError(429, 'Room inbox limit reached');
+
+    // Case-insensitive inbox consolidation: merge any messages sent to variant casing
+    for (const [inboxKey, msgs] of Object.entries(room.inboxes)) {
+      if (inboxKey !== clientId && inboxKey.toLowerCase() === clientId.toLowerCase()) {
+        room.inboxes[clientId] = (room.inboxes[clientId] || []).concat(msgs);
+        delete room.inboxes[inboxKey];
+      }
+    }
+
     room.inboxes[clientId] = (room.inboxes[clientId] ?? []).filter(m => !acknowledged.has(m.messageId));
     const pendingMessages = room.inboxes[clientId].slice(0, 100);
 

@@ -231,13 +231,13 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     }
   }, [prefilledInput]);
 
-  // Derived from who is actually in the room - no invented identities.
+  // Derived from who is actually in the room - no duplicate -ai suffixes.
   const agentSuggestions = [
     ...new Set([
-      ...(currentClientId ? [`${currentClientId}-ai`] : []),
-      ...Object.keys(participants).filter(p => p !== currentClientId).map(p => `${p}-ai`),
+      ...Object.keys(participants).filter(p => p !== currentClientId),
+      ...(currentClientId && !currentClientId.endsWith('-ai') ? [`${currentClientId}-ai`] : []),
     ]),
-  ].slice(0, 4);
+  ].slice(0, 6);
 
   const quickTargets = [...Object.keys(participants).filter(id => id !== currentClientId).map(id => `@${id}`), '@all'];
 
@@ -304,9 +304,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const onboardingPrompt = (agentId: string) => {
     const key = inviteKeyFor(roomCode);
     return (
-      `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect${key ? ` with inviteKey ${key}` : ''}. ` +
-      `Then keep the room current: call cowork_report when you start, before a large edit, when you are ` +
-      `blocked and when you finish, so the dashboard shows what you are doing.`
+      `Connect to CoWork room ${roomCode} as ${agentId} in this repository using cowork_connect${key ? ` with inviteKey ${key}` : ''}, and immediately call cowork_watch_loop to listen for room instructions. Autonomously execute tasks when tagged by the operator, report your reasoning with cowork_report, and sync commits with cowork_sync.`
     );
   };
 

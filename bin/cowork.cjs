@@ -27414,6 +27414,7 @@ Thoughts attached: ${info.detail.length} chars, folded behind Show more in the d
         const shareKey = mintedHere ? joinKey : "";
         const joinUrl = `${relayUrl.replace(/\/+$/, "")}/?room=${encodeURIComponent(roomCode)}${shareKey ? `#k=${shareKey}` : ""}`;
         const asciiQr = await getAsciiQr(joinUrl);
+        const pending = activePoller.drainInbox();
         return {
           content: [
             {
@@ -27435,7 +27436,19 @@ ${asciiQr}
 ${repoPlan.line}
 ` + (repoPlan.cloned ? `\u{1F4E5} ${repoPlan.cloned}
 ` : "") + (repoPlan.warning ? `\u26A0\uFE0F ${repoPlan.warning}
-` : "") + `\u{1F504} Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)`
+` : "") + `\u{1F504} Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)
+
+` + (pending.length > 0 ? `\u{1F4EC} Unread incoming messages from inbox (${pending.length}):
+` + pending.map((m2) => renderInboxMessage(m2)).join("\n") + "\n\n" : "") + `\u{1F3AF} AUTONOMOUS PAIRING DIRECTIVE:
+You are now connected to the pair programming room. To receive tasks from the human operator or peer agents, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).
+When an instruction arrives:
+1. Announce what you are starting via cowork_report(state='reading'|'editing'|'thinking', summary='...')
+2. Claim any files you will edit via cowork_claim_files(files=[...], taskDescription='...')
+3. Implement changes and verify tests pass
+4. Commit and push via cowork_sync(files=[...], commitMessage='...')
+5. Call cowork_watch_loop again to wait for the next instruction.
+
+\u{1F449} CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.`
             }
           ]
         };
@@ -27616,7 +27629,9 @@ Commit ${gitRes.hash} exists locally and was pushed to your remote, so nothing i
   Message: "${commitMessage}"
 
 \u{1F513} All file locks held by @${activePoller.getAgentId()} have been liberated.
-\u{1F4E1} Peers have been notified; only peers with autoPull enabled will pull.` + pushNote
+\u{1F4E1} Peers have been notified; only peers with autoPull enabled will pull.` + pushNote + `
+
+\u{1F449} Call cowork_watch_loop now to wait for your next task from the room.`
             }
           ]
         };
@@ -27672,7 +27687,8 @@ Room repository: none linked yet. The first push decides it for everyone.`;
             content: [
               {
                 type: "text",
-                text: `\u23F3 Watched for ${duration3}s. No new @ instructions arrived. System is idle.`
+                text: `\u23F3 Watched for ${duration3}s. No new @ instructions arrived yet. Room is active.
+\u{1F449} Call cowork_watch_loop again to keep listening for instructions from the operator.`
               }
             ]
           };
