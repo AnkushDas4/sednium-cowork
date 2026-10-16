@@ -217,7 +217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const selectedConfig = harnessConfigs[activeHarness];
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-canvas text-primary font-sans select-text scroll-panel">
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-canvas text-primary font-sans select-text scroll-panel min-w-0 max-w-full">
       {/* 1. Hardware Top Navbar */}
       <header className="sticky top-0 z-50 bg-panel/85 backdrop-blur-md border-b border-grid h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
@@ -484,9 +484,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 3. Dedicated Interactive AI Agent Harness Setup Section */}
-      <section id="harness-setup" className="py-12 sm:py-16 md:py-20 bg-panel/40 border-y border-grid px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
+      <section id="harness-setup" className="py-12 sm:py-16 md:py-20 bg-panel/40 border-y border-grid px-4 sm:px-6 lg:px-8 w-full max-w-full overflow-x-hidden min-w-0">
+        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 min-w-0 w-full">
+          <div className="text-center space-y-3 max-w-2xl mx-auto min-w-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-soft text-accent border border-accent/30 font-mono text-2xs font-semibold">
               <Cpu className="w-3.5 h-3.5" />
               <span>AI AGENT HARNESS CONFIGURATION</span>
@@ -499,33 +499,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          {/* Quick Parameters Selector Instrument */}
-          <div className="bg-panel border border-grid rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 max-w-3xl mx-auto shadow-card">
-            <div className="flex-1 flex items-center gap-2">
+          {/* Quick Parameters Selector Instrument - Guaranteed Zero Overflow */}
+          <div className="bg-panel border border-grid rounded-2xl p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mx-auto shadow-card min-w-0 w-full">
+            <div className="flex items-center justify-between gap-2 min-w-0 bg-canvas/80 rounded-xl p-2.5 sm:p-3 border border-grid/60">
               <span className="text-xs font-mono font-semibold text-muted uppercase shrink-0">TARGET ROOM:</span>
-              <span className="font-mono text-xs font-bold text-accent px-2.5 py-1 rounded-lg bg-canvas border border-grid">
-                {effectiveRoom}
-              </span>
+              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+                <span
+                  className="font-mono text-xs font-bold text-accent truncate block select-all"
+                  title={effectiveRoom}
+                >
+                  {effectiveRoom}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(effectiveRoom, 'room')}
+                  className="p-1 hover:bg-hover rounded text-secondary hover:text-accent transition-colors shrink-0 cursor-pointer"
+                  title="Copy room code"
+                >
+                  {copiedSnippet === 'room' ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0 bg-canvas/80 rounded-xl p-2.5 sm:p-3 border border-grid/60">
               <span className="text-xs font-mono font-semibold text-muted uppercase shrink-0">AGENT HANDLE:</span>
-              <div className="relative flex-1">
+              <div className="relative min-w-0 flex-1 max-w-[190px]">
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-2xs text-accent font-mono font-bold">@</span>
                 <input
                   type="text"
                   value={setupAgentId}
                   onChange={(e) => setSetupAgentId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
                   placeholder="agent handle"
-                  className="w-full bg-canvas border border-grid rounded-lg px-2 pl-6 py-1.5 text-xs font-mono font-semibold focus:outline-none focus:border-accent text-primary"
+                  className="w-full bg-panel border border-grid focus:border-accent rounded-lg pl-6 pr-2 py-1 text-xs font-mono font-semibold text-primary focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Harness Tab Switcher */}
-          <div className="border border-grid rounded-2xl sm:rounded-3xl bg-panel overflow-hidden shadow-card">
-            <div className="flex items-center border-b border-grid overflow-x-auto no-scrollbar divide-x divide-grid bg-canvas/30">
+          <div className="border border-grid rounded-2xl sm:rounded-3xl bg-panel overflow-hidden shadow-card min-w-0 w-full">
+            <div className="flex items-center border-b border-grid overflow-x-auto no-scrollbar divide-x divide-grid bg-canvas/30 min-w-0">
               {(Object.keys(harnessConfigs) as HarnessType[]).map((key) => {
                 const conf = harnessConfigs[key];
                 const isActive = activeHarness === key;
@@ -548,10 +561,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Tab Content Body */}
-            <div className="p-5 sm:p-7 space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-grid pb-4">
-                <div>
-                  <h3 className="text-base sm:text-lg font-bold text-primary font-sans">
+            <div className="p-4 sm:p-7 space-y-5 min-w-0 w-full">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-grid pb-4 min-w-0">
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-bold text-primary font-sans truncate">
                     {selectedConfig.title}
                   </h3>
                   <p className="text-xs text-secondary font-sans mt-0.5">
@@ -565,8 +578,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 )}
               </div>
 
-              {/* Code Snippet Box */}
-              <div className="space-y-2">
+              {/* Code Snippet Box (Zero Browser Default Scrollers) */}
+              <div className="space-y-2 min-w-0 w-full">
                 <div className="flex items-center justify-between text-2xs font-mono text-muted uppercase">
                   <span>Configuration / Install Command</span>
                   <button
@@ -588,44 +601,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </button>
                 </div>
 
-                <div className="bg-canvas border border-grid rounded-xl p-4 overflow-x-auto relative font-mono text-xs text-primary leading-relaxed shadow-inner max-h-72">
-                  <pre>{selectedConfig.code}</pre>
+                <div className="bg-canvas border border-grid rounded-xl p-3.5 sm:p-4 overflow-x-auto no-scrollbar relative font-mono text-xs text-primary leading-relaxed shadow-inner max-h-72 select-all min-w-0 w-full">
+                  <pre className="no-scrollbar font-mono whitespace-pre">{selectedConfig.code}</pre>
                 </div>
               </div>
 
-              {/* Ready-to-Use Agent Prompt */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between text-2xs font-mono text-muted uppercase">
-                  <span>Step 2: Tell Your Agent in Chat</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(selectedConfig.prompt, 'prompt')}
-                    className="text-accent hover:text-accent-strong flex items-center gap-1.5 font-bold transition-colors cursor-pointer"
-                  >
-                    {copiedSnippet === 'prompt' ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>COPIED PROMPT!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>COPY AGENT PROMPT</span>
-                      </>
-                    )}
-                  </button>
+              {/* Ready-to-Use Agent Pairing Command */}
+              <div className="mt-4 pt-4 border-t border-grid/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-7 h-7 rounded-lg bg-accent-soft text-accent flex items-center justify-center shrink-0 border border-accent/30">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] font-mono font-semibold text-muted uppercase">
+                      Direct Chat Pairing Prompt:
+                    </div>
+                    <div className="text-xs font-mono text-primary truncate max-w-full" title={selectedConfig.prompt}>
+                      {selectedConfig.prompt}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-canvas border border-grid rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs font-mono text-primary select-all">
-                  <span className="break-all sm:truncate">{selectedConfig.prompt}</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(selectedConfig.prompt, 'prompt')}
-                    className="p-1.5 bg-hover hover:bg-grid rounded-lg text-secondary hover:text-primary transition-colors shrink-0 cursor-pointer"
-                  >
-                    {copiedSnippet === 'prompt' ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(selectedConfig.prompt, 'prompt')}
+                  className="px-4 py-2 bg-accent hover:bg-accent-strong text-accent-ink rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 shrink-0 transition-all shadow-card active:scale-95 cursor-pointer"
+                >
+                  {copiedSnippet === 'prompt' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Copied Prompt!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy Chat Prompt</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
