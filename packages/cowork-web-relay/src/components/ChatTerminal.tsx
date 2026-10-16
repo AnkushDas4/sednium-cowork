@@ -52,6 +52,7 @@ interface ChatTerminalProps {
    */
   filter?: FilterType;
   onFilterChange?: (filter: FilterType) => void;
+  isVisible?: boolean;
 }
 
 export type FilterType = 'ALL' | 'MENTIONS' | 'GIT' | 'LOCKS';
@@ -116,12 +117,17 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   onFocusHandled,
   filter: filterProp,
   onFilterChange,
+  isVisible = true,
 }) => {
   const [input, setInput] = useState('');
   // Written to both places so the controlled and uncontrolled paths never drift apart.
   const [internalFilter, setInternalFilter] = useState<FilterType>('ALL');
   const filter = filterProp ?? internalFilter;
   const setFilter = (next: FilterType) => {
+    if (next === filter) {
+      scrollToBottom('smooth');
+      return;
+    }
     setInternalFilter(next);
     onFilterChange?.(next);
   };
@@ -178,6 +184,26 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const isUserInteractingRef = useRef(false);
   const interactTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Scroll memory per filter tab so switching tabs remembers reading position or stays anchored
+  const tabScrollMemoryRef = useRef<
+    Record<
+      FilterType,
+      {
+        scrollTop: number;
+        isNearBottom: boolean;
+      }
+    >
+  >({
+    ALL: { scrollTop: 0, isNearBottom: true },
+    MENTIONS: { scrollTop: 0, isNearBottom: true },
+    GIT: { scrollTop: 0, isNearBottom: true },
+    LOCKS: { scrollTop: 0, isNearBottom: true },
+  });
+
+  const prevFilterRef = useRef<FilterType>(filter);
+  const isTabSwitchingRef = useRef(false);
+  const isInitialBatchRef = useRef(true);
+
   const startUserInteraction = () => {
     isUserInteractingRef.current = true;
     if (interactTimeoutRef.current) clearTimeout(interactTimeoutRef.current);
@@ -218,22 +244,32 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
     streamEndRef.current?.scrollIntoView({ behavior });
     setIsScrolledUp(false);
     setUnreadWhileScrolled(0);
     isNearBottomRef.current = true;
+    if (el) {
+      prevScrollTopRef.current = el.scrollTop;
+      tabScrollMemoryRef.current[filter] = {
+        scrollTop: el.scrollTop,
+        isNearBottom: true,
+      };
+    }
   };
 
   const handleScroll = () => {
     const el = scrollContainerRef.current;
-    if (!el) return;
+    if (!el || isTabSwitchingRef.current) return;
     const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
 
-    // Detect user actively scrolling upward
-    if (el.scrollTop < prevScrollTopRef.current - 5) {
+    // Detect user actively scrolling upward (only during active user interaction)
+    if (isUserInteractingRef.current && el.scrollTop < prevScrollTopRef.current - 5) {
       isNearBottomRef.current = false;
       setIsScrolledUp(true);
-      startUserInteraction();
     }
     prevScrollTopRef.current = el.scrollTop;
 
@@ -243,18 +279,85 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       isNearBottomRef.current = true;
       setIsScrolledUp(false);
       setUnreadWhileScrolled(0);
-    } else {
+    } else if (isUserInteractingRef.current) {
       isNearBottomRef.current = false;
       setIsScrolledUp(true);
     }
+
+    tabScrollMemoryRef.current[filter] = {
+      scrollTop: el.scrollTop,
+      isNearBottom: isNearBottomRef.current,
+    };
+  };
+
+  const restoreTabScroll = (targetFilter: FilterType) => {
+    isTabSwitchingRef.current = true;
+    const targetMemory = tabScrollMemoryRef.current[targetFilter] || {
+      scrollTop: 0,
+      isNearBottom: true,
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const container = scrollContainerRef.current;
+        if (container) {
+          if (targetMemory.isNearBottom) {
+            container.scrollTop = container.scrollHeight;
+            streamEndRef.current?.scrollIntoView({ behavior: 'auto' });
+            isNearBottomRef.current = true;
+            setIsScrolledUp(false);
+            setUnreadWhileScrolled(0);
+          } else {
+            container.scrollTop = targetMemory.scrollTop;
+            const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            const atBottom = distanceToBottom <= 60;
+            isNearBottomRef.current = atBottom;
+            setIsScrolledUp(!atBottom);
+          }
+          prevScrollTopRef.current = container.scrollTop;
+        }
+        setTimeout(() => {
+          isTabSwitchingRef.current = false;
+        }, 60);
+      });
+    });
   };
 
   useEffect(() => {
+    const prev = prevFilterRef.current;
+    if (prev !== filter) {
+      const el = scrollContainerRef.current;
+      if (el) {
+        const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        tabScrollMemoryRef.current[prev] = {
+          scrollTop: el.scrollTop,
+          isNearBottom: distanceToBottom <= 60,
+        };
+      }
+      prevFilterRef.current = filter;
+      restoreTabScroll(filter);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    if (isVisible) {
+      restoreTabScroll(filter);
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
     const countDiff = messages.length - prevMessagesLengthRef.current;
+    const isInitialBatch = isInitialBatchRef.current && messages.length > 0;
     prevMessagesLengthRef.current = messages.length;
 
     // Critical: Do NOT auto-scroll on polls or updates if no new messages arrived
-    if (countDiff <= 0) return;
+    if (countDiff <= 0 && !isInitialBatch) return;
+
+    if (isInitialBatch) {
+      isInitialBatchRef.current = false;
+      restoreTabScroll(filter);
+      return;
+    }
 
     const lastMsg = messages[messages.length - 1];
     const isSelfLast = lastMsg && lastMsg.senderId === currentClientId;
@@ -271,7 +374,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     } else {
       setUnreadWhileScrolled((prev) => prev + countDiff);
     }
-  }, [messages, currentClientId]);
+  }, [messages, currentClientId, filter]);
 
   useEffect(() => {
     if (prefilledInput) {

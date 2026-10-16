@@ -427,6 +427,7 @@ export const App: React.FC = () => {
               <ChatTerminal
                 key={roomCode}
                 filter={feedFilter}
+                isVisible={mobileTab === 'stream'}
                 onFilterChange={selectFeed}
                 participants={participants}
                 messages={messages}
