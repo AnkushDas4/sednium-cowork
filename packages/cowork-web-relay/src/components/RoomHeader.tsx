@@ -99,8 +99,8 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
           <Terminal className="w-4 h-4 text-accent-ink" strokeWidth={2.5} />
         </div>
         <div className="hidden sm:flex flex-col">
-          <span className="font-semibold tracking-tight text-primary text-xs uppercase font-sans">
-            SEDNIUM COWORK
+          <span className="font-semibold tracking-tight text-primary text-xs font-sans">
+            Sednium CoWork
           </span>
           <span className="text-2xs text-muted tracking-wider font-mono uppercase">
             RELAY HUD v1.0

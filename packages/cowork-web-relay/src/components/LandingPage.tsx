@@ -219,22 +219,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-canvas text-primary font-sans select-text scroll-panel min-w-0 max-w-full">
       {/* 1. Hardware Top Navbar */}
-      <header className="sticky top-0 z-50 bg-panel/85 backdrop-blur-md border-b border-grid h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-accent flex items-center justify-center rounded-xl text-accent-ink shadow-sm">
+      <header className="sticky top-0 z-50 bg-panel/90 backdrop-blur-md border-b border-grid min-h-14 sm:min-h-16 pt-safe py-2.5 sm:py-2 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+          <div className="w-8 h-8 bg-accent flex items-center justify-center rounded-xl text-accent-ink shadow-sm shrink-0">
             <Terminal className="w-4 h-4" strokeWidth={2.5} />
           </div>
-          <div>
-            <span className="font-bold text-sm tracking-tight text-primary font-sans flex items-center gap-2">
-              SEDNIUM COWORK
-              <span className="px-1.5 py-0.5 rounded bg-accent-soft text-accent text-2xs font-mono font-semibold border border-accent/30 hidden xs:inline">
-                RELAY V1.0
-              </span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm tracking-tight text-primary font-sans">
+              Sednium CoWork
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-accent-soft text-accent text-2xs font-mono font-semibold border border-accent/30 hidden xs:inline shrink-0">
+              RELAY V1.0
             </span>
           </div>
         </div>
 
-        <nav className="flex items-center gap-2 sm:gap-4">
+        <nav className="flex items-center gap-2 sm:gap-4 shrink-0">
           <a
             href="#launcher"
             className="text-xs font-medium text-secondary hover:text-primary transition-colors hidden md:inline px-2 py-1"
