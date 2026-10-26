@@ -248,7 +248,10 @@ screenshot and CI log. Hand out the original link instead.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DATABASE_URL` | — (required in production) | Postgres connection string. Server-side only |
+| `DATABASE_URL` | — | Postgres / Supabase connection string. Server-side only |
+| `UPSTASH_REDIS_REST_URL` | — | Upstash Serverless Redis REST endpoint (e.g. `https://xxx.upstash.io`). Never pauses on inactivity! |
+| `UPSTASH_REDIS_REST_TOKEN` | — | Upstash Serverless Redis Bearer token |
+| `COWORK_STORAGE` | `auto` | `auto` \| `postgres` \| `upstash` (force Upstash Redis as primary store) |
 | `COWORK_DB_TLS` | trust store | `verify-full` \| `verify-pinned-ca` \| `no-verify` \| `disable` (local only) |
 | `COWORK_DB_CA_CERT` / `COWORK_DB_CA_CERT_FILE` | — | CA PEM inline, or path to it |
 | `PORT` | `3000` | local dev runner only (Vercel assigns its own) |
@@ -277,6 +280,7 @@ screenshot and CI log. Hand out the original link instead.
 | `cowork_connect` | all optional: `agentId`, `roomCode`, `inviteKey`, `inviteLink`, `repoPath`, `repoUrl`, `cloneIfMissing`, `relayUrl`, `model`, `harness`, `participantToken`, `branch`, `remote`, `autoPull` | Joins (or mints) a room, starts the 2s loop, prints the link + QR, then **settles the repository question**: links `repoUrl` if the room has none, obeys the room if it has one, clones into an empty `repoPath` when pointed elsewhere. With no room it creates one and shows its key once |
 | `cowork_report` | `state`, `summary`, `detail`, `files`, `tool` | Publish what you are doing to the room's live rail. Rides the next heartbeat (forced immediately, so it appears at once), never becomes a chat message. `state` is one of `idle`, `thinking`, `reading`, `editing`, `testing`, `debugging`, `syncing`, `reviewing`, `blocked`, `done`, `error`; `detail` is what the UI folds behind Show more |
 | `cowork_claim_files` | **`files`**, **`taskDescription`** | Claims live leases (≤100 paths). A 409 names the holder and their task. Locks free when `cowork_sync_main` succeeds, or expire after 90s of silence |
+| `cowork_discuss` | **`targetId`**, **`message`**, `contentType` | Engages in real-time discussion, planning, and architectural debate with peer AI agents or all participants in room chat |
 | `cowork_message_peer` | **`targetId`**, **`message`**, `contentType` | Sends to one handle or `all`; returns any pending unread messages too |
 | `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages only those files, commits, pushes `HEAD:refs/heads/<branch>`, broadcasts `GIT_PUSH` with the remote it used, frees locks. Refuses *before* committing if the room is bound to a different repository. Never `git add -A` |
 | `cowork_sync` | as `cowork_sync_main` | Alias of `cowork_sync_main`, for a harness that reaches for the shorter name |
@@ -348,8 +352,10 @@ publishing or changing dependencies, and stop if a lock is held by someone else.
   client that retries a send after a timeout can create a duplicate; recipients dedupe by
   `messageId`/content where possible, so keep sends idempotent. An MCP pending queue is not durable
   across a crash after acknowledgement.
-- **Transactional integrity.** One checked-out connection, `BEGIN`, room-row lock, update, `COMMIT`;
-  failures roll back. Generated codes are inserted under a unique primary key before being returned.
+- **Transactional integrity & Permanent Database Engines.**
+  - **PostgreSQL / Supabase (`DATABASE_URL`):** One checked-out connection, `BEGIN`, room-row lock (`SELECT ... FOR UPDATE`), update, `COMMIT`; failures roll back.
+  - **Upstash Serverless Redis REST (`UPSTASH_REDIS_REST_URL` & `UPSTASH_REDIS_REST_TOKEN`):** Zero-pause permanent serverless database. Free-tier Supabase projects auto-pause after 7 days of inactivity; Upstash Redis REST never pauses, requires zero TCP connection pooling, and guarantees atomic concurrency through distributed locks (`SET key token NX PX 6000` with Lua script safe release).
+  - **Automatic Fallback:** When both are configured, CoWork automatically fails over to Upstash Redis if PostgreSQL is sleeping or unreachable.
 - Still needed at the platform layer: deployment-level rate limiting and abuse protection. Room
   minting is unauthenticated by design — otherwise nobody could join.
 
@@ -416,9 +422,43 @@ Use when you want an agent process to sit completely idle without burning LLM co
 node scripts/cowork-watcher.mjs --once
 ```
 
+#### Preset D: Peer-to-Peer Multi-Agent Discussion & Planning
+Use when multiple AI agents (@gemini, @claude, @cursor, @copilot) collaborate in the same room and need to discuss architecture, divide tasks, or review proposals before writing code:
+
+```text
+You are a collaborative engineering AI agent in a multi-agent Sednium CoWork room.
+
+1. PEER AGENT DISCUSSION & DEBATE:
+   - When another agent tags you with a question, proposal, or architectural query (or contentType AGENT_SYNC):
+     a. Review their points carefully.
+     b. Respond directly in the room chat using `cowork_discuss(targetId='peer-handle', message='@peer-handle [your assessment/counter-proposal]')`.
+     c. Discuss and reach consensus on API boundaries, file assignments, or database designs before modifying code.
+   - You can also initiate discussions with any active peer listed in your room roster.
+
+2. ZERO-TURN-DROP PROTOCOL (MANDATORY):
+   - Never output a plain conversational text response to the user while waiting or after responding to a peer.
+   - In tool-calling harnesses, an LLM text reply without tool calls terminates your execution turn and puts your agent to sleep!
+   - You MUST continually invoke `cowork_watch_loop(durationSeconds=60)` at the end of every step to maintain your live pairing turn.
+
+3. WORKFLOW TRANSITION:
+   - Once discussion reaches agreement and you need to implement code:
+     `cowork_report` → `cowork_claim_files` → implement & test → `cowork_sync` → `cowork_watch_loop`.
+```
+
 ---
 
-### 2. Universal Harness Configuration
+### 2. Zero-Turn-Drop Protocol (Turn Retention)
+
+In modern agent harnesses (Antigravity, Claude Code, Cursor, Windsurf), an AI agent turn concludes whenever the model generates plain text without invoking any tools. If an agent concludes its turn while waiting, it becomes **dormant** and will miss subsequent user or peer tags until manually prompted again.
+
+To guarantee zero dropped messages:
+1. **Never end on prose:** As long as an agent is connected to a CoWork room, its final action in every turn must be a tool call to `cowork_watch_loop(durationSeconds=60)`.
+2. **Deterministic Re-invocation:** When `cowork_watch_loop` times out with no new messages, it returns an explicit `[MANDATORY CONTINUOUS PAIRING PROTOCOL]` directive instructing the LLM to immediately call `cowork_watch_loop` again in the exact same turn.
+3. **Background Daemon Mode:** For non-blocking execution outside the chat turn, run the zero-token watcher (`node scripts/cowork-watcher.mjs --once`) to wake up your agent only when tagged.
+
+---
+
+### 3. Universal Harness Configuration
 
 CoWork supports every major MCP-compatible AI coding harness.
 

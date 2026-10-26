@@ -3,6 +3,7 @@ import { Pool } from 'pg';
 import type { RoomState, CoWorkMessage } from './_types.js';
 import { ApiError, id, mintInviteKey } from './_validation.js';
 import { buildTls, describeConnection } from './_tls.js';
+import { isUpstashConfigured, mutateRoomUpstash, generateUniqueRoomUpstash } from './_upstash.js';
 
 export const LOCK_TTL_MS = 90_000;
 const memoryStore = new Map<string, RoomState>();
@@ -13,9 +14,11 @@ let memoryTail: Promise<unknown> = Promise.resolve();
 // Tests ALWAYS use isolated process memory, even if DATABASE_URL is inherited.
 function database(): Pool | null {
   if (process.env.NODE_ENV === 'test') return null;
+  if (process.env.COWORK_STORAGE === 'upstash') return null;
   if (!process.env.DATABASE_URL) {
+    if (isUpstashConfigured()) return null;
     if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-      throw new Error('DATABASE_URL is required in production');
+      throw new Error('DATABASE_URL or UPSTASH_REDIS_REST_URL is required in production');
     }
     return null;
   }
@@ -116,8 +119,9 @@ export function createDefaultRoom(roomCode: string, inviteHash?: string): RoomSt
 /** All API read/modify/write operations execute under one room row lock. */
 export async function mutateRoom<T>(rawCode: string, fn: (room: RoomState) => T | Promise<T>): Promise<T> {
   const code = id(rawCode, 'roomCode').toUpperCase();
-  const p = database();
-  if (!p) {
+
+  // Test environment always isolates in process memory
+  if (process.env.NODE_ENV === 'test') {
     const job = memoryTail.then(async () => {
       const state = structuredClone(memoryStore.get(code) ?? createDefaultRoom(code));
       cleanExpiredLocks(state);
@@ -128,22 +132,53 @@ export async function mutateRoom<T>(rawCode: string, fn: (room: RoomState) => T 
     memoryTail = job.catch(() => {});
     return job;
   }
-  await initialize(p);
-  const c = await p.connect();
+
+  // Explicit or configured Upstash Redis Serverless storage (zero inactivity pause)
+  if (process.env.COWORK_STORAGE === 'upstash' || (!process.env.DATABASE_URL && isUpstashConfigured())) {
+    return mutateRoomUpstash(code, fn, cleanExpiredLocks, createDefaultRoom);
+  }
+
+  const p = database();
+  if (!p) {
+    if (isUpstashConfigured()) {
+      return mutateRoomUpstash(code, fn, cleanExpiredLocks, createDefaultRoom);
+    }
+    const job = memoryTail.then(async () => {
+      const state = structuredClone(memoryStore.get(code) ?? createDefaultRoom(code));
+      cleanExpiredLocks(state);
+      const result = await fn(state);
+      memoryStore.set(code, state);
+      return structuredClone(result);
+    });
+    memoryTail = job.catch(() => {});
+    return job;
+  }
+
   try {
-    await c.query('BEGIN');
-    await c.query("SET LOCAL lock_timeout = '4s'");
-    await c.query(`INSERT INTO public.cowork_rooms(room_code, state) VALUES ($1, $2)
-      ON CONFLICT (room_code) DO NOTHING`, [code, JSON.stringify(createDefaultRoom(code))]);
-    const { rows } = await c.query('SELECT state FROM public.cowork_rooms WHERE room_code=$1 FOR UPDATE', [code]);
-    const state: RoomState = rows[0].state;
-    cleanExpiredLocks(state);
-    const result = await fn(state);
-    await c.query('UPDATE public.cowork_rooms SET state=$2, updated_at=NOW() WHERE room_code=$1', [code, JSON.stringify(state)]);
-    await c.query('COMMIT');
-    return result;
-  } catch (e) { await c.query('ROLLBACK'); throw e; }
-  finally { c.release(); }
+    await initialize(p);
+    const c = await p.connect();
+    try {
+      await c.query('BEGIN');
+      await c.query("SET LOCAL lock_timeout = '4s'");
+      await c.query(`INSERT INTO public.cowork_rooms(room_code, state) VALUES ($1, $2)
+        ON CONFLICT (room_code) DO NOTHING`, [code, JSON.stringify(createDefaultRoom(code))]);
+      const { rows } = await c.query('SELECT state FROM public.cowork_rooms WHERE room_code=$1 FOR UPDATE', [code]);
+      const state: RoomState = rows[0].state;
+      cleanExpiredLocks(state);
+      const result = await fn(state);
+      await c.query('UPDATE public.cowork_rooms SET state=$2, updated_at=NOW() WHERE room_code=$1', [code, JSON.stringify(state)]);
+      await c.query('COMMIT');
+      return result;
+    } catch (e) { await c.query('ROLLBACK'); throw e; }
+    finally { c.release(); }
+  } catch (err: any) {
+    // If Supabase is sleeping/down and Upstash is configured, fail over gracefully
+    if (isUpstashConfigured()) {
+      console.warn(`[CoWork] PostgreSQL database unavailable (${err?.message || 'unknown'}). Falling back to Upstash Redis.`);
+      return mutateRoomUpstash(code, fn, cleanExpiredLocks, createDefaultRoom);
+    }
+    throw err;
+  }
 }
 
 // Snapshot helpers for tests/inspection; API writes must use mutateRoom.
@@ -155,21 +190,44 @@ export async function saveRoom(state: RoomState): Promise<void> {
   await mutateRoom(state.roomCode, room => { Object.assign(room, structuredClone(state)); });
 }
 export async function generateUniqueRoom(): Promise<{ roomCode: string; inviteKey: string }> {
+  if (process.env.NODE_ENV !== 'test') {
+    if (process.env.COWORK_STORAGE === 'upstash' || (!process.env.DATABASE_URL && isUpstashConfigured())) {
+      return generateUniqueRoomUpstash(createDefaultRoom, mintInviteKey, () => randomBytes(16).toString('hex').toUpperCase());
+    }
+  }
+
   const p = database();
-  if (p) await initialize(p);
-  for (let attempt = 0; attempt < 10; attempt++) {
-    // The code names the room; the invite key authorises it. Only the hash is stored, and the
-    // key travels once inside the invite link/QR fragment (never a query param, never a log).
-    const code = `SED-${randomBytes(16).toString('hex').toUpperCase()}`;
-    const { inviteKey, inviteHash } = mintInviteKey();
-    const state = createDefaultRoom(code, inviteHash);
-    if (p) {
-      const res = await p.query(`INSERT INTO public.cowork_rooms(room_code,state) VALUES($1,$2)
-        ON CONFLICT DO NOTHING RETURNING room_code`, [code, JSON.stringify(state)]);
-      if (res.rowCount) return { roomCode: code, inviteKey };
-    } else if (!memoryStore.has(code)) {
-      memoryStore.set(code, state);
-      return { roomCode: code, inviteKey };
+  if (p) {
+    try {
+      await initialize(p);
+      for (let attempt = 0; attempt < 10; attempt++) {
+        // The code names the room; the invite key authorises it. Only the hash is stored, and the
+        // key travels once inside the invite link/QR fragment (never a query param, never a log).
+        const code = `SED-${randomBytes(16).toString('hex').toUpperCase()}`;
+        const { inviteKey, inviteHash } = mintInviteKey();
+        const state = createDefaultRoom(code, inviteHash);
+        const res = await p.query(`INSERT INTO public.cowork_rooms(room_code,state) VALUES($1,$2)
+          ON CONFLICT DO NOTHING RETURNING room_code`, [code, JSON.stringify(state)]);
+        if (res.rowCount) return { roomCode: code, inviteKey };
+      }
+    } catch (err) {
+      if (isUpstashConfigured()) {
+        console.warn(`[CoWork] PostgreSQL room generation failed; falling back to Upstash.`);
+        return generateUniqueRoomUpstash(createDefaultRoom, mintInviteKey, () => randomBytes(16).toString('hex').toUpperCase());
+      }
+      throw err;
+    }
+  } else if (process.env.NODE_ENV !== 'test' && isUpstashConfigured()) {
+    return generateUniqueRoomUpstash(createDefaultRoom, mintInviteKey, () => randomBytes(16).toString('hex').toUpperCase());
+  } else {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const code = `SED-${randomBytes(16).toString('hex').toUpperCase()}`;
+      const { inviteKey, inviteHash } = mintInviteKey();
+      const state = createDefaultRoom(code, inviteHash);
+      if (!memoryStore.has(code)) {
+        memoryStore.set(code, state);
+        return { roomCode: code, inviteKey };
+      }
     }
   }
   throw new Error('Unable to reserve room');

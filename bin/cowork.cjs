@@ -27263,6 +27263,22 @@ Peers working right now (${peers.length} narrating, from presence - not chat):
 ` + lines.join("\n") + (peers.length > 8 ? `
   (+${peers.length - 8} more)` : "");
 }
+function renderPeerAgents(participants, selfId) {
+  const peers = Object.values(participants || {}).filter((p2) => p2.clientId !== selfId);
+  if (!peers.length) return "\n\n\u{1F465} Room Roster: You are currently the only connected participant in this room.";
+  const lines = peers.slice(0, 10).map((p2) => {
+    const isPeerAgent = p2.role === "agent" || p2.clientId.toLowerCase().includes("ai");
+    const badge = isPeerAgent ? `\u{1F916} [AI AGENT: ${p2.harness || "Autonomous"}${p2.model ? ` \xB7 ${p2.model}` : ""}]` : `\u{1F464} [HUMAN OPERATOR]`;
+    return `  - @${p2.clientId} ${badge} - Status: ${p2.status || "Active"}`;
+  });
+  return `
+
+\u{1F465} Active Room Participants (${peers.length}):
+` + lines.join("\n") + `
+\u{1F4AC} AI Agent Collaboration & Discussion:
+  You can discuss technical approaches, divide tasks, or ask questions with any peer using:
+  cowork_discuss(targetId='<handle>', message='@<handle> ...') or cowork_message_peer.`;
+}
 function renderInboxMessage(m2, indent = "  ") {
   const via = m2.senderHarness ? ` (via ${m2.senderHarness}${m2.senderModel ? ` \xB7 ${m2.senderModel}` : ""})` : "";
   const files = Array.isArray(m2.files) && m2.files.length ? ` [files: ${m2.files.join(", ")}]` : "";
@@ -27401,6 +27417,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             files: { type: "array", items: { type: "string" }, description: "Optional repository-relative paths to advertise instead of the git-status guess." },
             tool: { type: "string", description: 'Optional command in flight, e.g. "npm test" or "Edit".' }
           }
+        }
+      },
+      {
+        name: "cowork_discuss",
+        description: "Engages in real-time discussion, planning, and architectural debate with peer AI agents (@peer-handle) or everyone (@all) in the room chat. Drains pending inbox messages and returns conversation state.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            targetId: {
+              type: "string",
+              description: `Peer agent handle (e.g. "claude-code", "cursor-ai") or "all" to broadcast to all participants.`
+            },
+            message: {
+              type: "string",
+              description: "Your discussion point, proposal, technical question, or reply to the peer agent."
+            },
+            contentType: {
+              type: "string",
+              enum: ["AGENT_SYNC", "CROSS_PROMPT", "CHAT"],
+              description: 'Message type (defaults to "AGENT_SYNC").'
+            }
+          },
+          required: ["targetId", "message"]
         }
       },
       {
@@ -27713,16 +27752,15 @@ ${repoPlan.line}
 ` : "") + `\u{1F504} Background Polling: Active (2000ms loop with Auto-Git Pull is opt-in via autoPull)
 
 ` + (pending.length > 0 ? `\u{1F4EC} Unread incoming messages from inbox (${pending.length}):
-` + pending.map((m2) => renderInboxMessage(m2)).join("\n") + "\n\n" : "") + `\u{1F3AF} AUTONOMOUS PAIRING DIRECTIVE:
-You are now connected to the pair programming room. To receive tasks from the human operator or peer agents, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).
-When an instruction arrives:
-1. Announce what you are starting via cowork_report(state='reading'|'editing'|'thinking', summary='...')
-2. Claim any files you will edit via cowork_claim_files(files=[...], taskDescription='...')
-3. Implement changes and verify tests pass
-4. Commit and push via cowork_sync(files=[...], commitMessage='...')
-5. Call cowork_watch_loop again to wait for the next instruction.
+` + pending.map((m2) => renderInboxMessage(m2)).join("\n") + "\n\n" : "") + `\u{1F3AF} AUTONOMOUS PAIRING DIRECTIVE (ZERO-TURN-DROP):
+You are now connected to the pair programming room. To receive tasks and converse with peers, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).
+\u{1F6D1} MANDATORY: Do NOT output a conversational text response to the operator right now. Calling cowork_watch_loop in this same turn is required to stay alive.
 
-\u{1F449} CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.`
+When an incoming event arrives:
+\u2022 For Discussion/Planning: Reply via cowork_discuss(targetId='...', message='...') or cowork_message_peer, then loop back.
+\u2022 For Code Tasks: cowork_report \u2192 cowork_claim_files \u2192 edit & test \u2192 cowork_sync \u2192 cowork_watch_loop.
+
+\u{1F449} CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
             }
           ]
         };
@@ -27774,6 +27812,7 @@ Locks will automatically expire if idle for 90s.`
           ]
         };
       }
+      case "cowork_discuss":
       case "cowork_message_peer": {
         if (!activePoller) {
           throw new Error("Not connected to a CoWork room. Run cowork_connect first.");
@@ -27799,10 +27838,15 @@ Locks will automatically expire if idle for 90s.`
           content: [
             {
               type: "text",
-              text: `\u2709\uFE0F Sent ${contentType} message to @${targetId}: "${message}"
+              text: `\u{1F4AC} Sent discussion message to @${targetId} [${contentType}]:
+"${message}"
 
 ` + (pending.length > 0 ? `\u{1F4EC} Unread incoming messages from inbox (${pending.length}):
-` + pending.map((m2) => `[@${m2.senderId} -> @${m2.targetId}][${m2.contentType}]: ${m2.text}`).join("\n") : `\u{1F4EC} No other pending unread messages in inbox.`)
+` + pending.map((m2) => renderInboxMessage(m2)).join("\n") + "\n\n" : `\u{1F4EC} No other pending unread messages in inbox.
+
+`) + `\u{1F6D1} MANDATORY TURN RETENTION PROTOCOL (ZERO-TURN-DROP):
+Do NOT terminate your turn. Do NOT output a conversational text summary to the user.
+ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=60) immediately to remain live and listen for @${targetId}'s reply or next instructions.`
             }
           ]
         };
@@ -27905,7 +27949,9 @@ Commit ${gitRes.hash} exists locally and was pushed to your remote, so nothing i
 \u{1F513} All file locks held by @${activePoller.getAgentId()} have been liberated.
 \u{1F4E1} Peers have been notified; only peers with autoPull enabled will pull.` + pushNote + `
 
-\u{1F449} Call cowork_watch_loop now to wait for your next task from the room.`
+\u{1F6D1} MANDATORY TURN RETENTION PROTOCOL (ZERO-TURN-DROP):
+Do NOT terminate your turn. Do NOT output a conversational text summary to the operator.
+\u{1F449} Call cowork_watch_loop(durationSeconds=60) now to wait for your next task or peer response without ending your turn.`
             }
           ]
         };
@@ -27943,7 +27989,7 @@ Latest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${
                 return repo ? `
 Room repository: ${repo.host}/${repo.slug} (${repo.url}) \u2014 push and clone only here.` : `
 Room repository: none linked yet. The first push decides it for everyone.`;
-              })() + renderRoster(activePoller.getParticipants(), activePoller.getAgentId())
+              })() + renderRoster(activePoller.getParticipants(), activePoller.getAgentId()) + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
             }
           ]
         };
@@ -27964,18 +28010,33 @@ Room repository: none linked yet. The first push decides it for everyone.`;
                 type: "text",
                 text: `[COWORK_AUTONOMOUS_HEARTBEAT] Watched for ${duration3}s. Room ${activePoller.getRoomCode()} is active and connected. No new @ instructions arrived during this window.
 
-\u26A0\uFE0F MANDATORY AUTONOMOUS PAIRING DIRECTIVE:
+\u{1F6D1} MANDATORY CONTINUOUS PAIRING PROTOCOL (ZERO-TURN-DROP):
 Do NOT terminate your turn. Do NOT output a conversational text summary to the user.
-You are in active pairing mode: IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration3}) again to keep waiting for instructions from the mobile dashboard or human operator.`
+Sending a text-only response will cause your agent harness to end its execution turn, putting you to sleep and missing future mentions.
+ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=${duration3}) immediately in this exact turn.` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
               }
             ]
           };
         }
+        const senderParticipant = activePoller.getParticipants()[msg.senderId];
+        const isFromPeerAgent = msg.senderId.toLowerCase().includes("ai") || senderParticipant?.role === "agent" || msg.contentType === "AGENT_SYNC";
+        const isDiscussion = msg.contentType === "AGENT_SYNC" || msg.contentType === "CHAT" || Boolean(msg.text) && /\?|how|what|should|think|discuss|plan|agree|architecture|proposal|divide|sync/i.test(msg.text || "");
+        const actionWorkflow = isFromPeerAgent && isDiscussion || isDiscussion && msg.contentType !== "CROSS_PROMPT" && !msg.files?.length ? `\u{1F4AC} PEER AGENT DISCUSSION & PLANNING PROTOCOL:
+This message is a discussion, proposal, question, or synchronization from @${msg.senderId}.
+1. Review @${msg.senderId}'s point: "${msg.text}".
+2. Formulate your technical assessment, recommendation, or answers.
+3. Reply in room chat using cowork_discuss(targetId='${msg.senderId}', message='@${msg.senderId} [your reply]').
+4. Do NOT end your turn: immediately call cowork_watch_loop(durationSeconds=${duration3}) to wait for their next response.` : `\u{1F3AF} TASK IMPLEMENTATION WORKFLOW:
+1. Announce start: cowork_report(state='reading'|'editing'|'thinking', summary='...')
+2. Lock files: cowork_claim_files(files=[...], taskDescription='...')
+3. Implement changes & verify tests pass
+4. Commit & push: cowork_sync(files=[...], commitMessage='...')
+5. IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration3}) again to wait for the next task.`;
         return {
           content: [
             {
               type: "text",
-              text: `\u26A1 INCOMING TASK RECEIVED from @${msg.senderId}` + (msg.senderHarness ? ` (via ${msg.senderHarness}${msg.senderModel ? ` \xB7 ${msg.senderModel}` : ""})` : "") + `
+              text: `\u26A1 INCOMING MESSAGE RECEIVED from @${msg.senderId}` + (msg.senderHarness ? ` (via ${msg.senderHarness}${msg.senderModel ? ` \xB7 ${msg.senderModel}` : ""})` : "") + `
 
 Target: @${msg.targetId}
 Type: ${msg.contentType}
@@ -27984,12 +28045,7 @@ Content: ${msg.text}
 ` : "") + `
 Ready to act on it. ${TRUST_NOTE}
 
-\u{1F3AF} EXECUTION WORKFLOW:
-1. Announce start: cowork_report(state='reading'|'editing'|'thinking', summary='...')
-2. Lock files: cowork_claim_files(files=[...], taskDescription='...')
-3. Implement changes & verify
-4. Commit & push: cowork_sync(files=[...], commitMessage='...')
-5. IMMEDIATELY call cowork_watch_loop(durationSeconds=60) again to wait for the next task.`
+${actionWorkflow}` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
             }
           ]
         };

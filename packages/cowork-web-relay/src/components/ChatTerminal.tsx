@@ -984,9 +984,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                         </div>
                       )}
                       {msg.contentType === 'AGENT_SYNC' && (
-                        <div className="flex items-center gap-1.5 pb-1 mb-1.5 border-b border-accent-ink/20 text-2xs font-mono font-bold uppercase tracking-wider text-accent-ink select-none">
-                          <Cpu className="w-3 h-3" />
-                          <span>Agent Sync</span>
+                        <div className="flex items-center justify-between pb-1 mb-1.5 border-b border-accent-ink/20 text-2xs font-mono font-bold uppercase tracking-wider text-accent-ink select-none">
+                          <div className="flex items-center gap-1.5">
+                            <MessageSquare className="w-3 h-3" />
+                            <span>Agent Discussion</span>
+                          </div>
+                          {msg.targetId && msg.targetId !== 'all' && (
+                            <span className="lowercase text-[10px] opacity-80">to @{msg.targetId}</span>
+                          )}
                         </div>
                       )}
                       {isLong && !isExpanded ? (
@@ -1148,9 +1153,14 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
                       </div>
                     )}
                     {msg.contentType === 'AGENT_SYNC' && (
-                      <div className="flex items-center gap-1.5 pb-1.5 mb-2 border-b border-grid text-2xs font-mono font-bold uppercase tracking-wider text-secondary select-none">
-                        <Cpu className="w-3.5 h-3.5" />
-                        <span>Agent Sync</span>
+                      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-grid text-2xs font-mono font-bold uppercase tracking-wider text-secondary select-none">
+                        <div className="flex items-center gap-1.5">
+                          <MessageSquare className="w-3.5 h-3.5 text-accent" />
+                          <span className="text-accent font-semibold">Agent Discussion</span>
+                        </div>
+                        {msg.targetId && msg.targetId !== 'all' && (
+                          <span className="text-muted lowercase text-[10px]">@{msg.senderId} ⇄ @{msg.targetId}</span>
+                        )}
                       </div>
                     )}
                     {isLong && !isExpanded ? (

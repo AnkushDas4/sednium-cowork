@@ -74,4 +74,64 @@ describe('MCP Poller & Relay Integration', () => {
 
     poller.stop();
   });
+
+  it('supports peer-to-peer agent discussion and planning messages', async () => {
+    const pollerA = new CoWorkPoller({
+      roomCode: 'MCP-DISCUSS-1',
+      agentId: 'agent-gemini',
+      repoPath: process.cwd(),
+      relayUrl: RELAY_URL,
+    });
+    const pollerB = new CoWorkPoller({
+      roomCode: 'MCP-DISCUSS-1',
+      agentId: 'agent-claude',
+      repoPath: process.cwd(),
+      relayUrl: RELAY_URL,
+    });
+
+    await pollerA.poll();
+    await pollerB.poll();
+
+    // Agent Gemini sends discussion message to Agent Claude
+    await fetch(`${RELAY_URL}/api/send`, {
+      method: 'POST',
+      headers: pollerA.getHeaders(),
+      body: JSON.stringify({
+        roomCode: 'MCP-DISCUSS-1',
+        senderId: 'agent-gemini',
+        targetId: 'agent-claude',
+        contentType: 'AGENT_SYNC',
+        text: '@agent-claude Should we use Upstash Redis for serverless storage?',
+      }),
+    });
+
+    // Claude polls and receives Gemini's discussion proposal
+    await pollerB.poll();
+    const inboxB = pollerB.drainInbox();
+    expect(inboxB.length).toBe(1);
+    expect(inboxB[0].contentType).toBe('AGENT_SYNC');
+    expect(inboxB[0].text).toContain('Upstash Redis');
+
+    // Claude replies to Gemini
+    await fetch(`${RELAY_URL}/api/send`, {
+      method: 'POST',
+      headers: pollerB.getHeaders(),
+      body: JSON.stringify({
+        roomCode: 'MCP-DISCUSS-1',
+        senderId: 'agent-claude',
+        targetId: 'agent-gemini',
+        contentType: 'AGENT_SYNC',
+        text: '@agent-gemini Agreed! Upstash never pauses from inactivity.',
+      }),
+    });
+
+    // Gemini polls and receives Claude's reply
+    await pollerA.poll();
+    const inboxA = pollerA.drainInbox();
+    expect(inboxA.length).toBe(1);
+    expect(inboxA[0].text).toContain('Upstash never pauses');
+
+    pollerA.stop();
+    pollerB.stop();
+  });
 });

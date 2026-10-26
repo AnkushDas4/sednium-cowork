@@ -67,6 +67,22 @@ function renderRoster(participants: Record<string, ParticipantInfo>, selfId: str
     + (peers.length > 8 ? `\n  (+${peers.length - 8} more)` : '');
 }
 
+function renderPeerAgents(participants: Record<string, ParticipantInfo>, selfId: string): string {
+  const peers = Object.values(participants || {}).filter((p) => p.clientId !== selfId);
+  if (!peers.length) return '\n\n👥 Room Roster: You are currently the only connected participant in this room.';
+  const lines = peers.slice(0, 10).map((p) => {
+    const isPeerAgent = p.role === 'agent' || p.clientId.toLowerCase().includes('ai');
+    const badge = isPeerAgent
+      ? `🤖 [AI AGENT: ${p.harness || 'Autonomous'}${p.model ? ` · ${p.model}` : ''}]`
+      : `👤 [HUMAN OPERATOR]`;
+    return `  - @${p.clientId} ${badge} - Status: ${p.status || 'Active'}`;
+  });
+  return `\n\n👥 Active Room Participants (${peers.length}):\n` + lines.join('\n') +
+    `\n💬 AI Agent Collaboration & Discussion:` +
+    `\n  You can discuss technical approaches, divide tasks, or ask questions with any peer using:` +
+    `\n  cowork_discuss(targetId='<handle>', message='@<handle> ...') or cowork_message_peer.`;
+}
+
 function renderInboxMessage(m: any, indent = '  '): string {
   const via = m.senderHarness ? ` (via ${m.senderHarness}${m.senderModel ? ` · ${m.senderModel}` : ''})` : '';
   const files = Array.isArray(m.files) && m.files.length ? ` [files: ${m.files.join(', ')}]` : '';
@@ -234,6 +250,30 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             files: { type: 'array', items: { type: 'string' }, description: 'Optional repository-relative paths to advertise instead of the git-status guess.' },
             tool: { type: 'string', description: 'Optional command in flight, e.g. "npm test" or "Edit".' },
           },
+        },
+      },
+      {
+        name: 'cowork_discuss',
+        description:
+          'Engages in real-time discussion, planning, and architectural debate with peer AI agents (@peer-handle) or everyone (@all) in the room chat. Drains pending inbox messages and returns conversation state.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            targetId: {
+              type: 'string',
+              description: `Peer agent handle (e.g. "claude-code", "cursor-ai") or "all" to broadcast to all participants.`,
+            },
+            message: {
+              type: 'string',
+              description: 'Your discussion point, proposal, technical question, or reply to the peer agent.',
+            },
+            contentType: {
+              type: 'string',
+              enum: ['AGENT_SYNC', 'CROSS_PROMPT', 'CHAT'],
+              description: 'Message type (defaults to "AGENT_SYNC").',
+            },
+          },
+          required: ['targetId', 'message'],
         },
       },
       {
@@ -598,15 +638,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                       ? `📬 Unread incoming messages from inbox (${pending.length}):\n` +
                         pending.map((m) => renderInboxMessage(m)).join('\n') + '\n\n'
                       : '') +
-                    `🎯 AUTONOMOUS PAIRING DIRECTIVE:\n` +
-                    `You are now connected to the pair programming room. To receive tasks from the human operator or peer agents, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).\n` +
-                    `When an instruction arrives:\n` +
-                    `1. Announce what you are starting via cowork_report(state='reading'|'editing'|'thinking', summary='...')\n` +
-                    `2. Claim any files you will edit via cowork_claim_files(files=[...], taskDescription='...')\n` +
-                    `3. Implement changes and verify tests pass\n` +
-                    `4. Commit and push via cowork_sync(files=[...], commitMessage='...')\n` +
-                    `5. Call cowork_watch_loop again to wait for the next instruction.\n\n` +
-                    `👉 CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.`,
+                    `🎯 AUTONOMOUS PAIRING DIRECTIVE (ZERO-TURN-DROP):\n` +
+                    `You are now connected to the pair programming room. To receive tasks and converse with peers, YOU MUST IMMEDIATELY CALL cowork_watch_loop(durationSeconds=60).\n` +
+                    `🛑 MANDATORY: Do NOT output a conversational text response to the operator right now. Calling cowork_watch_loop in this same turn is required to stay alive.\n\n` +
+                    `When an incoming event arrives:\n` +
+                    `• For Discussion/Planning: Reply via cowork_discuss(targetId='...', message='...') or cowork_message_peer, then loop back.\n` +
+                    `• For Code Tasks: cowork_report → cowork_claim_files → edit & test → cowork_sync → cowork_watch_loop.\n\n` +
+                    `👉 CALL cowork_watch_loop NOW TO START LISTENING FOR TASKS.` +
+                    renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],
         };
@@ -662,6 +701,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
 
+      case 'cowork_discuss':
       case 'cowork_message_peer': {
         if (!activePoller) {
           throw new Error('Not connected to a CoWork room. Run cowork_connect first.');
@@ -691,11 +731,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [
             {
               type: 'text',
-              text: `✉️ Sent ${contentType} message to @${targetId}: "${message}"\n\n` +
+              text: `💬 Sent discussion message to @${targetId} [${contentType}]:\n"${message}"\n\n` +
                     (pending.length > 0
                       ? `📬 Unread incoming messages from inbox (${pending.length}):\n` +
-                        pending.map((m) => `[@${m.senderId} -> @${m.targetId}][${m.contentType}]: ${m.text}`).join('\n')
-                      : `📬 No other pending unread messages in inbox.`),
+                        pending.map((m) => renderInboxMessage(m)).join('\n') + '\n\n'
+                      : `📬 No other pending unread messages in inbox.\n\n`) +
+                    `🛑 MANDATORY TURN RETENTION PROTOCOL (ZERO-TURN-DROP):\n` +
+                    `Do NOT terminate your turn. Do NOT output a conversational text summary to the user.\n` +
+                    `ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=60) immediately to remain live and listen for @${targetId}'s reply or next instructions.`,
             },
           ],
         };
@@ -808,7 +851,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `🔓 All file locks held by @${activePoller.getAgentId()} have been liberated.\n` +
                     `📡 Peers have been notified; only peers with autoPull enabled will pull.` +
                     pushNote +
-                    `\n\n👉 Call cowork_watch_loop now to wait for your next task from the room.`,
+                    `\n\n🛑 MANDATORY TURN RETENTION PROTOCOL (ZERO-TURN-DROP):\n` +
+                    `Do NOT terminate your turn. Do NOT output a conversational text summary to the operator.\n` +
+                    `👉 Call cowork_watch_loop(durationSeconds=60) now to wait for your next task or peer response without ending your turn.`,
             },
           ],
         };
@@ -855,7 +900,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         ? `\nRoom repository: ${repo.host}/${repo.slug} (${repo.url}) — push and clone only here.`
                         : `\nRoom repository: none linked yet. The first push decides it for everyone.`;
                     })() +
-                    renderRoster(activePoller.getParticipants(), activePoller.getAgentId()),
+                    renderRoster(activePoller.getParticipants(), activePoller.getAgentId()) +
+                    renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],
         };
@@ -879,19 +925,44 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               {
                 type: 'text',
                 text: `[COWORK_AUTONOMOUS_HEARTBEAT] Watched for ${duration}s. Room ${activePoller.getRoomCode()} is active and connected. No new @ instructions arrived during this window.\n\n` +
-                      `⚠️ MANDATORY AUTONOMOUS PAIRING DIRECTIVE:\n` +
+                      `🛑 MANDATORY CONTINUOUS PAIRING PROTOCOL (ZERO-TURN-DROP):\n` +
                       `Do NOT terminate your turn. Do NOT output a conversational text summary to the user.\n` +
-                      `You are in active pairing mode: IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration}) again to keep waiting for instructions from the mobile dashboard or human operator.`,
+                      `Sending a text-only response will cause your agent harness to end its execution turn, putting you to sleep and missing future mentions.\n` +
+                      `ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=${duration}) immediately in this exact turn.` +
+                      renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
               },
             ],
           };
         }
 
+        const senderParticipant = activePoller.getParticipants()[msg.senderId];
+        const isFromPeerAgent = msg.senderId.toLowerCase().includes('ai') ||
+          senderParticipant?.role === 'agent' ||
+          msg.contentType === 'AGENT_SYNC';
+
+        const isDiscussion = msg.contentType === 'AGENT_SYNC' ||
+          msg.contentType === 'CHAT' ||
+          (Boolean(msg.text) && /\?|how|what|should|think|discuss|plan|agree|architecture|proposal|divide|sync/i.test(msg.text || ''));
+
+        const actionWorkflow = (isFromPeerAgent && isDiscussion) || (isDiscussion && msg.contentType !== 'CROSS_PROMPT' && !msg.files?.length)
+          ? `💬 PEER AGENT DISCUSSION & PLANNING PROTOCOL:\n` +
+            `This message is a discussion, proposal, question, or synchronization from @${msg.senderId}.\n` +
+            `1. Review @${msg.senderId}'s point: "${msg.text}".\n` +
+            `2. Formulate your technical assessment, recommendation, or answers.\n` +
+            `3. Reply in room chat using cowork_discuss(targetId='${msg.senderId}', message='@${msg.senderId} [your reply]').\n` +
+            `4. Do NOT end your turn: immediately call cowork_watch_loop(durationSeconds=${duration}) to wait for their next response.`
+          : `🎯 TASK IMPLEMENTATION WORKFLOW:\n` +
+            `1. Announce start: cowork_report(state='reading'|'editing'|'thinking', summary='...')\n` +
+            `2. Lock files: cowork_claim_files(files=[...], taskDescription='...')\n` +
+            `3. Implement changes & verify tests pass\n` +
+            `4. Commit & push: cowork_sync(files=[...], commitMessage='...')\n` +
+            `5. IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration}) again to wait for the next task.`;
+
         return {
           content: [
             {
               type: 'text',
-              text: `⚡ INCOMING TASK RECEIVED from @${msg.senderId}` +
+              text: `⚡ INCOMING MESSAGE RECEIVED from @${msg.senderId}` +
                     (msg.senderHarness ? ` (via ${msg.senderHarness}${msg.senderModel ? ` · ${msg.senderModel}` : ''})` : '') +
                     `\n\n` +
                     `Target: @${msg.targetId}\n` +
@@ -899,12 +970,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     `Content: ${msg.text}\n` +
                     (msg.files ? `Files: ${msg.files.join(', ')}\n` : '') +
                     `\nReady to act on it. ${TRUST_NOTE}\n\n` +
-                    `🎯 EXECUTION WORKFLOW:\n` +
-                    `1. Announce start: cowork_report(state='reading'|'editing'|'thinking', summary='...')\n` +
-                    `2. Lock files: cowork_claim_files(files=[...], taskDescription='...')\n` +
-                    `3. Implement changes & verify\n` +
-                    `4. Commit & push: cowork_sync(files=[...], commitMessage='...')\n` +
-                    `5. IMMEDIATELY call cowork_watch_loop(durationSeconds=60) again to wait for the next task.`,
+                    `${actionWorkflow}` +
+                    renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],
         };
