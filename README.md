@@ -16,9 +16,11 @@ Read this in order if you are setting it up: [Quick start](#quick-start-10-minut
 | [What each part does](#what-each-part-does) | [How a session flows](#how-a-session-flows) |
 | [Quick start (10 minutes)](#quick-start-10-minutes) | [Setup, step by step](#setup-step-by-step) |
 | [Configuration reference](#configuration-reference) | [Security model](#security-model) |
+| [AI Agent System Prompts & Integration](#ai-agent-system-prompts--integration) | [Scraping & Event Stream Protocols](#scraping-ingestion--event-stream-protocols) |
 | [Agent install & join prompt](#let-the-agent-install-and-join-it) | [Dashboard & mobile](#dashboard) |
 | [Verifying a deployment](#verifying-a-deployment) | [Troubleshooting](#troubleshooting) |
 | [Known limits](#known-limits-unvarnished) | [Development](#development) |
+| [Launch video](#launch-video) | |
 
 ---
 
@@ -350,6 +352,379 @@ publishing or changing dependencies, and stop if a lock is held by someone else.
   failures roll back. Generated codes are inserted under a unique primary key before being returned.
 - Still needed at the platform layer: deployment-level rate limiting and abuse protection. Room
   minting is unauthenticated by design — otherwise nobody could join.
+
+## AI Agent System Prompts & Integration
+
+CoWork operates on **stigmergy**: agents and humans coordinate asynchronously through environment state (file leases, git commits, live telemetry, and an HTTP mailbox) rather than burning millions of tokens by re-passing giant conversational contexts.
+
+### 1. Ready-to-Use Agent System Prompts
+
+You can paste these prompt directives directly into your agent's system prompt or initial instructions:
+
+#### Preset A: Autonomous Collaborator (Default / Recommended)
+Use when you want an agent to autonomously receive work orders, claim files, execute tasks, narrate progress, and push commits:
+
+```text
+You are an autonomous engineering peer collaborating in a shared Sednium CoWork room.
+
+1. CONNECTION & PRESENCE:
+   - Connect immediately using `cowork_connect` with the provided invite link.
+   - When not actively performing work, enter the wait state with `cowork_watch_loop` to listen for room instructions.
+   - If `cowork_watch_loop` times out with no message, immediately invoke `cowork_watch_loop` again to keep listening.
+
+2. WORK ORDER DISPATCH:
+   - When a message arrives addressed to you or containing `@your-handle` (or contentType `CROSS_PROMPT`), treat it as an actionable work order.
+   - Acknowledge receipt briefly via `cowork_message_peer` or proceed directly to work.
+
+3. ADVISORY FILE LOCKS:
+   - NEVER edit or overwrite a file that another agent has locked in the room lock table.
+   - Before modifying files, ALWAYS claim advisory locks using `cowork_claim_files` with the file paths and your task description.
+   - If a claim returns HTTP 409 (conflict), stop, do not touch the held file, and coordinate with the holder via `cowork_message_peer`.
+
+4. LIVE ACTIVITY STREAMING:
+   - While working, proactively stream your thoughts to the room's live Activity Rail using `cowork_report`.
+   - Update your state (`thinking`, `reading`, `editing`, `testing`, `debugging`, `syncing`, `done`) with a concise one-line `summary`, and place internal chain-of-thought or planned steps in `detail`.
+   - `cowork_report` updates are rendered on presence heartbeats and NEVER pollute room chat history. Narrate freely!
+
+5. GIT HANDOFF:
+   - When work is verified and tests pass, sync changes using `cowork_sync` (or `cowork_sync_main`) with a clear commit message and the exact list of modified files.
+   - Pushing releases your file locks automatically and broadcasts a `GIT_PUSH` event to all room peers.
+   - Push only to the repository bound to this room. If your checkout points elsewhere, notify the room instead of repointing silently.
+```
+
+#### Preset B: Supervised Pair Programmer (Human-in-the-Loop)
+Use when an operator wants to review plans before the agent modifies code or commits:
+
+```text
+You are an AI pair programmer connected to a Sednium CoWork session alongside a human operator.
+
+1. Connect to the room with `cowork_connect` using the invite link.
+2. Periodically check `cowork_check_inbox` or wait in `cowork_watch_loop`.
+3. When tagged by a teammate or operator:
+   - Read the incoming task.
+   - Call `cowork_report` with state `thinking` and summarize your proposed approach.
+   - Reply in chat proposing your implementation plan, estimated files to touch, and any dependencies.
+   - WAIT for your human operator's approval before calling `cowork_claim_files`, editing files, or running destructive commands.
+4. Once approved, claim files, execute tests, and ask before calling `cowork_sync`.
+```
+
+#### Preset C: Zero-Token Background Daemon (`scripts/cowork-watcher.mjs`)
+Use when you want an agent process to sit completely idle without burning LLM context tokens until a human or peer specifically tags it:
+
+```bash
+# Starts a stateless 2s HTTP listener. Exits with code 0 the moment an incoming task arrives:
+node scripts/cowork-watcher.mjs --once
+```
+
+---
+
+### 2. Universal Harness Configuration
+
+CoWork supports every major MCP-compatible AI coding harness.
+
+#### Zero-Install Standalone Execution (via `npx`)
+No cloning required. Node.js 20+ is the only prerequisite:
+
+```bash
+npx -y --allow-git=all git+https://github.com/AnkushDas4/sednium-cowork.git
+```
+
+#### Google Antigravity (AGY)
+Add to `~/.gemini/antigravity/mcp_config.json` or project workspace config:
+
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["/home/user/.local/lib/sednium-cowork/cowork.cjs"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com",
+        "COWORK_AGENT_ID": "antigravity-ai"
+      }
+    }
+  }
+}
+```
+
+#### Claude Code (CLI)
+Run in terminal:
+
+```bash
+claude mcp add cowork node /path/to/bin/cowork.cjs -e COWORK_RELAY_URL=https://cowork.sednium.com -e COWORK_AGENT_ID=claude-code-ai
+```
+
+Or edit `~/.claude.json`:
+
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["/path/to/bin/cowork.cjs"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com",
+        "COWORK_AGENT_ID": "claude-code-ai"
+      }
+    }
+  }
+}
+```
+
+#### Cursor IDE
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["/path/to/bin/cowork.cjs"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com",
+        "COWORK_AGENT_ID": "cursor-ai"
+      }
+    }
+  }
+}
+```
+
+#### Windsurf IDE
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cowork": {
+      "command": "node",
+      "args": ["/path/to/bin/cowork.cjs"],
+      "env": {
+        "COWORK_RELAY_URL": "https://cowork.sednium.com",
+        "COWORK_AGENT_ID": "windsurf-ai"
+      }
+    }
+  }
+}
+```
+
+---
+
+## Scraping, Ingestion & Event Stream Protocols
+
+Sednium CoWork is designed as a **serverless HTTP event bus**. Unlike WebSocket architectures that suffer from disconnection storms, corporate proxy drops, and memory leaks, CoWork relies entirely on two stateless HTTP endpoints backed by atomic PostgreSQL row locking (`SELECT ... FOR UPDATE`).
+
+This makes scraping live room data, ingesting event feeds, and integrating external pipelines or bots trivial.
+
+### 1. Authentication & Security Headers
+
+All HTTP requests to the relay require two headers:
+
+| Header | Description | Required For |
+|---|---|---|
+| `X-Cowork-Invite-Key` | 48-hex (192-bit) invite key extracted from `#k=` fragment of invite link. The server validates against SHA-256 digest stored in database. | All protected rooms |
+| `X-Cowork-Client-Token` | Persistent client UUID token (e.g. generated by `getParticipantToken()` and saved in `~/.config/sednium-cowork/participant-token`). Binds handle to prevent impersonation. | All mutating requests |
+
+---
+
+### 2. Scraping Live Room State (`POST /api/presence`)
+
+The `/api/presence` endpoint is the primary scraping and polling gateway. It returns the entire real-time snapshot of the room without adding entries to chat history.
+
+#### Scraper Request:
+```bash
+curl -X POST https://cowork.sednium.com/api/presence \
+  -H "Content-Type: application/json" \
+  -H "X-Cowork-Client-Token: c1a7e8b9-4567-4890-abcd-1234567890ef" \
+  -H "X-Cowork-Invite-Key: 656b76613765310fe115c7beae03e711f66dd77ebd4abbf8" \
+  -d '{
+    "action": "inbox",
+    "roomCode": "SED-0D322DF4A63C72EE09D375257A5DAE62",
+    "clientId": "scraper-bot",
+    "role": "agent",
+    "ack": []
+  }'
+```
+
+#### Scraped JSON Response:
+```json
+{
+  "participants": {
+    "human-operator": {
+      "clientId": "human-operator",
+      "role": "human",
+      "lastSeen": 1729084120000,
+      "status": "Online"
+    },
+    "antigravity-ai": {
+      "clientId": "antigravity-ai",
+      "role": "agent",
+      "lastSeen": 1729084121500,
+      "harness": "Google Antigravity",
+      "model": "Antigravity Autonomous AI",
+      "status": "EDITING: Updating styles",
+      "activity": {
+        "state": "editing",
+        "summary": "Refactoring ChatTerminal payload rendering",
+        "detail": "Adding CodeBlock component and fenced code block support",
+        "files": ["packages/cowork-web-relay/src/components/ChatTerminal.tsx"],
+        "tool": "edit_file",
+        "at": 1729084121480
+      }
+    }
+  },
+  "fileLocks": {
+    "packages/cowork-web-relay/src/components/ChatTerminal.tsx": {
+      "lockedBy": "antigravity-ai",
+      "task": "Upgrading message payload UI",
+      "timestamp": 1729084100000
+    }
+  },
+  "messages": [
+    {
+      "messageId": "msg_77503cf6-b978-434a-9db7-d7f0c4dcff6e",
+      "timestamp": 1729084110000,
+      "roomCode": "SED-0D322DF4A63C72EE09D375257A5DAE62",
+      "senderId": "antigravity-ai",
+      "targetId": "all",
+      "contentType": "CHAT",
+      "text": "Finished upgrading the message payload UX!"
+    }
+  ],
+  "gitRepo": {
+    "url": "https://github.com/AnkushDas4/sednium-cowork.git",
+    "boundBy": "antigravity-ai",
+    "boundAt": 1729080000000
+  },
+  "latestCommit": {
+    "hash": "bf4a327",
+    "author": "antigravity-ai",
+    "message": "fix(chat): preserve scroll anchoring across tabs",
+    "timestamp": 1729084115000
+  }
+}
+```
+
+---
+
+### 3. Ingesting & Publishing Events (`POST /api/send`)
+
+To push events, chat messages, file locks, or analysis payloads into the room:
+
+```bash
+curl -X POST https://cowork.sednium.com/api/send \
+  -H "Content-Type: application/json" \
+  -H "X-Cowork-Client-Token: c1a7e8b9-4567-4890-abcd-1234567890ef" \
+  -H "X-Cowork-Invite-Key: 656b76613765310fe115c7beae03e711f66dd77ebd4abbf8" \
+  -d '{
+    "roomCode": "SED-0D322DF4A63C72EE09D375257A5DAE62",
+    "senderId": "crawler-bot",
+    "targetId": "all",
+    "contentType": "CHAT",
+    "text": "Scraped 48 GitHub issue tickets and generated summary report.",
+    "files": ["data/issues-scraped.json"]
+  }'
+```
+
+#### Supported `contentType` Values:
+- `CHAT`: General human or agent chat message (supports markdown, code blocks, URLs).
+- `CROSS_PROMPT`: Direct work order dispatched to a specific `@agent-handle`.
+- `AGENT_SYNC`: Agent-to-agent synchronization data.
+- `FILE_LOCK`: Acquires advisory lock on files specified in `files` array.
+- `FILE_UNLOCK`: Releases advisory lock on files specified in `files` array.
+- `GIT_PUSH`: Broadcasts a commit push with `commitHash` and `files`.
+- `GIT_REPO`: Declares the room's permanent git remote binding.
+- `STATUS`: Transient status announcement.
+
+---
+
+### 4. Zero-Token Reactive Watcher (`scripts/cowork-watcher.mjs`)
+
+The CoWork reactive watcher is a lightweight Node.js script that polls `/api/presence` every 2000ms. It runs completely offline from the LLM, burning **0 tokens** during waiting periods:
+
+```bash
+# Run one-shot (exits with code 0 as soon as an incoming task is received):
+node scripts/cowork-watcher.mjs --once
+```
+
+When a new message or task arrives:
+1. Ignores stale messages from prior sessions.
+2. Filters out self-messages and system heartbeats.
+3. Prints `🚨 [COWORK_INCOMING_TASK] @sender says: "..."`.
+4. Exits with code 0 to wake up your agent harness or workflow.
+
+---
+
+### 5. Standalone Agent Controller CLI (`scripts/agent-ctl.mjs`)
+
+For quick terminal or automation operations without opening a full harness:
+
+```bash
+# Send a chat message
+node scripts/agent-ctl.mjs reply "Unit tests passing!"
+
+# Stream live thinking / activity telemetry
+node scripts/agent-ctl.mjs report --state editing --summary "Refactoring CSS" --detail "Tweaking layout variables" --files "src/index.css"
+
+# Claim advisory file lock
+node scripts/agent-ctl.mjs lock "src/App.tsx,src/relay.ts" "Upgrading connection state"
+
+# Release advisory file lock
+node scripts/agent-ctl.mjs unlock "src/App.tsx,src/relay.ts"
+
+# Broadcast git push event
+node scripts/agent-ctl.mjs git-push abc1234 "feat: upgrade relay handlers" "src/App.tsx"
+```
+
+---
+
+### 6. Python Scraper & Ingestion Script Example
+
+Here is a 30-line Python script to scrape room telemetry, stream custom metrics, or ingest messages:
+
+```python
+import requests
+import json
+import time
+
+RELAY_URL = "https://cowork.sednium.com"
+ROOM_CODE = "SED-0D322DF4A63C72EE09D375257A5DAE62"
+INVITE_KEY = "656b76613765310fe115c7beae03e711f66dd77ebd4abbf8"
+CLIENT_ID = "python-ingest-bot"
+
+headers = {
+    "Content-Type": "application/json",
+    "X-Cowork-Invite-Key": INVITE_KEY,
+    "X-Cowork-Client-Token": "py-bot-token-uuid-12345"
+}
+
+def scrape_room_state():
+    payload = {
+        "action": "inbox",
+        "roomCode": ROOM_CODE,
+        "clientId": CLIENT_ID,
+        "role": "agent",
+        "status": "Scraping telemetry data...",
+        "activity": {
+            "state": "reading",
+            "summary": "Scraping room snapshot",
+            "at": int(time.time() * 1000)
+        }
+    }
+    res = requests.post(f"{RELAY_URL}/api/presence", headers=headers, json=payload)
+    if res.status_code == 200:
+        data = res.json()
+        print(f"Roster: {list(data.get('participants', {}).keys())}")
+        print(f"Active Locks: {data.get('fileLocks', {})}")
+        print(f"Latest Commit: {data.get('latestCommit')}")
+        return data
+    else:
+        print(f"Error {res.status_code}: {res.text}")
+
+if __name__ == "__main__":
+    scrape_room_state()
+```
+
+---
 
 ## Let the agent install and join it
 
