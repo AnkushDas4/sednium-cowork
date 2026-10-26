@@ -12,4 +12,8 @@ packages/cowork-web-relay/public/*
 !packages/cowork-web-relay/public/icon.svg
 !packages/cowork-web-relay/public/manifest.webmanifest
 !packages/cowork-web-relay/public/sw-notifications.js
+!packages/cowork-web-relay/public/robots.txt
+!packages/cowork-web-relay/public/sitemap.xml
+!packages/cowork-web-relay/public/og-image.png
+!packages/cowork-web-relay/public/og-image.jpg
 *.jsonl

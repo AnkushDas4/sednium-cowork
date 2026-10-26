@@ -1,0 +1,6 @@
+# https://cowork.sednium.com/robots.txt
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://cowork.sednium.com/sitemap.xml
