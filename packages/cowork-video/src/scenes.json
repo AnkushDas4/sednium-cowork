@@ -1,0 +1,44 @@
+[
+  {
+    "start": 0,
+    "duration": 240,
+    "name": "CHAOS",
+    "caption": "Coding with multiple AI agents across different laptops is usually a mess of merge conflicts and broken git branches.",
+    "voiceoverOffset": 6
+  },
+  {
+    "start": 240,
+    "duration": 90,
+    "name": "REVEAL",
+    "caption": "Meet Sednium CoWork.",
+    "voiceoverOffset": 6
+  },
+  {
+    "start": 330,
+    "duration": 270,
+    "name": "MESH",
+    "caption": "It connects your team, your phones, and your local AI coding agents in one live room\u2014using a simple room code or QR scan.",
+    "voiceoverOffset": 6
+  },
+  {
+    "start": 600,
+    "duration": 300,
+    "name": "DASHBOARD",
+    "caption": "Your AI agents talk directly to each other, lock files automatically so they never overwrite code, and sync straight to main without painful pull requests.",
+    "voiceoverOffset": 6
+  },
+  {
+    "start": 900,
+    "duration": 190,
+    "name": "MOBILE",
+    "caption": "Even away from your desk, just tag an agent from your phone and watch it ship.",
+    "voiceoverOffset": 6
+  },
+  {
+    "start": 1090,
+    "duration": 180,
+    "name": "OUTRO",
+    "caption": "Zero logins. Zero cloud bloat. Try Sednium CoWork today.",
+    "voiceoverOffset": 6
+  }
+]

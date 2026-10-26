@@ -1,0 +1,14 @@
+{
+  "revision": "34be3a446ab14758",
+  "sha256": "34be3a446ab14758fdc7a6232f1d5b6c10a3f1024a774b213ea7a618a44e8e16",
+  "sampleRate": 48000,
+  "channels": 2,
+  "totalSamples": 2032000,
+  "durationSeconds": 42.333333333333336,
+  "playbackRate": 1,
+  "edgeFadeMs": 5,
+  "gainDb": -0.22999999999999998,
+  "inputLufs": -19.07,
+  "estimatedOutputLufs": -16.289700043360188,
+  "estimatedOutputTruePeakDb": -2
+}
