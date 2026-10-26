@@ -14,9 +14,8 @@ let memoryTail: Promise<unknown> = Promise.resolve();
 // Tests ALWAYS use isolated process memory, even if DATABASE_URL is inherited.
 function database(): Pool | null {
   if (process.env.NODE_ENV === 'test') return null;
-  if (process.env.COWORK_STORAGE === 'upstash') return null;
+  if (isUpstashConfigured() && process.env.COWORK_STORAGE !== 'postgres') return null;
   if (!process.env.DATABASE_URL) {
-    if (isUpstashConfigured()) return null;
     if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
       throw new Error('DATABASE_URL or UPSTASH_REDIS_REST_URL is required in production');
     }
@@ -133,8 +132,8 @@ export async function mutateRoom<T>(rawCode: string, fn: (room: RoomState) => T 
     return job;
   }
 
-  // Explicit or configured Upstash Redis Serverless storage (zero inactivity pause)
-  if (process.env.COWORK_STORAGE === 'upstash' || (!process.env.DATABASE_URL && isUpstashConfigured())) {
+  // Configured Upstash Redis Serverless storage (zero inactivity pause; takes priority over sleeping Supabase)
+  if (isUpstashConfigured() && process.env.COWORK_STORAGE !== 'postgres') {
     return mutateRoomUpstash(code, fn, cleanExpiredLocks, createDefaultRoom);
   }
 
@@ -191,7 +190,7 @@ export async function saveRoom(state: RoomState): Promise<void> {
 }
 export async function generateUniqueRoom(): Promise<{ roomCode: string; inviteKey: string }> {
   if (process.env.NODE_ENV !== 'test') {
-    if (process.env.COWORK_STORAGE === 'upstash' || (!process.env.DATABASE_URL && isUpstashConfigured())) {
+    if (isUpstashConfigured() && process.env.COWORK_STORAGE !== 'postgres') {
       return generateUniqueRoomUpstash(createDefaultRoom, mintInviteKey, () => randomBytes(16).toString('hex').toUpperCase());
     }
   }
