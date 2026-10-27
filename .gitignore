@@ -16,4 +16,5 @@ packages/cowork-web-relay/public/*
 !packages/cowork-web-relay/public/sitemap.xml
 !packages/cowork-web-relay/public/og-image.png
 !packages/cowork-web-relay/public/og-image.jpg
+!packages/cowork-web-relay/public/google*.html
 *.jsonl
