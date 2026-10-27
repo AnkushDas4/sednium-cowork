@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  AlertCircle,
   Terminal,
   KeyRound,
   User,
@@ -49,6 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [invite, setInvite] = useState(() => inviteKeyFor(initialRoom));
   const [showInviteInput, setShowInviteInput] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+  const [handleError, setHandleError] = useState('');
 
   // Harness setup interactive state
   const [activeHarness, setActiveHarness] = useState<HarnessType>('antigravity');
@@ -94,12 +96,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (room.trim() && clientId.trim()) {
-      rememberInvite(room.trim().toUpperCase(), invite.trim());
-      const handle = clientId.trim().toLowerCase();
-      rememberHandle(handle);
-      onJoin(room.trim().toUpperCase(), handle);
+    if (!clientId.trim()) {
+      setHandleError('Please enter an operator handle to connect');
+      return;
     }
+    if (!room.trim()) {
+      return;
+    }
+    setHandleError('');
+    rememberInvite(room.trim().toUpperCase(), invite.trim());
+    const handle = clientId.trim().toLowerCase();
+    rememberHandle(handle);
+    onJoin(room.trim().toUpperCase(), handle);
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -368,7 +376,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4">
+              <form onSubmit={handleSubmit} noValidate className="p-5 sm:p-6 space-y-4">
                 {/* Room Code Field */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
@@ -455,18 +463,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       type="text"
                       required
                       value={clientId}
-                      onChange={(e) => setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase())}
+                      onChange={(e) => {
+                        setClientId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').toLowerCase());
+                        if (handleError) setHandleError('');
+                      }}
                       placeholder="your-name (e.g. ankush, dev-lead)"
                       autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck={false}
                       autoComplete="username"
-                      className="w-full bg-canvas/90 border border-grid focus:border-accent rounded-xl pl-8 pr-3.5 py-2.5 text-sm text-primary font-mono placeholder:text-muted focus:outline-none shadow-inner"
+                      className={`w-full bg-canvas/90 border ${
+                        handleError ? 'border-danger focus:border-danger' : 'border-grid focus:border-accent'
+                      } rounded-xl pl-8 pr-3.5 py-2.5 text-sm text-primary font-mono placeholder:text-muted focus:outline-none shadow-inner transition-colors`}
                     />
                   </div>
-                  <p className="text-2xs text-muted font-sans pl-1">
-                    Your handle in the chat stream. AI agents will connect separately with their own IDs.
-                  </p>
+                  {handleError ? (
+                    <p role="alert" className="text-2xs text-danger font-medium flex items-center gap-1 pl-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{handleError}</span>
+                    </p>
+                  ) : (
+                    <p className="text-2xs text-muted font-sans pl-1">
+                      Your handle in the chat stream. AI agents will connect separately with their own IDs.
+                    </p>
+                  )}
                 </div>
 
                 <button

@@ -15,6 +15,21 @@ export default defineConfig({
       .split(',')
       .map((h) => h.trim())
       .filter(Boolean),
+    proxy: {
+      '/api': {
+        target: 'https://cowork.sednium.com',
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'https://cowork.sednium.com',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',

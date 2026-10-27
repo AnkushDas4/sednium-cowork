@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   AtSign,
   Bell,
@@ -134,226 +135,230 @@ export const NotificationCenter: React.FC<Props> = ({ center }) => {
         )}
       </button>
 
-      {open && (
-        <>
-          <button
-            type="button"
-            aria-label="Close notifications"
-            className="fixed inset-0 z-40 cursor-default"
-            onClick={closePanel}
-          />
-          <div
-            role="dialog"
-            aria-label="Room notifications"
-            data-id="notification-panel"
-            className="fixed z-50 inset-x-2 top-14 xs:inset-x-auto xs:right-3 xs:top-14 xs:w-[22rem] sm:top-16 rounded-lg border border-grid bg-panel shadow-float overflow-hidden"
-          >
-            <div className="flex items-stretch divide-x divide-grid border-b border-grid bg-panel select-none">
-              <button
-                type="button"
-                onClick={() => setTab('alerts')}
-                aria-pressed={tab === 'alerts'}
-                className={`min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider transition-colors ${
-                  tab === 'alerts' ? 'text-primary bg-canvas' : 'text-muted hover:text-secondary'
-                }`}
-              >
-                <Bell className="w-3.5 h-3.5" />
-                Alerts
-                <span className="font-mono text-muted">({center.notifications.length})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab('settings')}
-                aria-pressed={tab === 'settings'}
-                className={`min-tap w-24 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider transition-colors ${
-                  tab === 'settings' ? 'text-primary bg-canvas' : 'text-muted hover:text-secondary'
-                }`}
-              >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                Settings
-              </button>
-              <button
-                type="button"
-                onClick={closePanel}
-                aria-label="Close"
-                className="min-tap w-11 flex items-center justify-center text-muted hover:text-primary hover:bg-hover transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {quiet && (
-              <div className="flex items-center gap-2 border-b border-grid bg-warn-soft px-3 py-1.5 text-2xs font-sans text-warn">
-                <Timer className="w-3.5 h-3.5 shrink-0" />
-                <span className="min-w-0 flex-1 truncate">
-                  Snoozed for {Math.ceil(center.snoozedFor / 60000)} min - alerts are collected, not shown
-                </span>
+      {open && (() => {
+        const panelElement = (
+          <>
+            <button
+              type="button"
+              aria-label="Close notifications"
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] cursor-default"
+              onClick={closePanel}
+            />
+            <div
+              role="dialog"
+              aria-label="Room notifications"
+              data-id="notification-panel"
+              className="fixed z-50 inset-x-2 top-14 xs:inset-x-auto xs:right-3 xs:top-14 xs:w-[22rem] rounded-lg border border-grid bg-panel shadow-float overflow-hidden animate-in fade-in duration-150"
+            >
+              <div className="flex items-stretch divide-x divide-grid border-b border-grid bg-panel select-none">
                 <button
                   type="button"
-                  onClick={() => center.snooze(0)}
-                  className="shrink-0 rounded-sm border border-warn/40 px-1.5 py-0.5 font-semibold uppercase tracking-wider hover:bg-warn/10"
+                  onClick={() => setTab('alerts')}
+                  aria-pressed={tab === 'alerts'}
+                  className={`min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider transition-colors ${
+                    tab === 'alerts' ? 'text-primary bg-canvas' : 'text-muted hover:text-secondary'
+                  }`}
                 >
-                  End
+                  <Bell className="w-3.5 h-3.5" />
+                  Alerts
+                  <span className="font-mono text-muted">({center.notifications.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTab('settings')}
+                  aria-pressed={tab === 'settings'}
+                  className={`min-tap w-24 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider transition-colors ${
+                    tab === 'settings' ? 'text-primary bg-canvas' : 'text-muted hover:text-secondary'
+                  }`}
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Settings
+                </button>
+                <button
+                  type="button"
+                  onClick={closePanel}
+                  aria-label="Close"
+                  className="min-tap w-11 flex items-center justify-center text-muted hover:text-primary hover:bg-hover transition-colors"
+                >
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
 
-            {tab === 'alerts' ? (
-              <>
-                {center.notifications.length === 0 ? (
-                  <div className="px-4 py-8 text-center">
-                    <CheckCheck className="w-5 h-5 text-muted mx-auto mb-2" />
-                    <p className="text-xs font-sans text-secondary">Nothing needs you.</p>
-                    <p className="mt-1 text-2xs font-sans text-muted">
-                      Mentions, finished agents and stuck agents land here as the room moves.
+              {quiet && (
+                <div className="flex items-center gap-2 border-b border-grid bg-warn-soft px-3 py-1.5 text-2xs font-sans text-warn">
+                  <Timer className="w-3.5 h-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">
+                    Snoozed for {Math.ceil(center.snoozedFor / 60000)} min - alerts are collected, not shown
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => center.snooze(0)}
+                    className="shrink-0 rounded-sm border border-warn/40 px-1.5 py-0.5 font-semibold uppercase tracking-wider hover:bg-warn/10"
+                  >
+                    End
+                  </button>
+                </div>
+              )}
+
+              {tab === 'alerts' ? (
+                <>
+                  {center.notifications.length === 0 ? (
+                    <div className="px-4 py-8 text-center">
+                      <CheckCheck className="w-5 h-5 text-muted mx-auto mb-2" />
+                      <p className="text-xs font-sans text-secondary">Nothing needs you.</p>
+                      <p className="mt-1 text-2xs font-sans text-muted">
+                        Mentions, finished agents and stuck agents land here as the room moves.
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="max-h-[52dvh] overflow-y-auto scroll-panel divide-y divide-grid">
+                      {center.notifications.map((n: RoomNotification) => {
+                        const Icon = ICON[n.kind] ?? Info;
+                        return (
+                          <li key={n.id} className="flex items-start gap-2.5 px-3 py-2.5">
+                            <span className={`mt-0.5 inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-sm ${TONE[n.kind]}`}>
+                              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-baseline gap-2">
+                                <span className="truncate text-xs font-sans font-semibold text-primary">{n.title}</span>
+                                <span className="ml-auto shrink-0 text-2xs font-mono text-muted">{timeAgo(Date.now() - n.at)}</span>
+                              </div>
+                              {n.body && <p className="mt-0.5 break-words text-2xs font-sans text-secondary leading-snug">{n.body}</p>}
+                              {n.files && n.files.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {n.files.slice(0, 4).map((f) => (
+                                    <span key={f} title={f} className="max-w-[12rem] truncate rounded-sm border border-grid bg-canvas px-1 py-0.5 font-mono text-[9px] text-muted">
+                                      {f}
+                                    </span>
+                                  ))}
+                                  {n.files.length > 4 && <span className="font-mono text-[9px] text-muted">+{n.files.length - 4}</span>}
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                  <div className="flex items-stretch divide-x divide-grid border-t border-grid">
+                    <button
+                      type="button"
+                      onClick={markRead}
+                      className="min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider text-muted hover:text-primary hover:bg-hover transition-colors"
+                    >
+                      <CheckCheck className="w-3.5 h-3.5" /> Mark read
+                    </button>
+                    <button
+                      type="button"
+                      onClick={center.clearAll}
+                      className="min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider text-muted hover:text-primary hover:bg-hover transition-colors"
+                    >
+                      Clear list
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="max-h-[62dvh] overflow-y-auto scroll-panel">
+                  <div className="border-b border-grid px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-3.5 h-3.5 text-accent shrink-0" />
+                      <span className="text-2xs font-sans font-semibold uppercase tracking-wider text-secondary">
+                        Device alerts
+                      </span>
+                      <span className="ml-auto text-2xs font-mono text-muted">{center.permission}</span>
+                      {center.permission === 'default' && (
+                        <button
+                          type="button"
+                          onClick={() => void center.askPermission()}
+                          className="rounded-sm bg-accent px-2 py-1 text-2xs font-sans font-semibold uppercase tracking-wider text-accent-ink hover:bg-accent-strong transition-colors"
+                        >
+                          Enable
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-1.5 flex items-start gap-1.5 text-2xs font-sans text-muted leading-snug">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span>{permissionHint(center.permission)}</span>
                     </p>
                   </div>
-                ) : (
-                  <ul className="max-h-[52dvh] overflow-y-auto scroll-panel divide-y divide-grid">
-                    {center.notifications.map((n: RoomNotification) => {
-                      const Icon = ICON[n.kind] ?? Info;
+
+                  <div className="flex items-center gap-2.5 border-b border-grid px-3 py-2.5">
+                    {center.settings.sound ? (
+                      <Volume2 className="w-3.5 h-3.5 text-accent shrink-0" />
+                    ) : (
+                      <VolumeX className="w-3.5 h-3.5 text-muted shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-xs font-sans font-medium text-primary">Chime on urgent alerts</span>
+                      <span className="block text-2xs text-muted">Two short tones, only while this tab is open</span>
+                    </div>
+                    <Switch on={center.settings.sound} onChange={center.setSound} label="Chime on urgent alerts" />
+                  </div>
+
+                  <div className="flex items-center gap-2.5 border-b border-grid px-3 py-2.5">
+                    <Timer className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-xs font-sans font-medium text-primary">Snooze</span>
+                      <span className="block text-2xs text-muted">Keeps banners and device alerts quiet; the list still fills</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {snoozeOptions.map((option) => (
+                        <button
+                          key={option.minutes}
+                          type="button"
+                          onClick={() => center.snooze(option.minutes)}
+                          className="rounded-sm border border-grid bg-canvas px-1.5 py-1 text-2xs font-mono text-secondary hover:border-accent/40 hover:text-accent transition-colors"
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <ul className="divide-y divide-grid">
+                    {NOTIFY_KINDS.map((info) => {
+                      const flags = center.settings.kinds[info.kind];
                       return (
-                        <li key={n.id} className="flex items-start gap-2.5 px-3 py-2.5">
-                          <span className={`mt-0.5 inline-flex w-6 h-6 shrink-0 items-center justify-center rounded-sm ${TONE[n.kind]}`}>
-                            <Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-baseline gap-2">
-                              <span className="truncate text-xs font-sans font-semibold text-primary">{n.title}</span>
-                              <span className="ml-auto shrink-0 text-2xs font-mono text-muted">{timeAgo(Date.now() - n.at)}</span>
+                        <li key={info.kind} className="px-3 py-2.5">
+                          <div className="flex items-start gap-2.5">
+                            <div className="min-w-0 flex-1">
+                              <span className="block text-xs font-sans font-medium text-primary">{info.label}</span>
+                              <span className="mt-0.5 block text-2xs font-sans text-muted leading-snug">{info.hint}</span>
                             </div>
-                            {n.body && <p className="mt-0.5 break-words text-2xs font-sans text-secondary leading-snug">{n.body}</p>}
-                            {n.files && n.files.length > 0 && (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {n.files.slice(0, 4).map((f) => (
-                                  <span key={f} title={f} className="max-w-[12rem] truncate rounded-sm border border-grid bg-canvas px-1 py-0.5 font-mono text-[9px] text-muted">
-                                    {f}
-                                  </span>
-                                ))}
-                                {n.files.length > 4 && <span className="font-mono text-[9px] text-muted">+{n.files.length - 4}</span>}
-                              </div>
-                            )}
+                            <div className="flex shrink-0 items-center gap-3 pt-0.5">
+                              <label className="flex flex-col items-center gap-1">
+                                <span className="text-[9px] font-sans uppercase tracking-wider text-muted">Banner</span>
+                                <Switch
+                                  on={flags.toast}
+                                  onChange={(next) => center.setChannel(info.kind, 'toast', next)}
+                                  label={`${info.label}: in-room banner`}
+                                />
+                              </label>
+                              <label className="flex flex-col items-center gap-1">
+                                <span className="text-[9px] font-sans uppercase tracking-wider text-muted">Device</span>
+                                <Switch
+                                  on={flags.device}
+                                  disabled={center.permission !== 'granted'}
+                                  disabledHint="Enable device alerts above first"
+                                  onChange={(next) => center.setChannel(info.kind, 'device', next)}
+                                  label={`${info.label}: system notification`}
+                                />
+                              </label>
+                            </div>
                           </div>
                         </li>
                       );
                     })}
                   </ul>
-                )}
-                <div className="flex items-stretch divide-x divide-grid border-t border-grid">
-                  <button
-                    type="button"
-                    onClick={markRead}
-                    className="min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider text-muted hover:text-primary hover:bg-hover transition-colors"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" /> Mark read
-                  </button>
-                  <button
-                    type="button"
-                    onClick={center.clearAll}
-                    className="min-tap flex-1 flex items-center justify-center gap-1.5 text-2xs font-sans font-semibold uppercase tracking-wider text-muted hover:text-primary hover:bg-hover transition-colors"
-                  >
-                    Clear list
-                  </button>
                 </div>
-              </>
-            ) : (
-              <div className="max-h-[62dvh] overflow-y-auto scroll-panel">
-                <div className="border-b border-grid px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-3.5 h-3.5 text-accent shrink-0" />
-                    <span className="text-2xs font-sans font-semibold uppercase tracking-wider text-secondary">
-                      Device alerts
-                    </span>
-                    <span className="ml-auto text-2xs font-mono text-muted">{center.permission}</span>
-                    {center.permission === 'default' && (
-                      <button
-                        type="button"
-                        onClick={() => void center.askPermission()}
-                        className="rounded-sm bg-accent px-2 py-1 text-2xs font-sans font-semibold uppercase tracking-wider text-accent-ink hover:bg-accent-strong transition-colors"
-                      >
-                        Enable
-                      </button>
-                    )}
-                  </div>
-                  <p className="mt-1.5 flex items-start gap-1.5 text-2xs font-sans text-muted leading-snug">
-                    <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                    <span>{permissionHint(center.permission)}</span>
-                  </p>
-                </div>
+              )}
+            </div>
+          </>
+        );
 
-                <div className="flex items-center gap-2.5 border-b border-grid px-3 py-2.5">
-                  {center.settings.sound ? (
-                    <Volume2 className="w-3.5 h-3.5 text-accent shrink-0" />
-                  ) : (
-                    <VolumeX className="w-3.5 h-3.5 text-muted shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-sans font-medium text-primary">Chime on urgent alerts</span>
-                    <span className="block text-2xs text-muted">Two short tones, only while this tab is open</span>
-                  </div>
-                  <Switch on={center.settings.sound} onChange={center.setSound} label="Chime on urgent alerts" />
-                </div>
-
-                <div className="flex items-center gap-2.5 border-b border-grid px-3 py-2.5">
-                  <Timer className="w-3.5 h-3.5 text-muted shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <span className="block text-xs font-sans font-medium text-primary">Snooze</span>
-                    <span className="block text-2xs text-muted">Keeps banners and device alerts quiet; the list still fills</span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {snoozeOptions.map((option) => (
-                      <button
-                        key={option.minutes}
-                        type="button"
-                        onClick={() => center.snooze(option.minutes)}
-                        className="rounded-sm border border-grid bg-canvas px-1.5 py-1 text-2xs font-mono text-secondary hover:border-accent/40 hover:text-accent transition-colors"
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <ul className="divide-y divide-grid">
-                  {NOTIFY_KINDS.map((info) => {
-                    const flags = center.settings.kinds[info.kind];
-                    return (
-                      <li key={info.kind} className="px-3 py-2.5">
-                        <div className="flex items-start gap-2.5">
-                          <div className="min-w-0 flex-1">
-                            <span className="block text-xs font-sans font-medium text-primary">{info.label}</span>
-                            <span className="mt-0.5 block text-2xs font-sans text-muted leading-snug">{info.hint}</span>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-3 pt-0.5">
-                            <label className="flex flex-col items-center gap-1">
-                              <span className="text-[9px] font-sans uppercase tracking-wider text-muted">Banner</span>
-                              <Switch
-                                on={flags.toast}
-                                onChange={(next) => center.setChannel(info.kind, 'toast', next)}
-                                label={`${info.label}: in-room banner`}
-                              />
-                            </label>
-                            <label className="flex flex-col items-center gap-1">
-                              <span className="text-[9px] font-sans uppercase tracking-wider text-muted">Device</span>
-                              <Switch
-                                on={flags.device}
-                                disabled={center.permission !== 'granted'}
-                                disabledHint="Enable device alerts above first"
-                                onChange={(next) => center.setChannel(info.kind, 'device', next)}
-                                label={`${info.label}: system notification`}
-                              />
-                            </label>
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+        return typeof document !== 'undefined' ? createPortal(panelElement, document.body) : panelElement;
+      })()}
     </>
   );
 };

@@ -2,6 +2,7 @@ import { relayRequest, captureInviteFromUrl, inviteKeyFor, lastHandle } from './
 import { parseRepoUrl } from '../api/_repo.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
+import { X } from 'lucide-react';
 import { RoomHeader } from './components/RoomHeader.js';
 import { AgentHUD } from './components/AgentHUD.js';
 import { ChatTerminal } from './components/ChatTerminal.js';
@@ -380,8 +381,17 @@ export const App: React.FC = () => {
             </div>
           )}
           {inviteNotice && !connectionError && (
-            <div className="mx-3 mt-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-xs font-medium text-accent">
-              {inviteNotice}
+            <div className="mx-3 mt-3 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-xs font-medium text-accent flex items-center justify-between gap-2 shadow-sm animate-in fade-in duration-200">
+              <span className="truncate">{inviteNotice}</span>
+              <button
+                type="button"
+                onClick={() => setInviteNotice('')}
+                className="min-tap -mr-1 p-2 hover:bg-accent/20 rounded-md text-accent hover:text-accent-strong shrink-0 transition-colors cursor-pointer flex items-center justify-center"
+                title="Dismiss notice"
+                aria-label="Dismiss notice"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
           {/* One row for both decisions a phone makes: which slice of the feed, and whether the agent

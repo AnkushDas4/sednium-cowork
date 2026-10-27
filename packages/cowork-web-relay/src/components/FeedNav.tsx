@@ -51,7 +51,7 @@ export const FeedNav: React.FC<FeedNavProps> = ({
   return (
     <nav
       aria-label="Feed"
-      className="md:hidden min-h-11 bg-panel/95 backdrop-blur-md border-b border-grid/60 px-2 py-1 flex items-center gap-1 shrink-0 select-none overflow-x-auto no-scrollbar"
+      className="md:hidden min-h-11 bg-panel/95 backdrop-blur-md border-b border-grid/60 px-2.5 pr-3.5 py-1 flex items-center gap-1 shrink-0 select-none overflow-x-auto no-scrollbar scroll-px-2.5"
     >
       {FEEDS.map(({ id, label, icon: Icon }) => {
         const active = !agentsActive && filter === id;

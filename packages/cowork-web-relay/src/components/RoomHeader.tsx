@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Terminal,
@@ -53,6 +54,15 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 }) => {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!showQr) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowQr(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showQr]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleCreateNewRoom = async () => {
@@ -103,7 +113,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
             Sednium CoWork
           </span>
           <span className="text-2xs text-muted tracking-wider font-mono uppercase">
-            RELAY HUD v1.0
+            Pair Programming Relay
           </span>
         </div>
       </div>
@@ -113,7 +123,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
       <div className="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-4 flex-1 min-w-0 sm:flex-none">
         <button
           onClick={() => setShowQr(true)}
-          className="flex items-center gap-1.5 font-mono min-w-0 bg-hover/40 hover:bg-hover px-2 py-1 rounded-lg border border-grid/50 hover:border-grid transition-colors text-left"
+          className="flex items-center gap-1.5 font-mono min-w-0 bg-hover/40 hover:bg-hover px-2.5 py-1.5 min-h-[36px] sm:min-h-0 rounded-lg border border-grid/50 hover:border-grid transition-colors text-left"
           title="Invite link - QR code, share and copy"
           aria-label="Show the invite link for this room"
         >
@@ -271,10 +281,19 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
         </button>
       </div>
 
-      {/* QR Code Modal Popover */}
-      {showQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-panel border border-grid rounded-2xl p-5 w-[min(92vw,22rem)] max-h-[86dvh] overflow-y-auto scroll-panel shadow-float relative">
+      {/* QR Code Modal Popover - rendered via Portal to document.body to prevent containing-block clipping */}
+      {showQr && typeof document !== 'undefined' && createPortal(
+        <div
+          onClick={() => setShowQr(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile Join Link QR Code"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-panel border border-grid rounded-2xl p-5 w-[min(92vw,22rem)] max-h-[86dvh] overflow-y-auto scroll-panel shadow-float relative"
+          >
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-grid">
               <div className="flex items-center gap-2">
                 <QrCode className="w-4 h-4 text-accent" />
@@ -284,13 +303,15 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
               </div>
               <button
                 onClick={() => setShowQr(false)}
-                className="p-1 hover:bg-hover text-muted hover:text-primary rounded-sm"
+                className="p-1.5 hover:bg-hover text-muted hover:text-primary rounded-lg transition-colors cursor-pointer"
+                title="Close QR Code"
+                aria-label="Close QR Code"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="bg-white p-4 rounded-sm flex items-center justify-center border border-grid shadow-inner mb-4">
+            <div className="bg-white p-4 rounded-xl flex items-center justify-center border border-grid shadow-inner mb-4">
               <QRCodeSVG value={shareUrl} size={190} level="M" />
             </div>
 
@@ -300,13 +321,14 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
 
             <button
               onClick={handleCopy}
-              className="w-full min-h-[44px] bg-accent hover:bg-accent-strong text-accent-ink text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 font-sans tracking-wide"
+              className="w-full min-h-[44px] bg-accent hover:bg-accent-strong text-accent-ink text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 font-sans tracking-wide cursor-pointer"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copied ? 'LINK COPIED' : 'COPY SHARE LINK'}</span>
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
