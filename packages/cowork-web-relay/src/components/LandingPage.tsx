@@ -12,7 +12,6 @@ import {
   Cpu,
   Lock,
   GitPullRequest,
-  Radio,
   Copy,
   Check,
   ExternalLink,
@@ -228,9 +227,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="font-bold text-sm tracking-tight text-primary font-sans">
               Sednium CoWork
             </span>
-            <span className="px-1.5 py-0.5 rounded bg-accent-soft text-accent text-2xs font-mono font-semibold border border-accent/30 hidden xs:inline shrink-0">
-              RELAY V1.0
-            </span>
           </div>
         </div>
 
@@ -298,12 +294,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-8 lg:gap-12 items-center">
           {/* Left Column: Vision & Value Proposition */}
           <div className="md:col-span-7 space-y-5 sm:space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-soft text-accent border border-accent/30 font-mono text-2xs font-semibold">
-              <Radio className="w-3 h-3 animate-pulse" />
-              <span className="hidden sm:inline">ZERO WEBSOCKETS • ZERO AUTH WALLS • STATELESS HTTP</span>
-              <span className="sm:hidden">ZERO-AUTH • STATELESS HTTP RELAY</span>
-            </div>
-
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-primary leading-[1.15]">
               Pair Programming Relay for Humans &{' '}
               <span className="text-accent font-black underline decoration-accent/70 decoration-wavy decoration-2 underline-offset-8">
