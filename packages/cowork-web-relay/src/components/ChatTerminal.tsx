@@ -24,6 +24,7 @@ import {
   Info,
   ExternalLink,
   FileCode,
+  Users,
 } from 'lucide-react';
 import type { CoWorkMessage, ContentType, ParticipantInfo } from '../../api/_types.js';
 import { inviteKeyFor, inviteLink } from '../relay.js';
@@ -135,6 +136,8 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
   const [copiedPrompt, setCopiedPrompt] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showMentionPopup, setShowMentionPopup] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [selectedMentionIdx, setSelectedMentionIdx] = useState(0);
 
   // Flexible Onboarding Agent ID input
   const [onboardingAgentId, setOnboardingAgentId] = useState<string>(
@@ -394,6 +397,47 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
 
   const quickTargets = [...Object.keys(participants).filter(id => id !== currentClientId).map(id => `@${id}`), '@all'];
 
+  interface MentionCandidate {
+    handle: string;
+    id: string;
+    label: string;
+    role: 'agent' | 'human' | 'broadcast';
+    detail: string;
+    status: string;
+  }
+
+  const allMentionCandidates: MentionCandidate[] = [
+    {
+      handle: '@all',
+      id: 'all',
+      label: 'Broadcast to Room',
+      role: 'broadcast',
+      detail: 'Notify all participants & AI agents',
+      status: 'Room Broadcast',
+    },
+    ...Object.values(participants)
+      .filter((p) => p.clientId !== currentClientId)
+      .map((p): MentionCandidate => {
+        const isAgent = p.role === 'agent' || p.clientId.toLowerCase().includes('ai');
+        return {
+          handle: `@${p.clientId}`,
+          id: p.clientId,
+          label: p.clientId,
+          role: isAgent ? 'agent' : 'human',
+          detail: isAgent
+            ? (p.harness ? `${p.harness}${p.model ? ` · ${p.model}` : ''}` : 'Autonomous Agent')
+            : 'Human Operator',
+          status: p.status || (isAgent ? 'Listening' : 'Online'),
+        };
+      }),
+  ];
+
+  const filteredMentionCandidates = allMentionCandidates.filter((c) => {
+    if (!mentionQuery) return true;
+    const q = mentionQuery.toLowerCase();
+    return c.handle.toLowerCase().includes(q) || c.id.toLowerCase().includes(q) || c.label.toLowerCase().includes(q);
+  });
+
   const handlePillClick = (mention: string) => {
     if (mention === '@all') {
       setInput((prev) => {
@@ -420,20 +464,47 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
     setInput(val);
 
     // Show mention popup if user typed '@'
-    const lastWord = val.split(' ').pop() || '';
-    if (lastWord.startsWith('@')) {
+    const match = val.match(/(?:^|\s)@([a-zA-Z0-9_-]*)$/);
+    if (match) {
+      setMentionQuery(match[1]);
       setShowMentionPopup(true);
+      setSelectedMentionIdx(0);
     } else {
+      setShowMentionPopup(false);
+      setMentionQuery('');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showMentionPopup || filteredMentionCandidates.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedMentionIdx((prev) => (prev + 1) % filteredMentionCandidates.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedMentionIdx((prev) => (prev - 1 + filteredMentionCandidates.length) % filteredMentionCandidates.length);
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      const target = filteredMentionCandidates[selectedMentionIdx];
+      if (target) {
+        handleSelectMention(target.handle);
+      }
+    } else if (e.key === 'Escape') {
       setShowMentionPopup(false);
     }
   };
 
   const handleSelectMention = (mention: string) => {
-    const words = input.split(' ');
-    words.pop(); // remove partial '@...'
-    words.push(mention);
-    setInput(words.join(' ') + ' ');
+    setInput((prev) => {
+      return prev.replace(/(?:^|\s)@([a-zA-Z0-9_-]*)$/, (match) => {
+        const prefix = match.startsWith(' ') ? ' ' : '';
+        return `${prefix}${mention} `;
+      });
+    });
     setShowMentionPopup(false);
+    setMentionQuery('');
+    setSelectedMentionIdx(0);
     inputRef.current?.focus();
   };
 
@@ -550,13 +621,25 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             );
           }
           if (part.startsWith('@')) {
+            const isSelfMention = part.toLowerCase() === `@${currentClientId.toLowerCase()}`;
             return (
-              <span
+              <button
+                type="button"
                 key={idx}
-                className="inline-flex items-center px-1.5 py-0.2 rounded-sm bg-accent/15 text-accent border border-accent/30 font-mono text-xs font-semibold mr-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePillClick(part);
+                }}
+                title={isSelfMention ? 'You are mentioned' : `Click to address ${part} in chat`}
+                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 mx-0.5 rounded-md font-mono text-xs cursor-pointer transition-all select-none hover:scale-105 active:scale-95 ${
+                  isSelfMention
+                    ? 'bg-accent text-accent-ink font-bold shadow-sm ring-1 ring-accent-strong'
+                    : 'bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 hover:border-accent font-semibold'
+                }`}
               >
-                {part}
-              </span>
+                <AtSign className="w-2.5 h-2.5 shrink-0 opacity-70" />
+                <span>{part.slice(1)}</span>
+              </button>
             );
           }
           if (part.startsWith('http://') || part.startsWith('https://')) {
@@ -962,7 +1045,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
             const parsedMentions = [...new Set([...(msg.text?.matchAll(/@([a-zA-Z0-9_-]+)/g) || [])].map(m => m[1]))];
             const allMentions = msg.mentions && msg.mentions.length > 0 ? msg.mentions : parsedMentions;
             const isPriority = msg.priority === 'HIGH' || allMentions.length > 0 || (msg.targetId && msg.targetId !== 'all') || msg.contentType === 'CROSS_PROMPT';
-            const isDirectedAtMe = allMentions.includes(currentClientId) || msg.targetId === currentClientId;
+            const isDirectedAtMe = allMentions.some(m => m.toLowerCase() === currentClientId.toLowerCase()) || msg.targetId?.toLowerCase() === currentClientId.toLowerCase();
 
             // Self Message: Right-Aligned Speech Bubble
             if (isSelf) {
@@ -1274,22 +1357,59 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
       {/* 3. Command Composer Dock */}
       <div className="bg-panel/90 backdrop-blur-md border-t border-grid/60 px-2.5 sm:px-4 py-2 sm:py-2.5 shrink-0 relative pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:pb-2.5">
         {/* Inline @ Mention Autocomplete Popup */}
-        {showMentionPopup && (
-          <div className="absolute bottom-full left-3 sm:left-4 mb-2 bg-panel border border-grid rounded-xl shadow-float py-1 z-30 w-52 divide-y divide-grid overflow-hidden">
-            <div className="px-3 py-1 text-2xs font-mono text-muted uppercase">
-              SELECT TARGET MENTION
+        {showMentionPopup && filteredMentionCandidates.length > 0 && (
+          <div
+            role="listbox"
+            aria-label="Mention suggestions"
+            className="absolute bottom-full left-2.5 sm:left-4 mb-2 bg-panel/95 backdrop-blur-md border border-grid rounded-xl shadow-float z-30 w-[min(90vw,22rem)] divide-y divide-grid overflow-hidden animate-in fade-in duration-150"
+          >
+            <div className="px-3 py-1.5 text-2xs font-mono font-bold text-muted uppercase flex items-center justify-between bg-canvas/40 select-none">
+              <span className="flex items-center gap-1">
+                <AtSign className="w-3 h-3 text-accent" />
+                <span>Mention Participant</span>
+              </span>
+              <span className="text-[10px] opacity-70">↑↓ to navigate, Enter/Tab</span>
             </div>
-            {quickTargets.map((mention) => (
-              <button
-                key={mention}
-                type="button"
-                onClick={() => handleSelectMention(mention)}
-                className="w-full text-left px-3 py-1.5 text-xs font-mono text-primary hover:bg-accent hover:text-accent-ink transition-colors flex items-center justify-between"
-              >
-                <span>{mention}</span>
-                <span className="text-2xs opacity-70">tab/click</span>
-              </button>
-            ))}
+            <div className="max-h-56 overflow-y-auto scroll-panel">
+              {filteredMentionCandidates.map((candidate, idx) => {
+                const isSelected = idx === selectedMentionIdx;
+                const Icon = candidate.role === 'broadcast' ? Users : candidate.role === 'agent' ? Bot : User;
+                return (
+                  <button
+                    key={candidate.handle}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseEnter={() => setSelectedMentionIdx(idx)}
+                    onClick={() => handleSelectMention(candidate.handle)}
+                    className={`w-full text-left px-3 py-2 text-xs font-mono transition-colors flex items-center gap-2.5 cursor-pointer ${
+                      isSelected
+                        ? 'bg-accent text-accent-ink font-semibold'
+                        : 'text-primary hover:bg-hover'
+                    }`}
+                  >
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
+                      isSelected ? 'bg-accent-strong text-accent-ink' : candidate.role === 'agent' ? 'bg-accent-soft text-accent' : 'bg-canvas text-secondary'
+                    }`}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold truncate">{candidate.handle}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-sans uppercase font-bold tracking-wider ${
+                          isSelected ? 'bg-accent-ink/20 text-accent-ink' : candidate.role === 'agent' ? 'bg-accent-soft text-accent' : 'bg-canvas text-muted'
+                        }`}>
+                          {candidate.role === 'broadcast' ? 'ALL' : candidate.role === 'agent' ? 'AI AGENT' : 'HUMAN'}
+                        </span>
+                      </div>
+                      <div className={`text-2xs truncate font-sans ${isSelected ? 'text-accent-ink/80' : 'text-muted'}`}>
+                        {candidate.detail}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -1328,6 +1448,7 @@ export const ChatTerminal: React.FC<ChatTerminalProps> = ({
               type="text"
               value={input}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               placeholder="Message room, or @handle..."
               enterKeyHint="send"
               autoComplete="off"

@@ -89,6 +89,21 @@ function renderInboxMessage(m: any, indent = '  '): string {
   const ts = Number(m.timestamp) ? ` ${hhmmss(Number(m.timestamp))}` : '';
   return `${indent}-${ts} [@${m.senderId}${via} → @${m.targetId}][${m.contentType}]: ${m.text}${files}`;
 }
+
+function renderChatMessage(m: any, indent = '  '): string {
+  const via = m.senderHarness ? ` (${m.senderHarness}${m.senderModel ? ` · ${m.senderModel}` : ''})` : '';
+  const files = Array.isArray(m.files) && m.files.length ? ` [files: ${m.files.join(', ')}]` : '';
+  const ts = Number(m.timestamp) ? `[${hhmmss(Number(m.timestamp))}]` : '';
+  const target = m.targetId && m.targetId !== 'all' ? ` → @${m.targetId}` : '';
+  return `${indent}${ts} @${m.senderId}${via}${target}: ${m.text || `[${m.contentType}]`}${files}`;
+}
+
+function renderRecentChatTranscript(history: any[], limit = 10): string {
+  if (!history || history.length === 0) return '';
+  const slice = history.slice(-limit);
+  return `\n\n📜 Recent Room Chat Stream (${slice.length} latest messages):\n` +
+    slice.map((m) => renderChatMessage(m)).join('\n') + '\n';
+}
 const truthy = (v: string): boolean => /^(1|true|yes|on)$/i.test(v);
 
 export function detectSmartModelAndHarness(
@@ -364,6 +379,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             durationSeconds: {
               type: 'number',
               description: 'Maximum seconds to wait for incoming work (default 60, max 600).',
+            },
+          },
+        },
+      },
+      {
+        name: 'cowork_read_chat',
+        description:
+          'Reads the recent chat stream and conversation history of the CoWork room (up to 50 recent messages), including user instructions, peer agent discussions, code reviews, and questions. Call this to catch up on what the operator or peer agents have been discussing in the chat.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            limit: {
+              type: 'number',
+              description: 'Number of recent chat messages to read (default 20, max 50).',
             },
           },
         },
@@ -876,6 +905,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const locks = activePoller.getFileLocks();
         const latestCommit = activePoller.getLatestCommit();
+        const recentChat = renderRecentChatTranscript(activePoller.getRecentHistory(), 10);
 
         return {
           content: [
@@ -900,7 +930,33 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         ? `\nRoom repository: ${repo.host}/${repo.slug} (${repo.url}) — push and clone only here.`
                         : `\nRoom repository: none linked yet. The first push decides it for everyone.`;
                     })() +
+                    recentChat +
                     renderRoster(activePoller.getParticipants(), activePoller.getAgentId()) +
+                    renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
+            },
+          ],
+        };
+      }
+
+      case 'cowork_read_chat': {
+        if (!activePoller) {
+          throw new Error('Not connected to a CoWork room. Run cowork_connect first.');
+        }
+
+        const limit = typeof args?.limit === 'number' ? Math.max(1, Math.min(50, args.limit)) : 20;
+        const history = activePoller.getRecentHistory();
+        const slice = history.slice(-limit);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `📜 CoWork Room Chat Stream (${slice.length} messages, Room ${activePoller.getRoomCode()}):\n\n` +
+                    (slice.length === 0
+                      ? `  (No chat messages in this room yet)\n\n`
+                      : slice.map((m) => renderChatMessage(m)).join('\n') + '\n\n') +
+                    `💬 To respond or discuss with anyone in the room, call:\n` +
+                    `cowork_discuss(targetId='<handle>'|'all', message='@<handle> [your response]')\n` +
                     renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],
@@ -920,6 +976,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         activePoller.setStatus('Idle / Connected');
 
         if (!msg) {
+          const recentChat = renderRecentChatTranscript(activePoller.getRecentHistory(), 5);
           return {
             content: [
               {
@@ -929,6 +986,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                       `Do NOT terminate your turn. Do NOT output a conversational text summary to the user.\n` +
                       `Sending a text-only response will cause your agent harness to end its execution turn, putting you to sleep and missing future mentions.\n` +
                       `ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=${duration}) immediately in this exact turn.` +
+                      recentChat +
                       renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
               },
             ],
@@ -958,6 +1016,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             `4. Commit & push: cowork_sync(files=[...], commitMessage='...')\n` +
             `5. IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration}) again to wait for the next task.`;
 
+        const recentChat = renderRecentChatTranscript(activePoller.getRecentHistory(), 8);
+
         return {
           content: [
             {
@@ -971,6 +1031,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     (msg.files ? `Files: ${msg.files.join(', ')}\n` : '') +
                     `\nReady to act on it. ${TRUST_NOTE}\n\n` +
                     `${actionWorkflow}` +
+                    recentChat +
                     renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId()),
             },
           ],

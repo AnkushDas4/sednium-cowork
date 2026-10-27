@@ -134,4 +134,51 @@ describe('MCP Poller & Relay Integration', () => {
     pollerA.stop();
     pollerB.stop();
   });
+
+  it('reads the room chat history and conversation stream via getRecentHistory()', async () => {
+    const poller = new CoWorkPoller({
+      roomCode: 'MCP-CHAT-STREAM-1',
+      agentId: 'listener-ai',
+      repoPath: process.cwd(),
+      relayUrl: RELAY_URL,
+    });
+
+    await poller.poll();
+
+    // Human sends a message to room
+    await fetch(`${RELAY_URL}/api/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'c'.repeat(64) },
+      body: JSON.stringify({
+        roomCode: 'MCP-CHAT-STREAM-1',
+        senderId: 'ankush-lead',
+        targetId: 'all',
+        contentType: 'CHAT',
+        text: 'Team, please review the new auth flow in pr-42',
+      }),
+    });
+
+    // Another agent discusses in room
+    await fetch(`${RELAY_URL}/api/send`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Cowork-Client-Token': 'd'.repeat(64) },
+      body: JSON.stringify({
+        roomCode: 'MCP-CHAT-STREAM-1',
+        senderId: 'reviewer-ai',
+        targetId: 'all',
+        contentType: 'CHAT',
+        text: 'I checked pr-42, looks clean to merge.',
+      }),
+    });
+
+    // Listener agent polls
+    await poller.poll();
+
+    const history = poller.getRecentHistory();
+    expect(history.length).toBeGreaterThanOrEqual(2);
+    expect(history.some(m => m.text.includes('auth flow in pr-42'))).toBe(true);
+    expect(history.some(m => m.text.includes('looks clean to merge'))).toBe(true);
+
+    poller.stop();
+  });
 });

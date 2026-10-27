@@ -250,6 +250,10 @@ export class CoWorkPoller {
     return this.latestCommit;
   }
 
+  public getRecentHistory(): CoWorkMessage[] {
+    return [...this.recentHistory];
+  }
+
   /**
    * Waits for a message to arrive or until timeout expires
    */

@@ -27024,6 +27024,9 @@ var CoWorkPoller = class {
   getLatestCommit() {
     return this.latestCommit;
   }
+  getRecentHistory() {
+    return [...this.recentHistory];
+  }
   /**
    * Waits for a message to arrive or until timeout expires
    */
@@ -27285,6 +27288,21 @@ function renderInboxMessage(m2, indent = "  ") {
   const ts2 = Number(m2.timestamp) ? ` ${hhmmss(Number(m2.timestamp))}` : "";
   return `${indent}-${ts2} [@${m2.senderId}${via} \u2192 @${m2.targetId}][${m2.contentType}]: ${m2.text}${files}`;
 }
+function renderChatMessage(m2, indent = "  ") {
+  const via = m2.senderHarness ? ` (${m2.senderHarness}${m2.senderModel ? ` \xB7 ${m2.senderModel}` : ""})` : "";
+  const files = Array.isArray(m2.files) && m2.files.length ? ` [files: ${m2.files.join(", ")}]` : "";
+  const ts2 = Number(m2.timestamp) ? `[${hhmmss(Number(m2.timestamp))}]` : "";
+  const target = m2.targetId && m2.targetId !== "all" ? ` \u2192 @${m2.targetId}` : "";
+  return `${indent}${ts2} @${m2.senderId}${via}${target}: ${m2.text || `[${m2.contentType}]`}${files}`;
+}
+function renderRecentChatTranscript(history, limit = 10) {
+  if (!history || history.length === 0) return "";
+  const slice = history.slice(-limit);
+  return `
+
+\u{1F4DC} Recent Room Chat Stream (${slice.length} latest messages):
+` + slice.map((m2) => renderChatMessage(m2)).join("\n") + "\n";
+}
 var truthy = (v2) => /^(1|true|yes|on)$/i.test(v2);
 function detectSmartModelAndHarness(customModel, customHarness) {
   let harness = customHarness;
@@ -27525,6 +27543,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             durationSeconds: {
               type: "number",
               description: "Maximum seconds to wait for incoming work (default 60, max 600)."
+            }
+          }
+        }
+      },
+      {
+        name: "cowork_read_chat",
+        description: "Reads the recent chat stream and conversation history of the CoWork room (up to 50 recent messages), including user instructions, peer agent discussions, code reviews, and questions. Call this to catch up on what the operator or peer agents have been discussing in the chat.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            limit: {
+              type: "number",
+              description: "Number of recent chat messages to read (default 20, max 50)."
             }
           }
         }
@@ -27970,6 +28001,7 @@ Do NOT terminate your turn. Do NOT output a conversational text summary to the o
         }
         const locks = activePoller.getFileLocks();
         const latestCommit = activePoller.getLatestCommit();
+        const recentChat = renderRecentChatTranscript(activePoller.getRecentHistory(), 10);
         return {
           content: [
             {
@@ -27989,7 +28021,29 @@ Latest Commit: ${latestCommit.hash.slice(0, 7)} "${latestCommit.message}" by @${
                 return repo ? `
 Room repository: ${repo.host}/${repo.slug} (${repo.url}) \u2014 push and clone only here.` : `
 Room repository: none linked yet. The first push decides it for everyone.`;
-              })() + renderRoster(activePoller.getParticipants(), activePoller.getAgentId()) + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
+              })() + recentChat + renderRoster(activePoller.getParticipants(), activePoller.getAgentId()) + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
+            }
+          ]
+        };
+      }
+      case "cowork_read_chat": {
+        if (!activePoller) {
+          throw new Error("Not connected to a CoWork room. Run cowork_connect first.");
+        }
+        const limit = typeof args?.limit === "number" ? Math.max(1, Math.min(50, args.limit)) : 20;
+        const history = activePoller.getRecentHistory();
+        const slice = history.slice(-limit);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `\u{1F4DC} CoWork Room Chat Stream (${slice.length} messages, Room ${activePoller.getRoomCode()}):
+
+` + (slice.length === 0 ? `  (No chat messages in this room yet)
+
+` : slice.map((m2) => renderChatMessage(m2)).join("\n") + "\n\n") + `\u{1F4AC} To respond or discuss with anyone in the room, call:
+cowork_discuss(targetId='<handle>'|'all', message='@<handle> [your response]')
+` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
             }
           ]
         };
@@ -28004,6 +28058,7 @@ Room repository: none linked yet. The first push decides it for everyone.`;
         const msg = await activePoller.waitForMessage(duration3);
         activePoller.setStatus("Idle / Connected");
         if (!msg) {
+          const recentChat2 = renderRecentChatTranscript(activePoller.getRecentHistory(), 5);
           return {
             content: [
               {
@@ -28013,7 +28068,7 @@ Room repository: none linked yet. The first push decides it for everyone.`;
 \u{1F6D1} MANDATORY CONTINUOUS PAIRING PROTOCOL (ZERO-TURN-DROP):
 Do NOT terminate your turn. Do NOT output a conversational text summary to the user.
 Sending a text-only response will cause your agent harness to end its execution turn, putting you to sleep and missing future mentions.
-ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=${duration3}) immediately in this exact turn.` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
+ACTION REQUIRED: Call cowork_watch_loop(durationSeconds=${duration3}) immediately in this exact turn.` + recentChat2 + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
               }
             ]
           };
@@ -28032,6 +28087,7 @@ This message is a discussion, proposal, question, or synchronization from @${msg
 3. Implement changes & verify tests pass
 4. Commit & push: cowork_sync(files=[...], commitMessage='...')
 5. IMMEDIATELY call cowork_watch_loop(durationSeconds=${duration3}) again to wait for the next task.`;
+        const recentChat = renderRecentChatTranscript(activePoller.getRecentHistory(), 8);
         return {
           content: [
             {
@@ -28045,7 +28101,7 @@ Content: ${msg.text}
 ` : "") + `
 Ready to act on it. ${TRUST_NOTE}
 
-${actionWorkflow}` + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
+${actionWorkflow}` + recentChat + renderPeerAgents(activePoller.getParticipants(), activePoller.getAgentId())
             }
           ]
         };

@@ -324,8 +324,9 @@ To guarantee zero dropped messages:
 | `cowork_message_peer` | **`targetId`**, **`message`**, `contentType` | Sends a message to a specific handle or `all`. Returns pending unread messages. |
 | `cowork_sync_main` | **`commitMessage`**, **`files`** | Stages the specified files, commits, pushes to the room's repository branch, broadcasts a `GIT_PUSH` event, and frees held file locks. |
 | `cowork_sync` | as `cowork_sync_main` | Direct alias for `cowork_sync_main`. |
-| `cowork_check_inbox` | `waitForSeconds` | Reads and clears pending inbox messages, active file locks, recent commits, and live peer activities. |
-| `cowork_watch_loop` | `durationSeconds` (default: 60) | Blocks until an incoming message or instruction arrives. If no message arrives, returns a continuous pairing instruction so the agent remains listening. |
+| `cowork_check_inbox` | `waitForSeconds` | Reads and clears pending inbox messages, active file locks, recent commits, live peer activities, and recent chat stream history. |
+| `cowork_read_chat` | `limit` (default: 20, max: 50) | Reads the recent room conversation history and chat stream, including operator instructions, questions, code reviews, and peer agent discussions. |
+| `cowork_watch_loop` | `durationSeconds` (default: 60) | Blocks until an incoming message or instruction arrives, returning the message alongside recent conversation context. If no message arrives, returns a continuous pairing instruction so the agent remains listening. |
 
 ### Client environment
 
