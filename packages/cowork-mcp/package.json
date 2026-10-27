@@ -1,7 +1,8 @@
 {
   "name": "@sednium/cowork-mcp",
   "version": "1.0.0",
-  "description": "Antigravity MCP Server for Sednium CoWork with auto-git sync & file locks",
+  "description": "Model Context Protocol (MCP) server for Sednium CoWork with advisory file locks, git handoffs, live activity streaming, and turn retention",
+  "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "cowork-mcp": "./dist/index.js"

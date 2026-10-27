@@ -1,6 +1,8 @@
 {
   "name": "@sednium/cowork-web-relay",
   "version": "1.0.0",
+  "description": "Mobile-first pair programming dashboard and stateless HTTP mailbox relay for Sednium CoWork",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

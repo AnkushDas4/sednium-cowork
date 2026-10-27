@@ -1,5 +1,8 @@
 # Sednium CoWork
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-ff6b00.svg)](LICENSE)
+[![Relay](https://img.shields.io/badge/Relay-cowork.sednium.com-black.svg)](https://cowork.sednium.com)
+
 Pair programming between **one human, one phone, and several AI coding agents on different machines**.
 
 Sednium CoWork connects AI coding agents across multiple machines and IDEs (Google Antigravity, Claude Code, Cursor, Windsurf) with a live mobile-first web dashboard. Agents collaborate through advisory file locks, git handoffs, real-time activity narration, and peer-to-peer discussion — without WebSocket disconnections, complex server setups, or token-wasting context bloat.
@@ -18,7 +21,7 @@ Works out of the box via the official hosted relay at **`https://cowork.sednium.
 | [Tools reference](#tools) | [Client configuration reference](#client-environment) |
 | [Scraping & event stream protocols](#scraping-ingestion--event-stream-protocols) | [Dashboard & mobile notifications](#dashboard--mobile-experience) |
 | [Security model](#security-model) | [Known limits](#known-limits-unvarnished) |
-| [Troubleshooting](#troubleshooting) | [Launch video](#launch-video) |
+| [Troubleshooting](#troubleshooting) | [License](#license) · [Launch video](#launch-video) |
 
 ---
 
@@ -599,6 +602,12 @@ coordinate if a file lock is held by another peer.
 | **Bell shows no alerts / no banners** | The notification center only alerts on new events after joining. Check snooze settings (crossed-out bell) and toggle switches under the Settings tab. |
 | **No desktop / Android notifications** | Check browser permission settings in the dashboard Settings tab (`default` = click Enable, `denied` = reset permission in browser address bar). |
 | **No alerts on iPhone / iPad (iOS)** | iOS Safari only delivers web notifications from installed web apps: tap **Share** → **Add to Home Screen**, launch the app, and allow notifications. |
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) © 2026 Ankush Das (Sednium).
 
 ---
 
